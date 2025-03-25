@@ -1,34 +1,11 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { RealtimeChannel } from '@supabase/supabase-js';
 
-// Initialize Supabase client with realtime enabled
+// Initialize Supabase client
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
-
-// Create a channel for realtime updates
-let channel: RealtimeChannel | null = null;
-
-function setupRealtimeChannel(conversationId: string) {
-  if (channel) {
-    channel.unsubscribe();
-  }
-
-  channel = supabase.channel(`messages:${conversationId}`)
-    .on('postgres_changes', {
-      event: '*',
-      schema: 'public',
-      table: 'messages',
-      filter: `conversation_id=eq.${conversationId}`
-    }, (payload) => {
-      console.log('Realtime message update:', payload);
-    })
-    .subscribe();
-
-  return channel;
-}
 
 // Verify token for webhook verification
 const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN || 'your_verify_token';
@@ -85,15 +62,6 @@ async function sendSimpleReply(to: string) {
       })
       .select()
       .single();
-
-    // Broadcast the reply through the channel
-    if (replyMessage) {
-      channel?.send({
-        type: 'broadcast',
-        event: 'message',
-        payload: replyMessage
-      });
-    }
 
     if (replyError) {
       console.error('Error storing reply message:', replyError);
@@ -217,9 +185,6 @@ export async function POST(request: Request) {
               // Store message
               console.log('Storing message for conversation:', conversationId);
               
-              // Set up realtime channel for this conversation
-              setupRealtimeChannel(conversationId);
-
               const { data: newMessage, error: messageError } = await supabase
                 .from('messages')
                 .insert({
@@ -235,15 +200,6 @@ export async function POST(request: Request) {
                 })
                 .select()
                 .single();
-                
-              // Broadcast the change through the channel
-              if (newMessage) {
-                channel?.send({
-                  type: 'broadcast',
-                  event: 'message',
-                  payload: newMessage
-                });
-              }
 
               if (messageError) {
                 console.error('Error storing message:', messageError);
