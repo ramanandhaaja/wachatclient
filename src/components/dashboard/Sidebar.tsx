@@ -28,7 +28,7 @@ import {
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -47,6 +47,7 @@ type SidebarItem = {
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { data: session } = useSession();
   const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({
     "Conversation": true,
   });
@@ -260,8 +261,8 @@ export function Sidebar() {
               </Avatar>
               {!collapsed && (
                 <div className="flex-1 text-left">
-                  <p className="text-sm font-medium">shadcn</p>
-                  <p className="text-xs text-gray-400">m@example.com</p>
+                  <p className="text-sm font-medium">{session?.user?.name || 'Guest'}</p>
+                  <p className="text-xs text-gray-400">{session?.user?.email || 'guest@example.com'}</p>
                 </div>
               )}
               <Settings className="h-4 w-4 text-gray-400" />
@@ -280,8 +281,8 @@ export function Sidebar() {
                 </Avatar>
               </div>
               <div className="flex flex-col space-y-0.5">
-                <p className="text-sm font-medium">shadcn</p>
-                <p className="text-xs text-gray-400">m@example.com</p>
+                <p className="text-sm font-medium">{session?.user?.name || 'Guest'}</p>
+                <p className="text-xs text-gray-400">{session?.user?.email || 'guest@example.com'}</p>
               </div>
               
             </div>
