@@ -117,7 +117,7 @@ export async function POST(request: Request) {
               const { data: existingContact } = await supabase
                 .from('conversations')
                 .select('id')
-                .eq('wa_id', contact.wa_id)
+                .eq('user_phone', contact.wa_id)
                 .single();
 
               if (!existingContact) {
