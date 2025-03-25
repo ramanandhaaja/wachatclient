@@ -5,9 +5,10 @@
   "scripts": {
     "dev": "next dev",
     "dev:turbo": "next dev --turbopack",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
+    "postinstall": "prisma generate",
     "test:supabase": "node test-supabase.js",
     "test:whatsapp": "node src/test-whatsapp.js",
     "test:chat-send": "node src/test-chat-send.js",
