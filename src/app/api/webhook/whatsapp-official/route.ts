@@ -114,7 +114,7 @@ async function sendSimpleReply(to: string) {
     const { data: conversations, error: findError } = await supabase
       .from('conversations')
       .select('id')
-      .eq('phone_number', to)
+      .eq('user_phone', to)
       .single();
 
     if (findError) {
