@@ -113,27 +113,51 @@ export async function POST(request: Request) {
               const message = value.messages[0];
               const contact = value.contacts[0];
               
+              console.log('Processing message from:', contact.wa_id);
+
               // Store contact information
-              const { data: existingContact } = await supabase
+              const { data: existingContact, error: findError } = await supabase
                 .from('conversations')
                 .select('id')
                 .eq('user_phone', contact.wa_id)
                 .single();
 
+              if (findError) {
+                console.error('Error finding conversation:', findError);
+              }
+
+              console.log('Existing contact:', existingContact);
+
+              let conversationId: string;
+
               if (!existingContact) {
-                await supabase.from('conversations').insert({
-                  user_id: contact.wa_id, // Using wa_id as user_id
-                  user_phone: contact.wa_id,
-                  user_name: contact.profile.name,
-                  status: 'active',
-                  last_message: message.text.body,
-                  last_message_time: new Date(parseInt(message.timestamp) * 1000).toISOString(),
-                  created_at: new Date().toISOString(),
-                  updated_at: new Date().toISOString(),
-                  is_bot_active: true
-                });
+                console.log('Creating new conversation for:', contact.wa_id);
+                const { data: newConversation, error: insertError } = await supabase
+                  .from('conversations')
+                  .insert({
+                    user_id: contact.wa_id,
+                    user_phone: contact.wa_id,
+                    user_name: contact.profile.name,
+                    status: 'active',
+                    last_message: message.text.body,
+                    last_message_time: new Date(parseInt(message.timestamp) * 1000).toISOString(),
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                    is_bot_active: true
+                  })
+                  .select('id')
+                  .single();
+
+                if (insertError) {
+                  console.error('Error creating conversation:', insertError);
+                  throw new Error('Failed to create conversation');
+                }
+
+                console.log('Created new conversation:', newConversation);
+                conversationId = newConversation.id;
               } else {
-                await supabase
+                console.log('Updating existing conversation:', existingContact.id);
+                const { error: updateError } = await supabase
                   .from('conversations')
                   .update({
                     last_message: message.text.body,
@@ -141,12 +165,20 @@ export async function POST(request: Request) {
                     updated_at: new Date().toISOString()
                   })
                   .eq('id', existingContact.id);
+
+                if (updateError) {
+                  console.error('Error updating conversation:', updateError);
+                  throw new Error('Failed to update conversation');
+                }
+
+                conversationId = existingContact.id;
               }
 
               // Store message
-              await supabase.from('messages').insert({
+              console.log('Storing message for conversation:', conversationId);
+              const { error: messageError } = await supabase.from('messages').insert({
                 sender_id: message.id,
-                conversation_id: existingContact?.id || contact.wa_id,
+                conversation_id: conversationId,
                 sender_type: 'user',
                 content: message.text.body,
                 timestamp: new Date(parseInt(message.timestamp) * 1000).toISOString(),
@@ -156,6 +188,13 @@ export async function POST(request: Request) {
                   wa_message_id: message.id
                 }
               });
+
+              if (messageError) {
+                console.error('Error storing message:', messageError);
+                throw new Error('Failed to store message');
+              }
+
+              console.log('Successfully stored message');
 
               // Send a simple "thanks" reply
               await sendSimpleReply(contact.wa_id);
