@@ -10,6 +10,62 @@ const supabase = createClient(
 // Verify token for webhook verification
 const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN || 'your_verify_token';
 
+// Send a simple "thanks" reply
+async function sendSimpleReply(to: string) {
+  try {
+    // Send the reply using the WhatsApp Cloud API
+    const WHATSAPP_API_VERSION = 'v17.0';
+    const WHATSAPP_PHONE_NUMBER_ID = process.env.NEXT_PUBLIC_WHATSAPP_PHONE_NUMBER_ID || '';
+    const WHATSAPP_ACCESS_TOKEN = process.env.NEXT_PUBLIC_WHATSAPP_ACCESS_TOKEN || '';
+    
+    const response = await fetch(
+      `https://graph.facebook.com/${WHATSAPP_API_VERSION}/${WHATSAPP_PHONE_NUMBER_ID}/messages`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${WHATSAPP_ACCESS_TOKEN}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messaging_product: 'whatsapp',
+          recipient_type: 'individual',
+          to: to,
+          type: 'text',
+          text: {
+            preview_url: false,
+            body: 'Thanks for your message! Our AI assistant will respond shortly.'
+          }
+        }),
+      }
+    );
+    
+    if (!response.ok) {
+      throw new Error(`WhatsApp API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log('Simple reply sent:', data);
+
+    // Store the outbound message
+    await supabase.from('messages').insert({
+      sender_id: data.messages?.[0]?.id,
+      conversation_id: to, // Using wa_id as conversation_id temporarily
+      sender_type: 'bot',
+      content: 'Thanks for your message! Our AI assistant will respond shortly.',
+      timestamp: new Date().toISOString(),
+      is_read: true,
+      metadata: {
+        message_type: 'text',
+        wa_message_id: data.messages?.[0]?.id,
+        delivery_status: 'sent'
+      }
+    });
+
+  } catch (error) {
+    console.error('Error sending reply:', error);
+  }
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   
@@ -57,105 +113,62 @@ export async function POST(request: Request) {
               const message = value.messages[0];
               const contact = value.contacts[0];
               
-              // Only process if it's a text message
-              if (message.type === 'text') {
-                // Send a simple "thanks" reply
-                await sendSimpleReply(contact.wa_id);
+              // Store contact information
+              const { data: existingContact } = await supabase
+                .from('conversations')
+                .select('id')
+                .eq('wa_id', contact.wa_id)
+                .single();
+
+              if (!existingContact) {
+                await supabase.from('conversations').insert({
+                  user_id: contact.wa_id, // Using wa_id as user_id
+                  user_phone: contact.wa_id,
+                  user_name: contact.profile.name,
+                  status: 'active',
+                  last_message: message.text.body,
+                  last_message_time: new Date(parseInt(message.timestamp) * 1000).toISOString(),
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString(),
+                  is_bot_active: true
+                });
+              } else {
+                await supabase
+                  .from('conversations')
+                  .update({
+                    last_message: message.text.body,
+                    last_message_time: new Date(parseInt(message.timestamp) * 1000).toISOString(),
+                    updated_at: new Date().toISOString()
+                  })
+                  .eq('id', existingContact.id);
               }
+
+              // Store message
+              await supabase.from('messages').insert({
+                sender_id: message.id,
+                conversation_id: existingContact?.id || contact.wa_id,
+                sender_type: 'user',
+                content: message.text.body,
+                timestamp: new Date(parseInt(message.timestamp) * 1000).toISOString(),
+                is_read: false,
+                metadata: {
+                  message_type: message.type,
+                  wa_message_id: message.id
+                }
+              });
+
+              // Send a simple "thanks" reply
+              await sendSimpleReply(contact.wa_id);
             }
           }
         }
       }
-      
-      // Return a 200 OK response to acknowledge receipt of the event
-      return new NextResponse('EVENT_RECEIVED', { status: 200 });
     }
-    
-    return new NextResponse('Not Found', { status: 404 });
+
+    return new NextResponse('OK', { status: 200 });
   } catch (error) {
     console.error('Error processing webhook:', error);
     return new NextResponse('Internal Server Error', { status: 500 });
   }
 }
 
-// Send a simple "thanks" reply
-async function sendSimpleReply(to: string) {
-  try {
-    // Send the reply using the WhatsApp Cloud API
-    const WHATSAPP_API_VERSION = 'v22.0';
-    const WHATSAPP_PHONE_NUMBER_ID = process.env.NEXT_PUBLIC_WHATSAPP_PHONE_NUMBER_ID || '';
-    const WHATSAPP_ACCESS_TOKEN = process.env.NEXT_PUBLIC_WHATSAPP_ACCESS_TOKEN || '';
-    
-    const response = await fetch(
-      `https://graph.facebook.com/${WHATSAPP_API_VERSION}/${WHATSAPP_PHONE_NUMBER_ID}/messages`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${WHATSAPP_ACCESS_TOKEN}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          messaging_product: 'whatsapp',
-          recipient_type: 'individual',
-          to: to,
-          type: 'text',
-          text: {
-            preview_url: false,
-            body: 'Thanks!'
-          }
-        }),
-      }
-    );
-    
-    const data = await response.json();
-    console.log('Simple reply sent:', data);
-
-    // Find the conversation for this phone number
-    const { data: conversations, error: findError } = await supabase
-      .from('conversations')
-      .select('id')
-      .eq('user_phone', to)
-      .single();
-
-    if (findError) {
-      console.error('Error finding conversation:', findError);
-      return;
-    }
-
-    // Save the reply message to Supabase
-    const { data: savedMessage, error: saveError } = await supabase
-      .from('messages')
-      .insert({
-        conversation_id: conversations.id,
-        content: 'Thanks!', // The reply message
-        sender_type: 'bot',
-        timestamp: new Date().toISOString(),
-        metadata: {
-          delivery_status: 'sent',
-          whatsapp_message_id: data.messages?.[0]?.id
-        }
-      })
-      .select()
-      .single();
-
-    if (saveError) {
-      console.error('Error saving reply message:', saveError);
-      return;
-    }
-
-    // Broadcast the change through Supabase's realtime
-    await supabase
-      .from('messages')
-      .update({
-        metadata: {
-          ...savedMessage?.metadata,
-          updated_at: new Date().toISOString()
-        }
-      })
-      .eq('id', savedMessage?.id);
-
-    console.log('[Webhook] Bot reply saved:', savedMessage?.id);
-  } catch (error) {
-    console.error('Error sending reply:', error);
-  }
-}
