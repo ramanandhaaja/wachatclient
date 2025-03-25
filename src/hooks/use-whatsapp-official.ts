@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@supabase/supabase-js';
 
 // Initialize Supabase client
@@ -39,6 +39,7 @@ interface SendMessageResponse {
 }
 
 export const useWhatsAppOfficial = () => {
+  const queryClient = useQueryClient();
   const [lastMessageId, setLastMessageId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -75,11 +76,13 @@ export const useWhatsAppOfficial = () => {
           })
           .select()
           .single();
-          
-        if (dbError) {
+
+        if (dbError || !savedMessage) {
           console.error('Error saving message to database:', dbError);
           throw new Error('Failed to save message');
         }
+
+        console.log('[SUPABASE] Message saved:', savedMessage);
         
         console.log('[WhatsApp Hook] Debug Info:', {
           phoneNumber: formattedPhoneNumber,
@@ -119,7 +122,7 @@ export const useWhatsAppOfficial = () => {
         // Check for errors in the response
         if (data.error) {
           // Update message status to failed
-          await supabase
+          const { error: updateError } = await supabase
             .from('messages')
             .update({
               metadata: {
@@ -129,14 +132,20 @@ export const useWhatsAppOfficial = () => {
             })
             .eq('id', savedMessage.id);
 
+          console.log('[SUPABASE] Message failed to send:', savedMessage.id);
+
+          if (updateError) {
+            console.error('Error updating message status:', updateError);
+          }
+
           throw new Error(data.error.message || 'Failed to send WhatsApp message');
         }
         
         // Store the message ID and update status to sent
-        if (data.messages && data.messages.length > 0) {
+        if (data.messages?.[0]) {
           setLastMessageId(data.messages[0].id);
           
-          await supabase
+          const { error: updateError } = await supabase
             .from('messages')
             .update({
               metadata: {
@@ -145,6 +154,12 @@ export const useWhatsAppOfficial = () => {
               }
             })
             .eq('id', savedMessage.id);
+
+          if (updateError) {
+            console.error('Error updating message status:', updateError);
+          } else {
+            console.log('[SUPABASE] Message sent successfully:', savedMessage.id);
+          }
         }
         
         return data;
@@ -155,6 +170,10 @@ export const useWhatsAppOfficial = () => {
     },
     onError: (err) => {
       setError(err.message || 'Failed to send message');
+    },
+    onSettled: () => {
+      // Invalidate queries to refresh the messages list
+      queryClient.invalidateQueries({ queryKey: ['messages'] });
     }
   });
 

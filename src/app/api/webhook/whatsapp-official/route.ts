@@ -123,7 +123,7 @@ async function sendSimpleReply(to: string) {
     }
 
     // Save the reply message to Supabase
-    const { error: saveError } = await supabase
+    const { data: savedMessage, error: saveError } = await supabase
       .from('messages')
       .insert({
         conversation_id: conversations.id,
@@ -134,11 +134,27 @@ async function sendSimpleReply(to: string) {
           delivery_status: 'sent',
           whatsapp_message_id: data.messages?.[0]?.id
         }
-      });
+      })
+      .select()
+      .single();
 
     if (saveError) {
       console.error('Error saving reply message:', saveError);
+      return;
     }
+
+    // Broadcast the change through Supabase's realtime
+    await supabase
+      .from('messages')
+      .update({
+        metadata: {
+          ...savedMessage?.metadata,
+          updated_at: new Date().toISOString()
+        }
+      })
+      .eq('id', savedMessage?.id);
+
+    console.log('[Webhook] Bot reply saved:', savedMessage?.id);
   } catch (error) {
     console.error('Error sending reply:', error);
   }

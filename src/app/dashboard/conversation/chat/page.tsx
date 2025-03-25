@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useWhatsAppOfficial } from "@/hooks/use-whatsapp-official";
 import { useConversation, useConversations, type Conversation, type Message } from "@/hooks/use-conversation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -35,6 +35,7 @@ import {
 
 
 export default function ChatPage() {
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const [messageText, setMessageText] = useState("");
   const [showDetails, setShowDetails] = useState(true);
   const [activeConversation, setActiveConversation] = useState<Conversation | null>(null);
@@ -53,6 +54,22 @@ export default function ChatPage() {
     isLoading: messagesLoading,
     error: messagesError
   } = useConversation(activeConversation?.id ?? null);
+
+  const scrollToBottom = useCallback(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollTo({
+        top: messagesEndRef.current.scrollHeight,
+        behavior: 'smooth'
+      });
+    }
+  }, []);
+
+  // Scroll to bottom when messages load or change
+  useEffect(() => {
+    if (!messagesLoading && conversationMessages?.length) {
+      scrollToBottom();
+    }
+  }, [messagesLoading, conversationMessages, scrollToBottom]);
 
   const handleSelectConversation = (conversation: Conversation) => {
     setActiveConversation(conversation);
@@ -215,7 +232,7 @@ export default function ChatPage() {
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            <div className="flex-1 overflow-y-auto p-4 space-y-4" ref={messagesEndRef}>
               {messagesLoading ? (
                 <div className="flex items-center justify-center h-full">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
@@ -245,7 +262,7 @@ export default function ChatPage() {
                     )}
                     <p>{message.content}</p>
                     <div className="flex items-center justify-end gap-1 text-xs mt-1 opacity-70">
-                      {message.sender_type === 'admin' && (
+                      {(message.sender_type === 'admin' || message.sender_type === 'bot') && (
                         <span className="inline-block">
                           {message.metadata?.delivery_status === 'pending' && (
                             <Clock className="h-3 w-3 text-gray-400" />
