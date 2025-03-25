@@ -47,19 +47,27 @@ async function sendSimpleReply(to: string) {
     console.log('Simple reply sent:', data);
 
     // Store the outbound message
-    await supabase.from('messages').insert({
-      sender_id: data.messages?.[0]?.id,
-      conversation_id: to, // Using wa_id as conversation_id temporarily
-      sender_type: 'bot',
-      content: 'Thanks for your message! Our AI assistant will respond shortly.',
-      timestamp: new Date().toISOString(),
-      is_read: true,
-      metadata: {
-        message_type: 'text',
-        wa_message_id: data.messages?.[0]?.id,
-        delivery_status: 'sent'
-      }
-    });
+    const { data: replyMessage, error: replyError } = await supabase
+      .from('messages')
+      .insert({
+        conversation_id: to, // Using wa_id as conversation_id temporarily
+        content: 'Thanks for your message! Our AI assistant will respond shortly.',
+        sender_type: 'bot',
+        timestamp: new Date().toISOString(),
+        metadata: {
+          message_type: 'text',
+          wa_message_id: data.messages?.[0]?.id,
+          delivery_status: 'sent'
+        }
+      })
+      .select()
+      .single();
+
+    if (replyError) {
+      console.error('Error storing reply message:', replyError);
+    } else {
+      console.log('Reply message stored successfully:', replyMessage);
+    }
 
   } catch (error) {
     console.error('Error sending reply:', error);
@@ -176,18 +184,21 @@ export async function POST(request: Request) {
 
               // Store message
               console.log('Storing message for conversation:', conversationId);
-              const { error: messageError } = await supabase.from('messages').insert({
-                sender_id: message.id,
-                conversation_id: conversationId,
-                sender_type: 'user',
-                content: message.text.body,
-                timestamp: new Date(parseInt(message.timestamp) * 1000).toISOString(),
-                is_read: false,
-                metadata: {
-                  message_type: message.type,
-                  wa_message_id: message.id
-                }
-              });
+              const { data: newMessage, error: messageError } = await supabase
+                .from('messages')
+                .insert({
+                  conversation_id: conversationId,
+                  content: message.text.body,
+                  sender_type: 'user',
+                  timestamp: new Date(parseInt(message.timestamp) * 1000).toISOString(),
+                  metadata: {
+                    message_type: message.type,
+                    wa_message_id: message.id,
+                    delivery_status: 'received'
+                  }
+                })
+                .select()
+                .single();
 
               if (messageError) {
                 console.error('Error storing message:', messageError);
