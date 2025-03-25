@@ -81,7 +81,26 @@ export const useWhatsAppOfficial = () => {
           throw new Error('Failed to save message');
         }
         
-        // Call the WhatsApp Cloud API directly
+        console.log('[WhatsApp Hook] Debug Info:', {
+          phoneNumber: formattedPhoneNumber,
+          message: message,
+          apiVersion: WHATSAPP_API_VERSION,
+          phoneNumberId: WHATSAPP_PHONE_NUMBER_ID
+        });
+
+        const requestBody = {
+          messaging_product: 'whatsapp',
+          recipient_type: 'individual',
+          to: formattedPhoneNumber,
+          type: 'text',
+          text: {
+            preview_url: previewUrl,
+            body: message
+          }
+        };
+
+        console.log('[WhatsApp Hook] Request Body:', requestBody);
+
         const response = await fetch(
           `https://graph.facebook.com/${WHATSAPP_API_VERSION}/${WHATSAPP_PHONE_NUMBER_ID}/messages`, 
           {
@@ -90,20 +109,12 @@ export const useWhatsAppOfficial = () => {
               'Authorization': `Bearer ${WHATSAPP_ACCESS_TOKEN}`,
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({
-              messaging_product: 'whatsapp',
-              recipient_type: 'individual',
-              to: formattedPhoneNumber,
-              type: 'text',
-              text: {
-                preview_url: previewUrl,
-                body: message
-              }
-            })
+            body: JSON.stringify(requestBody)
           }
         );
 
         const data = await response.json();
+        console.log('[WhatsApp Hook] Response Data:', data);
         
         // Check for errors in the response
         if (data.error) {

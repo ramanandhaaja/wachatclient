@@ -1,4 +1,11 @@
 import { NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
+
+// Initialize Supabase client
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 // Verify token for webhook verification
 const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN || 'your_verify_token';
@@ -102,7 +109,36 @@ async function sendSimpleReply(to: string) {
     
     const data = await response.json();
     console.log('Simple reply sent:', data);
-    
+
+    // Find the conversation for this phone number
+    const { data: conversations, error: findError } = await supabase
+      .from('conversations')
+      .select('id')
+      .eq('phone_number', to)
+      .single();
+
+    if (findError) {
+      console.error('Error finding conversation:', findError);
+      return;
+    }
+
+    // Save the reply message to Supabase
+    const { error: saveError } = await supabase
+      .from('messages')
+      .insert({
+        conversation_id: conversations.id,
+        content: 'Thanks!', // The reply message
+        sender_type: 'bot',
+        timestamp: new Date().toISOString(),
+        metadata: {
+          delivery_status: 'sent',
+          whatsapp_message_id: data.messages?.[0]?.id
+        }
+      });
+
+    if (saveError) {
+      console.error('Error saving reply message:', saveError);
+    }
   } catch (error) {
     console.error('Error sending reply:', error);
   }
