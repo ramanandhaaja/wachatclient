@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 
-export default function SignUp() {
+function SignUpContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
@@ -168,5 +168,17 @@ export default function SignUp() {
         </CardFooter>
       </Card>
     </div>
+  );
+}
+
+export default function SignUp() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen bg-gray-50">
+      <Card className="w-full max-w-md p-8">
+        <div className="text-center">Loading...</div>
+      </Card>
+    </div>}>
+      <SignUpContent />
+    </Suspense>
   );
 }
