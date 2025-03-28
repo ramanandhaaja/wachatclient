@@ -51,6 +51,35 @@ model User {
   resetTokenExpires  DateTime?
   accounts           Account[]
   sessions           Session[]
+  eventDuration      Int            @default(30) // 30 or 60 minutes
+  availability       Availability[]
+  events            Event[]
+}
+
+model Availability {
+  id        String   @id @default(cuid())
+  userId    String
+  dayOfWeek Int     // 0-6 (Sunday to Saturday)
+  startTime String  // Format: "HH:mm"
+  endTime   String  // Format: "HH:mm"
+  user      User    @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model Event {
+  id         String   @id @default(cuid())
+  userId     String
+  startTime  DateTime
+  endTime    DateTime
+  clientName String
+  user       User     @relation(fields: [userId], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([userId])
 }
 
 model VerificationToken {
