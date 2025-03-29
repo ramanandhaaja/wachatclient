@@ -2,14 +2,38 @@
 
 import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight, Video } from 'lucide-react';
+import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { CalendarGrid } from '@/components/calendar/CalendarGrid';
-import { TimeSlots } from '@/components/calendar/TimeSlots';
+import { EventPanel } from '@/components/calendar/EventPanel';
+import { AvailabilityPanel } from '@/components/calendar/AvailabilityPanel';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useCalendar } from '@/hooks/use-calendar';
+import { useSession } from 'next-auth/react';
 
 export default function CalendarPage() {
+  const { status } = useSession();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<'12h' | '24h'>('12h');
+
+  const { availableSlots, events } = useCalendar();
+  
+  // Fetch available slots for selected date
+  const { data: slots, isLoading: slotsLoading } = availableSlots.useQuery(selectedDate);
+
+  // Fetch events for current month
+  const { data: monthEvents, isLoading: eventsLoading } = events.useQuery({
+    startDate: format(startOfMonth(currentDate), 'yyyy-MM-dd'),
+    endDate: format(endOfMonth(currentDate), 'yyyy-MM-dd')
+  });
+
+  if (status === "loading") {
+    return <div className="p-8">Loading...</div>;
+  }
+
+  if (status === "unauthenticated") {
+    return <div className="p-8">Please sign in to access the calendar.</div>;
+  }
 
   const months = [
     'January', 'February', 'March', 'April', 'May', 'June',
@@ -105,7 +129,12 @@ export default function CalendarPage() {
           </div>
         </div>
 
-        <TimeSlots viewMode={viewMode} />
+        <div className="space-y-8">
+          <AvailabilityPanel />
+          <div className="border-t pt-8">
+            <EventPanel selectedDate={selectedDate} viewMode={viewMode} />
+          </div>
+        </div>
       </div>
     </div>
   );

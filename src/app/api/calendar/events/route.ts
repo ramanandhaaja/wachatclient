@@ -62,8 +62,10 @@ export async function POST(req: NextRequest) {
     }
 
     const { startTime, clientName } = result.data;
+    const eventDate = new Date(startTime);
+    const dayOfWeek = eventDate.getDay(); // 0-6 (Sunday-Saturday)
 
-    // Get user's event duration
+    // Get user's event duration and availability
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
       select: { eventDuration: true },
@@ -71,6 +73,46 @@ export async function POST(req: NextRequest) {
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    // Check if there's availability for this day
+    const availability = await prisma.availability.findFirst({
+      where: {
+        userId: session.user.id,
+        dayOfWeek,
+      },
+    });
+
+    if (!availability) {
+      return NextResponse.json(
+        { error: "No availability set for this day" },
+        { status: 400 }
+      );
+    }
+
+    // Parse event time
+    const [eventHour, eventMinute] = eventDate
+      .toTimeString()
+      .slice(0, 5)
+      .split(":")
+      .map(Number);
+    const eventMinutes = eventHour * 60 + eventMinute;
+
+    // Parse availability times
+    const [startHour, startMinute] = availability.startTime.split(":").map(Number);
+    const [endHour, endMinute] = availability.endTime.split(":").map(Number);
+    const availStartMinutes = startHour * 60 + startMinute;
+    const availEndMinutes = endHour * 60 + endMinute;
+
+    // Check if event is within availability
+    if (
+      eventMinutes < availStartMinutes ||
+      eventMinutes + user.eventDuration > availEndMinutes
+    ) {
+      return NextResponse.json(
+        { error: "Selected time is outside available hours" },
+        { status: 400 }
+      );
     }
 
     // Calculate end time based on event duration

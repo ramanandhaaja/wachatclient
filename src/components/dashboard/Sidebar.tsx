@@ -276,8 +276,11 @@ export function Sidebar() {
             <div className="flex items-center gap-2 p-2">
               <div className="rounded-full bg-primary/10 p-1">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src="/avatar.png" alt="User" />
-                  <AvatarFallback>SC</AvatarFallback>
+                  <AvatarImage 
+                    src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${session?.user?.email || 'guest'}`} 
+                    alt={session?.user?.name || 'User'} 
+                  />
+                  <AvatarFallback>{session?.user?.name?.[0] || 'U'}</AvatarFallback>
                 </Avatar>
               </div>
               <div className="flex flex-col space-y-0.5">

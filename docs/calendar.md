@@ -67,6 +67,8 @@ Response: {
 - Validates date format (YYYY-MM-DD)
 - Considers user's event duration and availability settings
 - Filters out booked slots
+- Validates against user's availability schedule
+- Returns error if user has no availability set for the day
 
 ### Events Management
 ```typescript
@@ -78,28 +80,115 @@ Response: { events: Array<Event> }
 POST /api/calendar/events
 Body: {
   startTime: string;  // ISO datetime
-  clientName: string;
+  clientName: string;  // Min length: 1
 }
-Response: { event: Event }
+Response: { 
+  event: {
+    id: string;
+    userId: string;
+    startTime: Date;
+    endTime: Date;
+    clientName: string;
+    createdAt: Date;
+    updatedAt: Date;
+  }
+}
+
+Validation:
+- startTime must be a valid ISO datetime
+- clientName must not be empty
+- Event must be within user's availability hours
+- Time slot must be available (no overlapping events)
 ```
 
 ### Individual Event Operations
 ```typescript
 // Get Event
 GET /api/calendar/events/[eventId]
-Response: { event: Event }
+Response: { 
+  event: {
+    id: string;
+    userId: string;
+    startTime: Date;
+    endTime: Date;
+    clientName: string;
+    createdAt: Date;
+    updatedAt: Date;
+  }
+}
 
 // Update Event
 PUT /api/calendar/events/[eventId]
 Body: {
   startTime?: string;  // ISO datetime
-  clientName?: string;
+  clientName?: string;  // Min length: 1
 }
-Response: { event: Event }
+Response: { 
+  event: {
+    id: string;
+    userId: string;
+    startTime: Date;
+    endTime: Date;
+    clientName: string;
+    createdAt: Date;
+    updatedAt: Date;
+  }
+}
+
+Validation:
+- If startTime is provided, must be a valid ISO datetime
+- If clientName is provided, must not be empty
+- New time slot must be available (no overlapping events)
+- New time must be within user's availability hours
 
 // Delete Event
 DELETE /api/calendar/events/[eventId]
-Response: { message: string }
+Response: { success: true }
+
+Validation:
+- Event must exist and belong to the authenticated user
+```
+
+### Availability Management
+```typescript
+// List Availability
+GET /api/calendar/availability
+Response: {
+  availability: Array<{
+    id: string;
+    userId: string;
+    dayOfWeek: number;  // 0-6 (Sunday to Saturday)
+    startTime: string;  // Format: "HH:mm"
+    endTime: string;    // Format: "HH:mm"
+    createdAt: Date;
+    updatedAt: Date;
+  }>
+}
+
+// Create/Update Availability
+POST /api/calendar/availability
+Body: {
+  dayOfWeek: number;  // 0-6 (Sunday to Saturday)
+  startTime: string;  // Format: "HH:mm" (24-hour)
+  endTime: string;    // Format: "HH:mm" (24-hour)
+}
+Response: {
+  availability: {
+    id: string;
+    userId: string;
+    dayOfWeek: number;
+    startTime: string;
+    endTime: string;
+    createdAt: Date;
+    updatedAt: Date;
+  }
+}
+
+Validation:
+- dayOfWeek must be between 0 and 6
+- startTime and endTime must be in HH:mm format (24-hour)
+- startTime must be before endTime
+- Cannot overlap with existing availability for the same day
 ```
 
 ## Implementation Details

@@ -1,23 +1,37 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { ClipboardList, Clock, Star } from "lucide-react";
+import { ClipboardList, Clock, Star, Calendar } from "lucide-react";
+import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { PerformanceChart } from "@/components/dashboard/PerformanceChart";
 import { EfficiencyChart } from "@/components/dashboard/EfficiencyChart";
 import { ActivityChart } from "@/components/dashboard/ActivityChart";
 import { BudgetCard } from "@/components/dashboard/BudgetCard";
+import { useCalendar } from "@/hooks/use-calendar";
 
 export default function Dashboard() {
   const { status } = useSession();
+  const { events } = useCalendar();
 
-  if (status === "loading") {
+  // Fetch current month's events
+  const { data: monthEvents, isLoading: eventsLoading } = events.useQuery({
+    startDate: format(startOfMonth(new Date()), 'yyyy-MM-dd'),
+    endDate: format(endOfMonth(new Date()), 'yyyy-MM-dd')
+  });
+
+  if (status === "loading" || eventsLoading) {
     return <div className="p-8">Loading...</div>;
   }
 
   if (status === "unauthenticated") {
     return <div className="p-8">Please sign in to access the dashboard.</div>;
   }
+
+  // Calculate calendar stats
+  const totalEvents = monthEvents?.length || 0;
+  const upcomingEvents = monthEvents?.filter(event => event.startTime > new Date()).length || 0;
+  const completedEvents = monthEvents?.filter(event => event.endTime < new Date()).length || 0;
 
   const performanceData = [
     { avatar: "/avatars/01.png", percentage: 19 },
