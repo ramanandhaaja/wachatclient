@@ -5,6 +5,7 @@ import { AgentExecutor } from 'langchain/agents';
 import { formatToOpenAIFunctionMessages } from 'langchain/agents/format_scratchpad';
 import { RunnableSequence } from '@langchain/core/runnables';
 import { getTools } from './tools';
+import { HumanMessage, AIMessage } from '@langchain/core/messages';
 
 // Setup chat agent with LangChain
 export async function setupChatAgent() {
@@ -30,7 +31,6 @@ export async function setupChatAgent() {
      - Multi-language support
      `],
     ["human", "{input}"],
-    ["ai", "{agent_scratchpad}"],
   ]);
 
   // Create the agent
@@ -44,20 +44,19 @@ export async function setupChatAgent() {
   const agentExecutor = new AgentExecutor({
     agent,
     tools,
-    verbose: true, // Enable verbose mode for debugging
+    verbose: true,
   });
 
   // Create the runnable sequence
   const runnable = RunnableSequence.from([
     {
-      input: (i: { input: string; chat_history?: any[]; steps?: any[] }) => i.input,
-      chat_history: (i: { input: string; chat_history?: any[]; steps?: any[] }) => i.chat_history || [],
-      agent_scratchpad: (i: { input: string; chat_history?: any[]; steps?: any[] }) => {
-        if (i.steps?.length) {
-          return formatToOpenAIFunctionMessages(i.steps);
-        }
-        return [];
-      },
+      input: (i: { input: string; chat_history?: any[] }) => i.input,
+      chat_history: (i: { input: string; chat_history?: any[] }) => {
+        if (!i.chat_history) return [];
+        return i.chat_history.map(msg => 
+          msg.type === 'human' ? new HumanMessage(msg.content) : new AIMessage(msg.content)
+        );
+      }
     },
     prompt,
     agent,

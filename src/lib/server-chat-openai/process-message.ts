@@ -39,14 +39,12 @@ export async function processMessage(sessionId: string, message: string): Promis
     // Process the message with history
     console.log('Invoking executor with:', {
       input: message,
-      chat_history: history.chat_history || [],
-      steps: []
+      chat_history: history.chat_history || []
     });
 
     const result = await executor.invoke({
       input: message,
-      chat_history: history.chat_history || [],
-      steps: [],
+      chat_history: history.chat_history || []
     });
 
     console.log('Executor result:', result);
