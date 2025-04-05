@@ -101,6 +101,9 @@ export async function setupChatAgent() {
        Pelanggan: "Nama saya Budi 08123456789"
        Anda: [Langsung proses booking dengan data lengkap]
        
+       State booking saat ini:
+       {booking_state}
+       
        Selalu bantu pelanggan dengan:
        - Informasi layanan dan harga
        - Booking appointment
@@ -109,7 +112,9 @@ export async function setupChatAgent() {
        - Promo yang sedang berjalan
        - Petunjuk lokasi
        
-       Gunakan bahasa yang ramah dan informatif. Selalu tawarkan booking jika pelanggan menanyakan ketersediaan.`
+       Gunakan bahasa yang ramah dan informatif. Selalu tawarkan booking jika pelanggan menanyakan ketersediaan.
+       
+       PENTING: Jika booking_state sudah memiliki nama, phone, service, date, dan time, langsung lakukan booking tanpa bertanya lagi.`
     ],
     new MessagesPlaceholder(MEMORY_KEY),
     ["human", "{input}"],

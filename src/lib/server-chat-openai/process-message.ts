@@ -6,6 +6,18 @@ import { setupChatAgent } from './setup-chat-agent';
 // Store conversation memory for different sessions
 const sessionMemories: Record<string, ConversationSummaryMemory> = {};
 
+// Store booking state for different sessions
+type BookingState = {
+  name?: string;
+  phone?: string;
+  service?: string;
+  date?: string;
+  time?: string;
+  barberId?: string;
+};
+
+const bookingStates: Record<string, BookingState> = {};
+
 /**
  * Process a message and return the response (server-side function)
  * This is a server-only function that can be imported in API routes
@@ -27,6 +39,52 @@ export async function processMessage(sessionId: string, message: string): Promis
       });
     }
 
+    // Initialize booking state if not exists
+    if (!bookingStates[sessionId]) {
+      bookingStates[sessionId] = {};
+    }
+
+    // Update booking state based on message content
+    const state = bookingStates[sessionId];
+    const lowerMsg = message.toLowerCase();
+    
+    // Extract name and phone if provided together
+    const namePhoneMatch = lowerMsg.match(/([a-z]+)\s+(\d{6,})/i);
+    if (namePhoneMatch) {
+      state.name = namePhoneMatch[1];
+      state.phone = namePhoneMatch[2];
+    }
+
+    // Extract time if mentioned
+    if (lowerMsg.includes('jam')) {
+      const timeMatch = lowerMsg.match(/jam\s*(\d{1,2})(?:[:.](\d{2}))?\s*(pagi|siang|sore|malam)?/i);
+      if (timeMatch) {
+        let hour = parseInt(timeMatch[1]);
+        const minute = timeMatch[2] ? timeMatch[2] : '00';
+        const period = timeMatch[3]?.toLowerCase();
+        
+        // Convert to 24-hour format
+        if (period === 'siang' && hour < 12) hour += 12;
+        if (period === 'sore') hour += 12;
+        if (period === 'malam' && hour < 12) hour += 12;
+        if (period === 'pagi' && hour === 12) hour = 0;
+        
+        state.time = `${hour.toString().padStart(2, '0')}:${minute}`;
+      }
+    }
+
+    // Extract date if "besok" is mentioned
+    if (lowerMsg.includes('besok')) {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      state.date = tomorrow.toISOString().split('T')[0];
+    }
+
+    // Extract service type
+    if (lowerMsg.includes('gunting') || lowerMsg.includes('potong')) {
+      state.service = 'potong';
+    }
+
     // Setup the agent
     console.log('Setting up chat agent');
     const executor = await setupChatAgent();
@@ -36,16 +94,16 @@ export async function processMessage(sessionId: string, message: string): Promis
     const history = await sessionMemories[sessionId].loadMemoryVariables({});
     console.log('Chat history:', history);
     
-    // Process the message with history
-    console.log('Invoking executor with:', {
+    // Add booking state to context
+    const contextWithState = {
       input: message,
-      chat_history: history.chat_history || []
-    });
+      chat_history: history.chat_history || [],
+      booking_state: state
+    };
+    
+    console.log('Invoking executor with:', contextWithState);
 
-    const result = await executor.invoke({
-      input: message,
-      chat_history: history.chat_history || []
-    });
+    const result = await executor.invoke(contextWithState);
 
     console.log('Executor result:', result);
 
