@@ -1,10 +1,10 @@
-import { ConversationSummaryMemory } from 'langchain/memory';
+import { BufferMemory } from 'langchain/memory';
 import { ChatOpenAI } from '@langchain/openai';
 import { BaseMessage, HumanMessage, AIMessage } from '@langchain/core/messages';
 import { setupChatAgent } from './setup-chat-agent';
 
 // Store conversation memory for different sessions
-const sessionMemories: Record<string, ConversationSummaryMemory> = {};
+const sessionMemories: Record<string, BufferMemory> = {};
 
 // Store booking state for different sessions
 type BookingState = {
@@ -18,6 +18,9 @@ type BookingState = {
 
 const bookingStates: Record<string, BookingState> = {};
 
+// Maximum number of messages to keep in memory
+const MAX_MESSAGES = 10;
+
 /**
  * Process a message and return the response (server-side function)
  * This is a server-only function that can be imported in API routes
@@ -29,14 +32,27 @@ export async function processMessage(sessionId: string, message: string): Promis
     // Initialize or retrieve memory for this session
     if (!sessionMemories[sessionId]) {
       console.log('Initializing new session memory');
-      sessionMemories[sessionId] = new ConversationSummaryMemory({
+      const memory = new BufferMemory({
         memoryKey: "chat_history",
-        llm: new ChatOpenAI({ 
-          temperature: 0,
-          openAIApiKey: process.env.OPENAI_API_KEY 
-        }),
         returnMessages: true,
+        inputKey: "input",
+        outputKey: "output"
       });
+
+      // Limit the number of messages by overriding the internal array
+      const originalSave = memory.saveContext.bind(memory);
+      memory.saveContext = async (input: any, output: any) => {
+        await originalSave(input, output);
+        const vars = await memory.loadMemoryVariables({});
+        if (vars.chat_history && vars.chat_history.length > MAX_MESSAGES) {
+          // Keep only the most recent messages
+          vars.chat_history = vars.chat_history.slice(-MAX_MESSAGES);
+          // @ts-ignore - Accessing internal property to update messages
+          memory.chatHistory.messages = vars.chat_history;
+        }
+      };
+
+      sessionMemories[sessionId] = memory;
     }
 
     // Initialize booking state if not exists
@@ -118,6 +134,11 @@ export async function processMessage(sessionId: string, message: string): Promis
         { input: message },
         { output: result.output }
       );
+
+      // Clear booking state if booking was successful
+      if (result.output.toLowerCase().includes('booking berhasil')) {
+        bookingStates[sessionId] = {};
+      }
 
       return result.output as string;
     } else {
