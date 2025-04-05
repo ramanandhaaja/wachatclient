@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -10,11 +10,27 @@ const UpdateEventSchema = z.object({
   clientName: z.string().min(1).optional(),
 });
 
+// Type declarations for route handlers
+export type GET = (
+  request: Request,
+  context: { params: { eventId: string } }
+) => Promise<Response>;
+
+export type PUT = (
+  request: Request,
+  context: { params: { eventId: string } }
+) => Promise<Response>;
+
+export type DELETE = (
+  request: Request,
+  context: { params: { eventId: string } }
+) => Promise<Response>;
+
 // GET /api/calendar/events/[eventId]
 export async function GET(
-  request: NextRequest,
-  context: { params: { eventId: string } }
-): Promise<NextResponse> {
+  request: Request,
+  { params }: { params: { eventId: string } }
+) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -23,7 +39,7 @@ export async function GET(
 
     const event = await prisma.event.findUnique({
       where: {
-        id: context.params.eventId,
+        id: params.eventId,
         userId: session.user.id,
       },
     });
@@ -35,18 +51,15 @@ export async function GET(
     return NextResponse.json({ event });
   } catch (error) {
     console.error("Error in GET event:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
 // PUT /api/calendar/events/[eventId]
 export async function PUT(
-  request: NextRequest,
-  context: { params: { eventId: string } }
-): Promise<NextResponse> {
+  request: Request,
+  { params }: { params: { eventId: string } }
+) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -65,7 +78,7 @@ export async function PUT(
     // Get the existing event
     const existingEvent = await prisma.event.findUnique({
       where: {
-        id: context.params.eventId,
+        id: params.eventId,
         userId: session.user.id,
       },
     });
@@ -94,7 +107,7 @@ export async function PUT(
       const overlappingEvent = await prisma.event.findFirst({
         where: {
           userId: session.user.id,
-          id: { not: context.params.eventId }, // Exclude current event
+          id: { not: params.eventId }, // Exclude current event
           OR: [
             {
               startTime: {
@@ -113,17 +126,14 @@ export async function PUT(
       });
 
       if (overlappingEvent) {
-        return NextResponse.json(
-          { error: "Time slot is already booked" },
-          { status: 409 }
-        );
+        return NextResponse.json({ error: "Time slot is already booked" }, { status: 409 });
       }
     }
 
     // Update the event
     const updatedEvent = await prisma.event.update({
       where: {
-        id: context.params.eventId,
+        id: params.eventId,
         userId: session.user.id,
       },
       data: {
@@ -138,18 +148,15 @@ export async function PUT(
     return NextResponse.json({ event: updatedEvent });
   } catch (error) {
     console.error("Error in PUT event:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
 // DELETE /api/calendar/events/[eventId]
 export async function DELETE(
-  request: NextRequest,
-  context: { params: { eventId: string } }
-): Promise<NextResponse> {
+  request: Request,
+  { params }: { params: { eventId: string } }
+) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -159,7 +166,7 @@ export async function DELETE(
     // Delete the event
     await prisma.event.delete({
       where: {
-        id: context.params.eventId,
+        id: params.eventId,
         userId: session.user.id,
       },
     });
@@ -167,9 +174,6 @@ export async function DELETE(
     return NextResponse.json({ message: "Event deleted successfully" });
   } catch (error) {
     console.error("Error in DELETE event:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
