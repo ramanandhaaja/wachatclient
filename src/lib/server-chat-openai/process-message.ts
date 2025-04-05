@@ -12,8 +12,11 @@ const sessionMemories: Record<string, ConversationSummaryMemory> = {};
  */
 export async function processMessage(sessionId: string, message: string): Promise<string> {
   try {
+    console.log('Processing message:', { sessionId, message });
+
     // Initialize or retrieve memory for this session
     if (!sessionMemories[sessionId]) {
+      console.log('Initializing new session memory');
       sessionMemories[sessionId] = new ConversationSummaryMemory({
         memoryKey: "chat_history",
         llm: new ChatOpenAI({ temperature: 0 }),
@@ -22,30 +25,54 @@ export async function processMessage(sessionId: string, message: string): Promis
     }
 
     // Setup the agent
+    console.log('Setting up chat agent');
     const executor = await setupChatAgent();
 
     // Get chat history from memory
+    console.log('Loading chat history');
     const history = await sessionMemories[sessionId].loadMemoryVariables({});
+    console.log('Chat history:', history);
     
     // Convert message to a HumanMessage
     const currentMessage = new HumanMessage(message);
     
     // Process the message with history
+    console.log('Invoking executor with:', {
+      input: message,
+      chat_history: history.chat_history || [],
+      steps: []
+    });
+
     const result = await executor.invoke({
       input: message,
       chat_history: history.chat_history || [],
-      steps: [], // Initialize empty steps for the agent
+      steps: [],
     });
 
-    // Save the conversation to memory
-    await sessionMemories[sessionId].saveContext(
-      { input: message },
-      { output: result.output }
-    );
+    console.log('Executor result:', result);
 
-    return result.output as string;
+    // Save the conversation to memory
+    if (result.output) {
+      console.log('Saving to memory:', {
+        input: message,
+        output: result.output
+      });
+
+      await sessionMemories[sessionId].saveContext(
+        { input: message },
+        { output: result.output }
+      );
+
+      return result.output as string;
+    } else {
+      throw new Error('No output from executor');
+    }
   } catch (err) {
     console.error('Error processing message:', err);
+    if (err instanceof Error) {
+      console.error('Error details:', err.message);
+      console.error('Error stack:', err.stack);
+    }
     return "I apologize, but I'm having trouble processing your message right now. Please try again later.";
   }
 }
