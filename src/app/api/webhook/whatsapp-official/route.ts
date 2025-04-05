@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { processMessage } from '@/hooks/use-chat-openai';
+import { processMessage } from '@/lib/server-chat-openai/process-message';
 import { v4 as uuidv4 } from 'uuid';
 
 // Initialize Supabase client
