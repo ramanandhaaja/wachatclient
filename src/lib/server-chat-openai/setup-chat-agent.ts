@@ -4,7 +4,7 @@ import { ChatPromptTemplate } from '@langchain/core/prompts';
 import { AgentExecutor } from 'langchain/agents';
 import { formatToOpenAIFunctionMessages } from 'langchain/agents/format_scratchpad';
 import { RunnableSequence } from '@langchain/core/runnables';
-import { getTools } from '@/lib/tools';
+import { getTools } from './tools';
 
 // Setup chat agent with LangChain
 export async function setupChatAgent() {
