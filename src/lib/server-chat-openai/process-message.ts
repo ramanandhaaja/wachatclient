@@ -1,6 +1,6 @@
 import { ConversationSummaryMemory } from 'langchain/memory';
 import { ChatOpenAI } from '@langchain/openai';
-import { BaseMessage } from '@langchain/core/messages';
+import { BaseMessage, HumanMessage, AIMessage } from '@langchain/core/messages';
 import { setupChatAgent } from './setup-chat-agent';
 
 // Store conversation memory for different sessions
@@ -26,17 +26,20 @@ export async function processMessage(sessionId: string, message: string): Promis
 
     // Get chat history from memory
     const history = await sessionMemories[sessionId].loadMemoryVariables({});
+    
+    // Ensure chat_history is initialized as an empty array if undefined
+    const chatHistory = history.chat_history || [];
 
     // Process the message with history
     const result = await executor.invoke({
       input: message,
-      chat_history: (history.chat_history || []) as BaseMessage[],
+      chat_history: chatHistory,
     });
 
     // Save the conversation to memory
     await sessionMemories[sessionId].saveContext(
-      { input: message } as Record<string, unknown>,
-      { output: result.output } as Record<string, unknown>
+      { input: message },
+      { output: result.output }
     );
 
     return result.output as string;
