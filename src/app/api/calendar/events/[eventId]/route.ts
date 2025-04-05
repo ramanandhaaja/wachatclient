@@ -11,6 +11,7 @@ const UpdateEventSchema = z.object({
 });
 
 // GET /api/calendar/events/[eventId]
+/*
 export async function GET(
   request: Request,
   context: { params: { eventId: string } }
@@ -160,4 +161,4 @@ export async function DELETE(
     console.error("Error in DELETE event:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
-}
+}*/
