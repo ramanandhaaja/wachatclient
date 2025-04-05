@@ -10,7 +10,7 @@ import { getTools } from './tools';
 export async function setupChatAgent() {
   const model = new ChatOpenAI({
     temperature: 0,
-    modelName: process.env.NEXT_PUBLIC_OPENAI_MODEL || 'gpt-4o-mini',
+    modelName: process.env.NEXT_PUBLIC_OPENAI_MODEL || 'gpt-4o-mini-2024-07-18',
     streaming: false,
   });
 

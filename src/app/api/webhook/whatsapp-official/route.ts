@@ -12,10 +12,10 @@ const supabase = createClient(
 // Verify token for webhook verification
 const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN || 'your_verify_token';
 
-async function sendtoChatBot(to: string, message: string) {
+async function sendtoChatBot(to: string, message: string, conversationId: string) {
   try {
     // Generate a session ID for this conversation
-    const sessionId = uuidv4();
+    const sessionId = conversationId;
     
     // Get response from OpenAI
     const response = await processMessage(sessionId, message);
@@ -26,7 +26,7 @@ async function sendtoChatBot(to: string, message: string) {
       const WHATSAPP_PHONE_NUMBER_ID = process.env.NEXT_PUBLIC_WHATSAPP_PHONE_NUMBER_ID || '';
       const WHATSAPP_ACCESS_TOKEN = process.env.NEXT_PUBLIC_WHATSAPP_ACCESS_TOKEN || '';
       
-      await fetch(
+      const whatsappResponse = await fetch(
         `https://graph.facebook.com/${WHATSAPP_API_VERSION}/${WHATSAPP_PHONE_NUMBER_ID}/messages`,
         {
           method: 'POST',
@@ -45,73 +45,49 @@ async function sendtoChatBot(to: string, message: string) {
           }),
         }
       );
+
+      if (!whatsappResponse.ok) {
+        throw new Error(`WhatsApp API error: ${whatsappResponse.status}`);
+      }
+
+      const data = await whatsappResponse.json();
+
+      // Store the bot's response in the messages table
+      const { error: messageError } = await supabase
+        .from('messages')
+        .insert({
+          conversation_id: conversationId,
+          content: response,
+          sender_type: 'bot',
+          timestamp: new Date().toISOString(),
+          metadata: {
+            message_type: 'text',
+            wa_message_id: data.messages?.[0]?.id,
+            delivery_status: 'sent'
+          }
+        });
+
+      if (messageError) {
+        console.error('Error storing bot response:', messageError);
+      }
+
+      // Update conversation last message
+      const { error: updateError } = await supabase
+        .from('conversations')
+        .update({
+          last_message: response,
+          last_message_time: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', conversationId);
+
+      if (updateError) {
+        console.error('Error updating conversation:', updateError);
+      }
     }
   } catch (error) {
     console.error('Error in sendtoChatBot:', error);
-  }
-}
-
-// Send a simple "thanks" reply
-async function sendSimpleReply(to: string) {
-  try {
-    // Send the reply using the WhatsApp Cloud API
-    const WHATSAPP_API_VERSION = 'v17.0';
-    const WHATSAPP_PHONE_NUMBER_ID = process.env.NEXT_PUBLIC_WHATSAPP_PHONE_NUMBER_ID || '';
-    const WHATSAPP_ACCESS_TOKEN = process.env.NEXT_PUBLIC_WHATSAPP_ACCESS_TOKEN || '';
-    
-    const response = await fetch(
-      `https://graph.facebook.com/${WHATSAPP_API_VERSION}/${WHATSAPP_PHONE_NUMBER_ID}/messages`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${WHATSAPP_ACCESS_TOKEN}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          messaging_product: 'whatsapp',
-          recipient_type: 'individual',
-          to: to,
-          type: 'text',
-          text: {
-            preview_url: false,
-            body: 'Thanks for your message! Our AI assistant will respond shortly.'
-          }
-        }),
-      }
-    );
-    
-    if (!response.ok) {
-      throw new Error(`WhatsApp API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    console.log('Simple reply sent:', data);
-
-    // Store the outbound message
-    const { data: replyMessage, error: replyError } = await supabase
-      .from('messages')
-      .insert({
-        conversation_id: to, // Using wa_id as conversation_id temporarily
-        content: 'Thanks for your message! Our AI assistant will respond shortly.',
-        sender_type: 'bot',
-        timestamp: new Date().toISOString(),
-        metadata: {
-          message_type: 'text',
-          wa_message_id: data.messages?.[0]?.id,
-          delivery_status: 'sent'
-        }
-      })
-      .select()
-      .single();
-
-    if (replyError) {
-      console.error('Error storing reply message:', replyError);
-    } else {
-      console.log('Reply message stored successfully:', replyMessage);
-    }
-
-  } catch (error) {
-    console.error('Error sending reply:', error);
+    throw error;
   }
 }
 
@@ -143,44 +119,35 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     
-    // Log the webhook event for debugging
-    console.log('Received webhook:', JSON.stringify(body, null, 2));
-    
-    // Check if this is a WhatsApp message notification
+    // Check if this is a valid WhatsApp message webhook
     if (body.object === 'whatsapp_business_account') {
-      // Process each entry
       for (const entry of body.entry) {
-        // Process each change
         for (const change of entry.changes) {
-          // Check if this is a message
           if (change.field === 'messages') {
             const value = change.value;
             
-            // Check if there are messages
-            if (value.messages && value.messages.length > 0) {
-              // Get the first message and contact
+            if (value.messages && value.messages[0] && value.contacts && value.contacts[0]) {
               const message = value.messages[0];
               const contact = value.contacts[0];
               
               console.log('Processing message from:', contact.wa_id);
 
-              // Store contact information
+              // Store or update contact information and get conversation ID
               const { data: existingContact, error: findError } = await supabase
                 .from('conversations')
-                .select('id')
+                .select('id, sessions!inner(*)')
                 .eq('user_phone', contact.wa_id)
                 .single();
 
-              if (findError) {
+              if (findError && findError.code !== 'PGRST116') { // Not found error
                 console.error('Error finding conversation:', findError);
+                throw findError;
               }
-
-              console.log('Existing contact:', existingContact);
 
               let conversationId: string;
 
               if (!existingContact) {
-                console.log('Creating new conversation for:', contact.wa_id);
+                // Create new conversation and session
                 const { data: newConversation, error: insertError } = await supabase
                   .from('conversations')
                   .insert({
@@ -199,13 +166,30 @@ export async function POST(request: Request) {
 
                 if (insertError) {
                   console.error('Error creating conversation:', insertError);
-                  throw new Error('Failed to create conversation');
+                  throw insertError;
                 }
 
-                console.log('Created new conversation:', newConversation);
                 conversationId = newConversation.id;
+
+                // Create initial session
+                const { error: sessionError } = await supabase
+                  .from('sessions')
+                  .insert({
+                    conversation_id: conversationId,
+                    status: 'active',
+                    auto_reply_enabled: true,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                  });
+
+                if (sessionError) {
+                  console.error('Error creating session:', sessionError);
+                  throw sessionError;
+                }
               } else {
-                console.log('Updating existing conversation:', existingContact.id);
+                conversationId = existingContact.id;
+
+                // Update existing conversation
                 const { error: updateError } = await supabase
                   .from('conversations')
                   .update({
@@ -217,16 +201,12 @@ export async function POST(request: Request) {
 
                 if (updateError) {
                   console.error('Error updating conversation:', updateError);
-                  throw new Error('Failed to update conversation');
+                  throw updateError;
                 }
-
-                conversationId = existingContact.id;
               }
 
-              // Store message
-              console.log('Storing message for conversation:', conversationId);
-              
-              const { data: newMessage, error: messageError } = await supabase
+              // Store incoming message
+              const { error: messageError } = await supabase
                 .from('messages')
                 .insert({
                   conversation_id: conversationId,
@@ -238,20 +218,15 @@ export async function POST(request: Request) {
                     wa_message_id: message.id,
                     delivery_status: 'received'
                   }
-                })
-                .select()
-                .single();
+                });
 
               if (messageError) {
                 console.error('Error storing message:', messageError);
-                throw new Error('Failed to store message');
+                throw messageError;
               }
 
-              console.log('Successfully stored message');
-
-              // Send a simple "thanks" reply
-              //await sendSimpleReply(contact.wa_id);
-              await sendtoChatBot(contact.wa_id, message);
+              // Process message with chatbot
+              await sendtoChatBot(contact.wa_id, message.text.body, conversationId);
             }
           }
         }
