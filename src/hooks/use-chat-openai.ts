@@ -1,9 +1,9 @@
+'use client';
+
 import { useState, useEffect, useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { ChatOpenAI } from '@langchain/openai';
 import { ChatPromptTemplate } from '@langchain/core/prompts';
-import { StringOutputParser } from '@langchain/core/output_parsers';
-import { RunnableSequence } from '@langchain/core/runnables';
 import { StructuredTool } from '@langchain/core/tools';
 import { BaseMessage, HumanMessage, AIMessage } from '@langchain/core/messages';
 import { ConversationSummaryMemory } from 'langchain/memory';
