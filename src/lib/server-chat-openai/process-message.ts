@@ -19,7 +19,10 @@ export async function processMessage(sessionId: string, message: string): Promis
       console.log('Initializing new session memory');
       sessionMemories[sessionId] = new ConversationSummaryMemory({
         memoryKey: "chat_history",
-        llm: new ChatOpenAI({ temperature: 0 }),
+        llm: new ChatOpenAI({ 
+          temperature: 0,
+          openAIApiKey: process.env.OPENAI_API_KEY 
+        }),
         returnMessages: true,
       });
     }

@@ -13,6 +13,7 @@ export async function setupChatAgent() {
   const model = new ChatOpenAI({
     temperature: 0,
     modelName: process.env.NEXT_PUBLIC_OPENAI_MODEL || 'gpt-4',
+    openAIApiKey: process.env.OPENAI_API_KEY,
     streaming: false,
   });
 
