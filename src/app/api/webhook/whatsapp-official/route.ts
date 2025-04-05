@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { processMessage } from '@/hooks/use-chat-openai';
+import { v4 as uuidv4 } from 'uuid';
 
 // Initialize Supabase client
 const supabase = createClient(
@@ -9,6 +11,45 @@ const supabase = createClient(
 
 // Verify token for webhook verification
 const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN || 'your_verify_token';
+
+async function sendtoChatBot(to: string, message: string) {
+  try {
+    // Generate a session ID for this conversation
+    const sessionId = uuidv4();
+    
+    // Get response from OpenAI
+    const response = await processMessage(sessionId, message);
+    
+    if (response) {
+      // Send the AI response back via WhatsApp
+      const WHATSAPP_API_VERSION = 'v17.0';
+      const WHATSAPP_PHONE_NUMBER_ID = process.env.NEXT_PUBLIC_WHATSAPP_PHONE_NUMBER_ID || '';
+      const WHATSAPP_ACCESS_TOKEN = process.env.NEXT_PUBLIC_WHATSAPP_ACCESS_TOKEN || '';
+      
+      await fetch(
+        `https://graph.facebook.com/${WHATSAPP_API_VERSION}/${WHATSAPP_PHONE_NUMBER_ID}/messages`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${WHATSAPP_ACCESS_TOKEN}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            messaging_product: 'whatsapp',
+            recipient_type: 'individual',
+            to: to,
+            type: 'text',
+            text: {
+              body: response
+            }
+          }),
+        }
+      );
+    }
+  } catch (error) {
+    console.error('Error in sendtoChatBot:', error);
+  }
+}
 
 // Send a simple "thanks" reply
 async function sendSimpleReply(to: string) {
@@ -209,7 +250,8 @@ export async function POST(request: Request) {
               console.log('Successfully stored message');
 
               // Send a simple "thanks" reply
-              await sendSimpleReply(contact.wa_id);
+              //await sendSimpleReply(contact.wa_id);
+              await sendtoChatBot(contact.wa_id, message);
             }
           }
         }
@@ -222,4 +264,3 @@ export async function POST(request: Request) {
     return new NextResponse('Internal Server Error', { status: 500 });
   }
 }
-
