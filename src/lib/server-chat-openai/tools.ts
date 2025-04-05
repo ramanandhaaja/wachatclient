@@ -144,12 +144,13 @@ export async function getTools() {
       }
 
       return `Booking berhasil!
-      Layanan: ${service}
-      Tanggal: ${date}
-      Jam: ${time}
-      Nama: ${name}
-      WhatsApp: ${phone}
-      Barber: ${barberName}
+
+      •⁠  ⁠*Layanan*: ${service}
+      •⁠  ⁠*Tanggal*: ${date}
+      •⁠  ⁠*Jam*: ${time}
+      •⁠  ⁠*Nama*: ${name}
+      •⁠  ⁠*WhatsApp*: ${phone}
+      •⁠  ⁠*Barber*: ${barberName}
       
       Mohon datang 5 menit sebelum jadwal.
       Kami akan mengirimkan reminder via WhatsApp 1 jam sebelum jadwal Anda.`;

@@ -14,6 +14,7 @@ type BookingState = {
   date?: string;
   time?: string;
   barberId?: string;
+  status: 'initial' | 'pending_confirmation' | 'confirmed' | 'completed';
 };
 
 const bookingStates: Record<string, BookingState> = {};
@@ -57,13 +58,29 @@ export async function processMessage(sessionId: string, message: string): Promis
 
     // Initialize booking state if not exists
     if (!bookingStates[sessionId]) {
-      bookingStates[sessionId] = {};
+      bookingStates[sessionId] = { status: 'initial' };
     }
 
     // Update booking state based on message content
     const state = bookingStates[sessionId];
     const lowerMsg = message.toLowerCase();
     
+    // Handle confirmation
+    if (state.status === 'pending_confirmation') {
+      if (lowerMsg.includes('ya') || lowerMsg.includes('iya') || lowerMsg.includes('ok') || lowerMsg.includes('benar') || lowerMsg.includes('setuju')) {
+        state.status = 'confirmed';
+      } else if (lowerMsg.includes('tidak') || lowerMsg.includes('batal') || lowerMsg.includes('gak') || lowerMsg.includes('nggak')) {
+        state.status = 'initial';
+        // Clear booking info
+        state.name = undefined;
+        state.phone = undefined;
+        state.service = undefined;
+        state.date = undefined;
+        state.time = undefined;
+        state.barberId = undefined;
+      }
+    }
+
     // Extract name and phone if provided together
     const namePhoneMatch = lowerMsg.match(/([a-z]+)\s+(\d{6,})/i);
     if (namePhoneMatch) {
@@ -101,6 +118,15 @@ export async function processMessage(sessionId: string, message: string): Promis
       state.service = 'potong';
     }
 
+    // If we have all booking info but haven't asked for confirmation
+    if (state.status === 'initial' && 
+        state.name && 
+        state.phone && 
+        state.service && 
+        (state.date || lowerMsg.includes('besok'))) {
+      state.status = 'pending_confirmation';
+    }
+
     // Setup the agent
     console.log('Setting up chat agent');
     const executor = await setupChatAgent();
@@ -135,9 +161,9 @@ export async function processMessage(sessionId: string, message: string): Promis
         { output: result.output }
       );
 
-      // Clear booking state if booking was successful
-      if (result.output.toLowerCase().includes('booking berhasil')) {
-        bookingStates[sessionId] = {};
+      // Clear booking state if booking was completed
+      if (state.status === 'completed') {
+        bookingStates[sessionId] = { status: 'initial' };
       }
 
       return result.output as string;

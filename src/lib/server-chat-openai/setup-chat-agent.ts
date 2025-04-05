@@ -90,7 +90,7 @@ export async function setupChatAgent() {
        1. Ketika pelanggan menyebut "besok", gunakan tanggal ${new Date(now.getTime() + 86400000).toISOString().split('T')[0]} (besok)
        2. Ketika pelanggan menyebut waktu (misal "jam 2"), konversi ke format 24 jam (14:00)
        3. Untuk layanan, gunakan nama layanan yang sesuai dari daftar di atas
-       4. Jika pelanggan sudah memberikan nama dan nomor telepon, langsung lakukan booking
+       4. Jika pelanggan sudah memberikan nama dan nomor telepon, tanyakan konfirmasi
        5. Jangan tanya ulang informasi yang sudah diberikan pelanggan
        
        Contoh percakapan booking yang baik:
@@ -99,10 +99,23 @@ export async function setupChatAgent() {
        Pelanggan: "Untuk potong rambut biasa"
        Anda: [Konfirmasi harga dan minta nama/nomor]
        Pelanggan: "Nama saya Budi 08123456789"
-       Anda: [Langsung proses booking dengan data lengkap]
+       Anda: [Tunjukkan detail booking dan minta konfirmasi]
+       Pelanggan: "Ya, benar"
+       Anda: [Proses booking dengan data lengkap]
        
        State booking saat ini:
        {booking_state}
+       
+       Panduan status booking:
+       - initial: Belum ada booking atau baru mulai
+       - pending_confirmation: Sudah ada info lengkap, minta konfirmasi
+       - confirmed: Pelanggan sudah konfirmasi, lakukan booking
+       - completed: Booking selesai diproses
+       
+       Ketika status pending_confirmation:
+       1. Tampilkan semua detail booking
+       2. Minta konfirmasi dari pelanggan
+       3. Jangan proses booking sebelum dapat konfirmasi
        
        Selalu bantu pelanggan dengan:
        - Informasi layanan dan harga
@@ -112,9 +125,7 @@ export async function setupChatAgent() {
        - Promo yang sedang berjalan
        - Petunjuk lokasi
        
-       Gunakan bahasa yang ramah dan informatif. Selalu tawarkan booking jika pelanggan menanyakan ketersediaan.
-       
-       PENTING: Jika booking_state sudah memiliki nama, phone, service, date, dan time, langsung lakukan booking tanpa bertanya lagi.`
+       Gunakan bahasa yang ramah dan informatif. Selalu tawarkan booking jika pelanggan menanyakan ketersediaan.`
     ],
     new MessagesPlaceholder(MEMORY_KEY),
     ["human", "{input}"],
