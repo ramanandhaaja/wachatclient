@@ -10,25 +10,9 @@ const UpdateEventSchema = z.object({
   clientName: z.string().min(1).optional(),
 });
 
-// Type declarations for route handlers
-export type GET = (
-  request: Request,
-  context: { params: { eventId: string } }
-) => Promise<Response>;
-
-export type PUT = (
-  request: Request,
-  context: { params: { eventId: string } }
-) => Promise<Response>;
-
-export type DELETE = (
-  request: Request,
-  context: { params: { eventId: string } }
-) => Promise<Response>;
-
 // GET /api/calendar/events/[eventId]
 export async function GET(
-  request: Request,
+  req: Request,
   { params }: { params: { eventId: string } }
 ) {
   try {
@@ -57,7 +41,7 @@ export async function GET(
 
 // PUT /api/calendar/events/[eventId]
 export async function PUT(
-  request: Request,
+  req: Request,
   { params }: { params: { eventId: string } }
 ) {
   try {
@@ -66,7 +50,7 @@ export async function PUT(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const json = await request.json();
+    const json = await req.json();
     const result = UpdateEventSchema.safeParse(json);
 
     if (!result.success) {
@@ -154,7 +138,7 @@ export async function PUT(
 
 // DELETE /api/calendar/events/[eventId]
 export async function DELETE(
-  request: Request,
+  req: Request,
   { params }: { params: { eventId: string } }
 ) {
   try {
