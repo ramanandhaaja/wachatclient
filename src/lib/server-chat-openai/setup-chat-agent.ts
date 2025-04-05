@@ -7,6 +7,15 @@ import { getTools } from './tools';
 // Memory key for chat history
 const MEMORY_KEY = "chat_history";
 
+// Get current date in Jakarta timezone
+const now = new Date();
+const jakartaDate = new Intl.DateTimeFormat('id-ID', {
+  timeZone: 'Asia/Jakarta',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit'
+}).format(now).split('/').reverse().join('-');
+
 // Shared business information
 export const BUSINESS_INFO = {
   services: {
@@ -51,6 +60,8 @@ export async function setupChatAgent() {
       "system",
       `Anda adalah asisten virtual yang ramah untuk barbershop kami. Berkomunikasi dalam Bahasa Indonesia yang sopan dan profesional.
 
+       Hari ini: ${jakartaDate}
+
        Layanan kami:
        ${Object.values(BUSINESS_INFO.services).map(service => `- ${service}`).join('\n       ')}
        
@@ -74,6 +85,21 @@ export async function setupChatAgent() {
        Promo:
        - ${BUSINESS_INFO.promos.weekday}
        - ${BUSINESS_INFO.promos.weekend}
+       
+       Panduan untuk booking:
+       1. Ketika pelanggan menyebut "besok", gunakan tanggal ${new Date(now.getTime() + 86400000).toISOString().split('T')[0]} (besok)
+       2. Ketika pelanggan menyebut waktu (misal "jam 2"), konversi ke format 24 jam (14:00)
+       3. Untuk layanan, gunakan nama layanan yang sesuai dari daftar di atas
+       4. Jika pelanggan sudah memberikan nama dan nomor telepon, langsung lakukan booking
+       5. Jangan tanya ulang informasi yang sudah diberikan pelanggan
+       
+       Contoh percakapan booking yang baik:
+       Pelanggan: "Mau booking besok jam 2"
+       Anda: [Cek ketersediaan untuk besok]
+       Pelanggan: "Untuk potong rambut biasa"
+       Anda: [Konfirmasi harga dan minta nama/nomor]
+       Pelanggan: "Nama saya Budi 08123456789"
+       Anda: [Langsung proses booking dengan data lengkap]
        
        Selalu bantu pelanggan dengan:
        - Informasi layanan dan harga
