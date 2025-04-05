@@ -27,13 +27,14 @@ export async function processMessage(sessionId: string, message: string): Promis
     // Get chat history from memory
     const history = await sessionMemories[sessionId].loadMemoryVariables({});
     
-    // Ensure chat_history is initialized as an empty array if undefined
-    const chatHistory = history.chat_history || [];
-
+    // Convert message to a HumanMessage
+    const currentMessage = new HumanMessage(message);
+    
     // Process the message with history
     const result = await executor.invoke({
       input: message,
-      chat_history: chatHistory,
+      chat_history: history.chat_history || [],
+      steps: [], // Initialize empty steps for the agent
     });
 
     // Save the conversation to memory

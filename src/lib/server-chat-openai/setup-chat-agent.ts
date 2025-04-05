@@ -44,16 +44,16 @@ export async function setupChatAgent() {
   const agentExecutor = new AgentExecutor({
     agent,
     tools,
-    verbose: false,
+    verbose: true, // Enable verbose mode for debugging
   });
 
   // Create the runnable sequence
   const runnable = RunnableSequence.from([
     {
-      input: (i) => i.input,
-      chat_history: (i) => i.chat_history || [],
-      agent_scratchpad: (i) => {
-        if (i.steps && i.steps.length) {
+      input: (i: { input: string; chat_history?: any[]; steps?: any[] }) => i.input,
+      chat_history: (i: { input: string; chat_history?: any[]; steps?: any[] }) => i.chat_history || [],
+      agent_scratchpad: (i: { input: string; chat_history?: any[]; steps?: any[] }) => {
+        if (i.steps?.length) {
           return formatToOpenAIFunctionMessages(i.steps);
         }
         return [];
