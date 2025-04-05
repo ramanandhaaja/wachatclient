@@ -3,6 +3,13 @@ import { ChatOpenAI } from '@langchain/openai';
 import { BaseMessage, HumanMessage, AIMessage } from '@langchain/core/messages';
 import { setupChatAgent } from './setup-chat-agent';
 
+// Define input type for executor
+interface ExecutorInput {
+  input: string;
+  chat_history?: any[];
+  steps?: any[];
+}
+
 // Store conversation memory for different sessions
 const sessionMemories: Record<string, ConversationSummaryMemory> = {};
 
@@ -37,15 +44,15 @@ export async function processMessage(sessionId: string, message: string): Promis
     const currentMessage = new HumanMessage(message);
     
     // Process the message with history
-    console.log('Invoking executor with:', {
+    const executorInput: ExecutorInput = {
       input: message,
-      chat_history: history.chat_history || []
-    });
+      chat_history: history.chat_history || [],
+      steps: []
+    };
 
-    const result = await executor.invoke({
-      input: message,
-      chat_history: history.chat_history || []
-    });
+    console.log('Invoking executor with:', executorInput);
+
+    const result = await executor.invoke(executorInput);
 
     console.log('Executor result:', result);
 

@@ -31,6 +31,7 @@ export async function setupChatAgent() {
      - Multi-language support
      `],
     ["human", "{input}"],
+    ["ai", "{agent_scratchpad}"]
   ]);
 
   // Create the agent
@@ -56,6 +57,12 @@ export async function setupChatAgent() {
         return i.chat_history.map(msg => 
           msg.type === 'human' ? new HumanMessage(msg.content) : new AIMessage(msg.content)
         );
+      },
+      agent_scratchpad: (i: { input: string; chat_history?: any[]; steps?: any[] }) => {
+        if (i.steps?.length) {
+          return formatToOpenAIFunctionMessages(i.steps);
+        }
+        return [];
       }
     },
     prompt,
