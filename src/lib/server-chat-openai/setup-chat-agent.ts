@@ -46,7 +46,7 @@ export async function setupChatAgent() {
   // Initialize the model
   const model = new ChatOpenAI({
     temperature: 0,
-    modelName: process.env.NEXT_PUBLIC_OPENAI_MODEL || 'gpt-4o-mini-2024-07-18',
+    modelName: process.env.NEXT_PUBLIC_OPENAI_MODEL,
     openAIApiKey: process.env.OPENAI_API_KEY,
     streaming: false,
   });
