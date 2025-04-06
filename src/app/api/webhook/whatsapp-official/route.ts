@@ -12,14 +12,12 @@ const supabase = createClient(
 // Verify token for webhook verification
 const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN || 'your_verify_token';
 
-async function sendtoChatBot(to: string, message: string) {
+async function sendtoChatBot(to: string, message: string, conversationId: string) {
   try {
-    // Generate a session ID for this conversation
-    const sessionId = uuidv4();
-    
-    // Get response from OpenAI
+    // Process the message using the AI
+    const sessionId = to; // Using phone number as session ID
     const response = await processMessage(sessionId, message);
-    
+
     if (response) {
       // Send the AI response back via WhatsApp
       const WHATSAPP_API_VERSION = 'v17.0';
@@ -52,7 +50,7 @@ async function sendtoChatBot(to: string, message: string) {
       const { data: botMessage, error: botMessageError } = await supabase
         .from('messages')
         .insert({
-          conversation_id: to,
+          conversation_id: conversationId,
           content: response,
           sender_type: 'bot',
           timestamp: new Date().toISOString(),
@@ -276,7 +274,7 @@ export async function POST(request: Request) {
 
               // Send a simple "thanks" reply
               //await sendSimpleReply(contact.wa_id);
-              await sendtoChatBot(contact.wa_id, message.text.body);
+              await sendtoChatBot(contact.wa_id, message.text.body, conversationId);
             }
           }
         }
