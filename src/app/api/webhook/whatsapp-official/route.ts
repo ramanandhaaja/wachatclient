@@ -26,7 +26,7 @@ async function sendtoChatBot(to: string, message: string) {
       const WHATSAPP_PHONE_NUMBER_ID = process.env.NEXT_PUBLIC_WHATSAPP_PHONE_NUMBER_ID || '';
       const WHATSAPP_ACCESS_TOKEN = process.env.NEXT_PUBLIC_WHATSAPP_ACCESS_TOKEN || '';
       
-      await fetch(
+      const whatsappResponse = await fetch(
         `https://graph.facebook.com/${WHATSAPP_API_VERSION}/${WHATSAPP_PHONE_NUMBER_ID}/messages`,
         {
           method: 'POST',
@@ -45,6 +45,31 @@ async function sendtoChatBot(to: string, message: string) {
           }),
         }
       );
+
+      const whatsappData = await whatsappResponse.json();
+      
+      // Store the bot's response message
+      const { data: botMessage, error: botMessageError } = await supabase
+        .from('messages')
+        .insert({
+          conversation_id: to,
+          content: response,
+          sender_type: 'bot',
+          timestamp: new Date().toISOString(),
+          metadata: {
+            message_type: 'text',
+            wa_message_id: whatsappData.messages?.[0]?.id,
+            delivery_status: 'sent'
+          }
+        })
+        .select()
+        .single();
+
+      if (botMessageError) {
+        console.error('Error storing bot message:', botMessageError);
+      } else {
+        console.log('Bot message stored successfully:', botMessage);
+      }
     }
   } catch (error) {
     console.error('Error in sendtoChatBot:', error);
