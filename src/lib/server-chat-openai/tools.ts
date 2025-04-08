@@ -165,7 +165,7 @@ export async function getTools() {
         
         // Get the base URL for the API call
         // This needs to be an absolute URL for server-side API calls
-        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+        const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
         
         // Make the API call to create the event
         const response = await fetch(`${baseUrl}/api/calendar/events`, {
