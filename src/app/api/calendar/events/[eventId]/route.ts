@@ -21,7 +21,7 @@ const UpdateEventSchema = z.object({
 // GET /api/calendar/events/[eventId]
 export async function GET(
   request: Request,
-  context: { params: { eventId: string } }
+  { params }: { params: { eventId: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -31,7 +31,7 @@ export async function GET(
 
     const event = await prisma.event.findUnique({
       where: {
-        id: context.params.eventId,
+        id: params.eventId,
         userId: session.user.id,
       },
       include: {
@@ -53,7 +53,7 @@ export async function GET(
 // PUT /api/calendar/events/[eventId]
 export async function PUT(
   request: Request,
-  context: { params: { eventId: string } }
+  { params }: { params: { eventId: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -73,7 +73,7 @@ export async function PUT(
     // Get the existing event
     const existingEvent = await prisma.event.findUnique({
       where: {
-        id: context.params.eventId,
+        id: params.eventId,
         userId: session.user.id,
       },
       include: {
@@ -105,7 +105,7 @@ export async function PUT(
       const overlappingEvent = await prisma.event.findFirst({
         where: {
           userId: session.user.id,
-          id: { not: context.params.eventId }, // Exclude current event
+          id: { not: params.eventId }, // Exclude current event
           OR: [
             {
               startTime: {
@@ -145,7 +145,7 @@ export async function PUT(
     // Update the event
     const updatedEvent = await prisma.event.update({
       where: {
-        id: context.params.eventId,
+        id: params.eventId,
         userId: session.user.id,
       },
       data: {
@@ -173,7 +173,7 @@ export async function PUT(
 // DELETE /api/calendar/events/[eventId]
 export async function DELETE(
   request: Request,
-  context: { params: { eventId: string } }
+  { params }: { params: { eventId: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -184,7 +184,7 @@ export async function DELETE(
     // Delete the event
     await prisma.event.delete({
       where: {
-        id: context.params.eventId,
+        id: params.eventId,
         userId: session.user.id,
       },
     });
