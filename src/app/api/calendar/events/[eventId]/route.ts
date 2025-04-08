@@ -17,7 +17,7 @@ const UpdateEventSchema = z.object({
   providerName: z.string().optional(),
   notes: z.string().optional(),
 });
-
+/*
 // GET /api/calendar/events/[eventId]
 export async function GET(
   request: Request,
@@ -195,3 +195,4 @@ export async function DELETE(
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
+*/
