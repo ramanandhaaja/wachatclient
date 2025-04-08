@@ -1,6 +1,7 @@
 import { DynamicStructuredTool } from '@langchain/core/tools';
 import { z } from 'zod';
 import { BUSINESS_INFO } from './setup-chat-agent';
+import { prisma } from '@/lib/prisma';
 
 type ServiceInfo = {
   [key: string]: string;
@@ -163,26 +164,49 @@ export async function getTools() {
           }
         }
         
-        // Get the base URL for the API call
-        // This needs to be an absolute URL for server-side API calls
-        const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
-        
-        // Make the API call to create the event
-        const response = await fetch(`${baseUrl}/api/calendar/events`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
+        // First, check if client with this phone number already exists
+        let client = await prisma.client.findFirst({
+          where: {
+            phone: phone,
           },
-          body: JSON.stringify(eventData),
         });
+
+        // If client doesn't exist, create a new one
+        if (!client) {
+          client = await prisma.client.create({
+            data: {
+              name: name,
+              phone: phone,
+            },
+          });
+        }
+
+        // Get the user (assuming we have a default user for the chatbot)
+        const user = await prisma.user.findFirst();
         
-        if (!response.ok) {
-          const errorData = await response.json();
-          return `Maaf, booking gagal: ${errorData.error || 'Terjadi kesalahan'}`;
+        if (!user) {
+          return "Maaf, terjadi kesalahan sistem. Silakan coba lagi nanti.";
         }
         
-        const result = await response.json();
-        const event = result.event;
+        // Calculate end time based on event duration
+        const endTime = new Date(startTime);
+        endTime.setMinutes(endTime.getMinutes() + (user.eventDuration || 60)); // Default to 60 minutes if not set
+        
+        // Create the event directly using prisma
+        const event = await prisma.event.create({
+          data: {
+            startTime: new Date(startTime),
+            endTime,
+            serviceType: service,
+            providerId: barberId,
+            providerName: eventData.providerName,
+            userId: user.id,
+            clientId: client.id,
+          },
+          include: {
+            client: true
+          },
+        });
         
         // Format the response message
         return `Booking berhasil!
