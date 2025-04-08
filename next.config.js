@@ -51,6 +51,18 @@ const nextConfig = {
     'qrcode-terminal'
   ],
   
+  // Configure image domains for next/image
+  images: {
+    domains: ['images.unsplash.com'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+        pathname: '/**',
+      },
+    ],
+  },
+  
   // Turbopack configuration
   experimental: {
     turbo: {

@@ -19,6 +19,9 @@ interface EventPanelProps {
 export function EventPanel({ selectedDate, viewMode }: EventPanelProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [clientName, setClientName] = useState("");
+  const [clientPhone, setClientPhone] = useState("");
+  const [clientEmail, setClientEmail] = useState("");
+  const [serviceType, setServiceType] = useState("Default Service");
   const [startTime, setStartTime] = useState("09:00");
   const [error, setError] = useState<string>();
 
@@ -59,10 +62,18 @@ export function EventPanel({ selectedDate, viewMode }: EventPanelProps) {
 
       await createMutation.mutateAsync({
         startTime: eventDate.toISOString(),
-        clientName
+        clientInfo: {
+          name: clientName,
+          phone: clientPhone,
+          email: clientEmail || undefined
+        },
+        serviceType
       });
       setIsOpen(false);
       setClientName("");
+      setClientPhone("");
+      setClientEmail("");
+      setServiceType("Default Service");
       setStartTime("09:00");
       setError(undefined);
     } catch (error: any) {
@@ -100,6 +111,33 @@ export function EventPanel({ selectedDate, viewMode }: EventPanelProps) {
                 />
               </div>
               <div className="space-y-2">
+                <Label htmlFor="phone">Client Phone</Label>
+                <Input
+                  id="phone"
+                  value={clientPhone}
+                  onChange={(e) => setClientPhone(e.target.value)}
+                  placeholder="Enter client phone number"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">Client Email (Optional)</Label>
+                <Input
+                  id="email"
+                  value={clientEmail}
+                  onChange={(e) => setClientEmail(e.target.value)}
+                  placeholder="Enter client email"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="service">Service Type</Label>
+                <Input
+                  id="service"
+                  value={serviceType}
+                  onChange={(e) => setServiceType(e.target.value)}
+                  placeholder="Enter service type"
+                />
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="time">Start Time</Label>
                 <select
                   id="time"
@@ -121,7 +159,7 @@ export function EventPanel({ selectedDate, viewMode }: EventPanelProps) {
                   )}
                 </select>
               </div>
-              <Button onClick={handleCreateEvent} className="w-full" disabled={!clientName || !startTime}>
+              <Button onClick={handleCreateEvent} className="w-full" disabled={!clientName || !clientPhone || !serviceType || !startTime}>
                 Create Event
               </Button>
             </div>
@@ -189,9 +227,15 @@ export function EventPanel({ selectedDate, viewMode }: EventPanelProps) {
                           {formatTime(event.startTime)} - {formatTime(event.endTime)}
                         </span>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 mb-1">
                         <User className="w-4 h-4 text-gray-500" />
-                        <span className="text-sm text-gray-600">{event.clientName}</span>
+                        <span className="text-sm text-gray-600">{event.client?.name || "Unknown client"}</span>
+                      </div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs text-gray-500">📱 {event.client?.phone || "No phone"}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-500">🔧 {event.serviceType}</span>
                       </div>
                     </div>
                     <Button

@@ -7,11 +7,18 @@ import { z } from "zod";
 // Schema for event update
 const UpdateEventSchema = z.object({
   startTime: z.string().datetime().optional(),
-  clientName: z.string().min(1).optional(),
+  clientInfo: z.object({
+    name: z.string().min(1).optional(),
+    phone: z.string().min(1).optional(),
+    email: z.string().email().optional(),
+  }).optional(),
+  serviceType: z.string().min(1).optional(),
+  providerId: z.string().optional(),
+  providerName: z.string().optional(),
+  notes: z.string().optional(),
 });
 
 // GET /api/calendar/events/[eventId]
-/*
 export async function GET(
   request: Request,
   context: { params: { eventId: string } }
@@ -27,6 +34,9 @@ export async function GET(
         id: context.params.eventId,
         userId: session.user.id,
       },
+      include: {
+        client: true
+      } as any
     });
 
     if (!event) {
@@ -58,7 +68,7 @@ export async function PUT(
       return NextResponse.json({ error: "Invalid input" }, { status: 400 });
     }
 
-    const { startTime, clientName } = result.data;
+    const { startTime, clientInfo, serviceType, providerId, providerName, notes } = result.data;
 
     // Get the existing event
     const existingEvent = await prisma.event.findUnique({
@@ -66,6 +76,9 @@ export async function PUT(
         id: context.params.eventId,
         userId: session.user.id,
       },
+      include: {
+        client: true
+      } as any
     });
 
     if (!existingEvent) {
@@ -115,6 +128,20 @@ export async function PUT(
       }
     }
 
+    // Update client information if provided
+    if (clientInfo && existingEvent.client) {
+      await prisma.client.update({
+        where: {
+          id: (existingEvent as any).client.id
+        },
+        data: {
+          ...(clientInfo.name && { name: clientInfo.name }),
+          ...(clientInfo.phone && { phone: clientInfo.phone }),
+          ...(clientInfo.email !== undefined && { email: clientInfo.email }),
+        }
+      });
+    }
+
     // Update the event
     const updatedEvent = await prisma.event.update({
       where: {
@@ -126,8 +153,14 @@ export async function PUT(
           startTime: new Date(startTime),
           endTime,
         }),
-        ...(clientName && { clientName }),
+        ...(serviceType && { serviceType }),
+        ...(providerId !== undefined && { providerId }),
+        ...(providerName !== undefined && { providerName }),
+        ...(notes !== undefined && { notes }),
       },
+      include: {
+        client: true
+      } as any
     });
 
     return NextResponse.json({ event: updatedEvent });
@@ -161,4 +194,4 @@ export async function DELETE(
     console.error("Error in DELETE event:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
-}*/
+}

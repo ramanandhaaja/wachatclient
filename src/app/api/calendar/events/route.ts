@@ -7,7 +7,15 @@ import { z } from "zod";
 // Schema for event creation/update
 const EventSchema = z.object({
   startTime: z.string().datetime(),
-  clientName: z.string().min(1),
+  clientInfo: z.object({
+    name: z.string().min(1),
+    phone: z.string().min(1),
+    email: z.string().email().optional(),
+  }),
+  serviceType: z.string().min(1),
+  providerId: z.string().optional(),
+  providerName: z.string().optional(),
+  notes: z.string().optional(),
 });
 
 // GET /api/calendar/events
@@ -35,7 +43,12 @@ export async function GET(req: NextRequest) {
         : {}),
     };
 
-    const events = await prisma.event.findMany({ where });
+    const events = await prisma.event.findMany({ 
+      where,
+      include: {
+        client: true
+      }
+    });
     return NextResponse.json({ events });
   } catch (error) {
     console.error("Error in GET events:", error);
@@ -61,7 +74,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid input" }, { status: 400 });
     }
 
-    const { startTime, clientName } = result.data;
+    const { startTime, clientInfo, serviceType, providerId, providerName, notes } = result.data;
     const eventDate = new Date(startTime);
     const dayOfWeek = eventDate.getDay(); // 0-6 (Sunday-Saturday)
 
@@ -147,13 +160,38 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // First, check if client with this phone number already exists
+    let client = await prisma.client.findFirst({
+      where: {
+        phone: clientInfo.phone,
+      },
+    });
+
+    // If client doesn't exist, create a new one
+    if (!client) {
+      client = await prisma.client.create({
+        data: {
+          name: clientInfo.name,
+          phone: clientInfo.phone,
+          email: clientInfo.email,
+        },
+      });
+    }
+
     // Create the event
     const event = await prisma.event.create({
       data: {
         startTime: new Date(startTime),
         endTime,
-        clientName,
+        serviceType,
+        providerId,
+        providerName,
+        notes,
         userId: session.user.id,
+        clientId: client.id,
+      },
+      include: {
+        client: true
       },
     });
 

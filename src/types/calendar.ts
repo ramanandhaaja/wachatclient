@@ -6,21 +6,46 @@ export interface TimeSlot {
 export interface Event {
   id: string;
   userId: string;
+  clientId: string;
   startTime: Date;
   endTime: Date;
-  clientName: string;
+  serviceType: string;
+  providerId?: string;
+  providerName?: string;
+  notes?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  client?: Client;
+}
+
+export interface Client {
+  id: string;
+  name: string;
+  phone: string;
+  email?: string;
   createdAt: Date;
   updatedAt: Date;
 }
 
 export interface CreateEventInput {
   startTime: string; // ISO datetime
-  clientName: string;
+  clientInfo: {
+    name: string;
+    phone: string;
+    email?: string;
+  };
+  serviceType: string;
+  providerId?: string;
+  providerName?: string;
+  notes?: string;
 }
 
 export interface UpdateEventInput {
   startTime?: string; // ISO datetime
-  clientName?: string;
+  serviceType?: string;
+  providerId?: string;
+  providerName?: string;
+  notes?: string;
 }
 
 export interface CalendarQueryParams {

@@ -53,7 +53,7 @@ model User {
   sessions           Session[]
   eventDuration      Int            @default(30) // 30 or 60 minutes
   availability       Availability[]
-  events            Event[]
+  events             Event[]
 }
 
 model Availability {
@@ -69,17 +69,35 @@ model Availability {
   @@index([userId])
 }
 
+model Client {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String   // For WhatsApp/contact number
+  email     String?  // Optional email
+  events    Event[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([phone])
+}
+
 model Event {
-  id         String   @id @default(cuid())
-  userId     String
-  startTime  DateTime
-  endTime    DateTime
-  clientName String
-  user       User     @relation(fields: [userId], references: [id])
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id           String   @id @default(cuid())
+  userId       String
+  clientId     String
+  startTime    DateTime
+  endTime      DateTime
+  serviceType  String   // Type of service
+  providerId   String?  // Optional service provider ID
+  providerName String?  // Optional service provider name
+  notes        String?  // Optional notes about the booking
+  user         User     @relation(fields: [userId], references: [id])
+  client       Client   @relation(fields: [clientId], references: [id])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@index([userId])
+  @@index([clientId])
 }
 
 model VerificationToken {
