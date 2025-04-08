@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useCalendar } from "@/hooks/use-calendar";
 import { Event } from "@/types/calendar";
+import { toWIB, formatWIB } from "@/lib/utils";
 
 interface EventPanelProps {
   selectedDate: Date;
@@ -83,9 +84,10 @@ export function EventPanel({ selectedDate, viewMode }: EventPanelProps) {
   };
 
   const formatTime = (date: Date) => {
-    // The date objects coming from the database are already in the local timezone
-    // when they're parsed by JavaScript, so we just need to format them correctly
-    return format(date, viewMode === '12h' ? 'hh:mm a' : 'HH:mm');
+    // Use the utility function to convert to WIB and format
+    return viewMode === '12h' 
+      ? formatWIB(date, 'hh:mm a')
+      : formatWIB(date, 'HH:mm');
   };
 
   return (

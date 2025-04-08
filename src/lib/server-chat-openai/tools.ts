@@ -2,6 +2,7 @@ import { DynamicStructuredTool } from '@langchain/core/tools';
 import { z } from 'zod';
 import { BUSINESS_INFO } from './setup-chat-agent';
 import { prisma } from '@/lib/prisma';
+import { toUTC } from '@/lib/utils';
 
 type ServiceInfo = {
   [key: string]: string;
@@ -138,12 +139,15 @@ export async function getTools() {
     }),
     func: async ({ date, time, service, name, phone, barberId }) => {
       try {
-        // Format the date and time into ISO format for the API
-        const startTime = new Date(`${date}T${time}:00`);
+        // Create the date in WIB timezone
+        const wibStartTime = new Date(`${date}T${time}:00`);
+        
+        // Convert to UTC for storage in the database
+        const utcStartTime = toUTC(wibStartTime);
         
         // Prepare the data according to the EventSchema
         const eventData: any = {
-          startTime: startTime.toISOString(),
+          startTime: utcStartTime.toISOString(),
           clientInfo: {
             name,
             phone,
@@ -189,13 +193,13 @@ export async function getTools() {
         }
         
         // Calculate end time based on event duration
-        const endTime = new Date(startTime);
+        const endTime = new Date(utcStartTime);
         endTime.setMinutes(endTime.getMinutes() + (user.eventDuration || 60)); // Default to 60 minutes if not set
         
         // Create the event directly using prisma
         const event = await prisma.event.create({
           data: {
-            startTime: new Date(startTime),
+            startTime: new Date(utcStartTime),
             endTime,
             serviceType: service,
             providerId: barberId,
