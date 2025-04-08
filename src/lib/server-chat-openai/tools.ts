@@ -136,24 +136,70 @@ export async function getTools() {
       barberId: z.string().optional().describe("ID barber yang diinginkan (opsional)"),
     }),
     func: async ({ date, time, service, name, phone, barberId }) => {
-      // Placeholder: In a real implementation, this would create a booking in a database
-      let barberName = "barber yang available";
-      if (barberId) {
-        const barber = barbers.find(b => b.id === barberId);
-        if (barber) barberName = barber.name;
-      }
-
-      return `Booking berhasil!
+      try {
+        // Format the date and time into ISO format for the API
+        const startTime = new Date(`${date}T${time}:00`);
+        
+        // Prepare the data according to the EventSchema
+        const eventData: any = {
+          startTime: startTime.toISOString(),
+          clientInfo: {
+            name,
+            phone,
+            // Only include email if it exists
+          },
+          serviceType: service,
+          // Only include optional fields if they exist
+        };
+        
+        // If barberId is provided, add it to the request
+        if (barberId) {
+          eventData.providerId = barberId;
+          
+          // If we have a barber ID, try to get the name
+          const barber = barbers.find(b => b.id === barberId);
+          if (barber) {
+            eventData.providerName = barber.name;
+          }
+        }
+        
+        // Get the base URL for the API call
+        // This needs to be an absolute URL for server-side API calls
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+        
+        // Make the API call to create the event
+        const response = await fetch(`${baseUrl}/api/calendar/events`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(eventData),
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          return `Maaf, booking gagal: ${errorData.error || 'Terjadi kesalahan'}`;
+        }
+        
+        const result = await response.json();
+        const event = result.event;
+        
+        // Format the response message
+        return `Booking berhasil!
 
       •⁠  ⁠*Layanan*: ${service}
-      •⁠  ⁠*Tanggal*: ${date}
-      •⁠  ⁠*Jam*: ${time}
-      •⁠  ⁠*Nama*: ${name}
-      •⁠  ⁠*WhatsApp*: ${phone}
-      •⁠  ⁠*Barber*: ${barberName}
+      •⁠  ⁠*Tanggal*: ${new Date(event.startTime).toLocaleDateString('id-ID')}
+      •⁠  ⁠*Jam*: ${new Date(event.startTime).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+      •⁠  ⁠*Nama*: ${event.client.name}
+      •⁠  ⁠*WhatsApp*: ${event.client.phone}
+      •⁠  ⁠*Barber*: ${event.providerName || "barber yang available"}
       
       Mohon datang 5 menit sebelum jadwal.
       Kami akan mengirimkan reminder via WhatsApp 1 jam sebelum jadwal Anda.`;
+      } catch (error) {
+        console.error("Error booking appointment:", error);
+        return "Maaf, terjadi kesalahan saat booking. Silakan coba lagi atau hubungi kami langsung.";
+      }
     },
   });
 
