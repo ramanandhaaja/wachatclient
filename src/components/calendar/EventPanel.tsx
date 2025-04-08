@@ -83,6 +83,8 @@ export function EventPanel({ selectedDate, viewMode }: EventPanelProps) {
   };
 
   const formatTime = (date: Date) => {
+    // The date objects coming from the database are already in the local timezone
+    // when they're parsed by JavaScript, so we just need to format them correctly
     return format(date, viewMode === '12h' ? 'hh:mm a' : 'HH:mm');
   };
 

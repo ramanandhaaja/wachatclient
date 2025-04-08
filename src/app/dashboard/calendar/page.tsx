@@ -102,7 +102,7 @@ export default function CalendarPage() {
       </div>
 
       {/* Right Panel */}
-      <div className="w-1/3 border-l p-5">
+      <div className="w-1/3 border-l p-5 flex flex-col">
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-2">
             <h2 className="text-2xl font-medium">
@@ -129,7 +129,7 @@ export default function CalendarPage() {
           </div>
         </div>
 
-        <div className="space-y-8">
+        <div className="space-y-8 overflow-y-auto flex-1">
           <AvailabilityPanel />
           <div className="border-t pt-8">
             <EventPanel selectedDate={selectedDate} viewMode={viewMode} />
