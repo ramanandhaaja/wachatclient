@@ -54,6 +54,7 @@ model User {
   eventDuration      Int            @default(30) // 30 or 60 minutes
   availability       Availability[]
   events             Event[]
+  phoneNumbers       UserPhone[]    // Relation to multiple phone numbers
 }
 
 model Availability {
@@ -98,6 +99,22 @@ model Event {
 
   @@index([userId])
   @@index([clientId])
+}
+
+model UserPhone {
+  id          String   @id @default(cuid())
+  userId      String
+  phoneNumber String   // Phone number for WhatsApp
+  isDefault   Boolean  @default(false) // Flag to mark default phone number
+  isActive    Boolean  @default(true)  // Flag to enable/disable a phone number
+  label       String?  // Optional label (e.g., "Work", "Personal")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, phoneNumber]) // Prevent duplicate phone numbers for the same user
+  @@index([userId])
+  @@index([phoneNumber])
 }
 
 model VerificationToken {

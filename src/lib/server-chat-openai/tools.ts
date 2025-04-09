@@ -139,15 +139,18 @@ export async function getTools() {
     }),
     func: async ({ date, time, service, name, phone, barberId }) => {
       try {
-        // Create the date in WIB timezone
-        const wibStartTime = new Date(`${date}T${time}:00`);
+        // When a user enters 9 AM in the chat, they mean 9 AM WIB
+        // JavaScript's Date constructor will interpret this as 9 AM in the local timezone
+        // which is already correct for WIB input
+        const localDate = new Date(`${date}T${time}:00`);
         
-        // Convert to UTC for storage in the database
-        const utcStartTime = toUTC(wibStartTime);
+        // For database storage, we need to convert to UTC
+        // No need to use toUTC here as JavaScript's toISOString() already converts to UTC
+        const utcISOString = localDate.toISOString();
         
         // Prepare the data according to the EventSchema
         const eventData: any = {
-          startTime: utcStartTime.toISOString(),
+          startTime: utcISOString,
           clientInfo: {
             name,
             phone,
@@ -193,13 +196,13 @@ export async function getTools() {
         }
         
         // Calculate end time based on event duration
-        const endTime = new Date(utcStartTime);
+        const endTime = new Date(utcISOString);
         endTime.setMinutes(endTime.getMinutes() + (user.eventDuration || 60)); // Default to 60 minutes if not set
         
         // Create the event directly using prisma
         const event = await prisma.event.create({
           data: {
-            startTime: new Date(utcStartTime),
+            startTime: utcISOString, // Store as UTC in the database
             endTime,
             serviceType: service,
             providerId: barberId,
@@ -212,12 +215,14 @@ export async function getTools() {
           },
         });
         
-        // Format the response message
+        // Format the response message - convert UTC times back to WIB for display
+        const localStartTime = new Date(event.startTime);
+        
         return `Booking berhasil!
 
       •⁠  ⁠*Layanan*: ${service}
-      •⁠  ⁠*Tanggal*: ${new Date(event.startTime).toLocaleDateString('id-ID')}
-      •⁠  ⁠*Jam*: ${new Date(event.startTime).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+      •⁠  ⁠*Tanggal*: ${localStartTime.toLocaleDateString('id-ID')}
+      •⁠  ⁠*Jam*: ${localStartTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
       •⁠  ⁠*Nama*: ${event.client.name}
       •⁠  ⁠*WhatsApp*: ${event.client.phone}
       •⁠  ⁠*Barber*: ${event.providerName || "barber yang available"}

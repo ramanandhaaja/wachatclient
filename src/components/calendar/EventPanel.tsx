@@ -84,10 +84,11 @@ export function EventPanel({ selectedDate, viewMode }: EventPanelProps) {
   };
 
   const formatTime = (date: Date) => {
-    // Use the utility function to convert to WIB and format
-    return viewMode === '12h' 
-      ? formatWIB(date, 'hh:mm a')
-      : formatWIB(date, 'HH:mm');
+    // Create a new date object from the UTC date from the database
+    const localDate = new Date(date);
+    
+    // Format the local date according to the view mode
+    return format(localDate, viewMode === '12h' ? 'hh:mm a' : 'HH:mm');
   };
 
   return (

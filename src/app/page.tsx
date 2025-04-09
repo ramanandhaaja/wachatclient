@@ -11,6 +11,7 @@ import {
 import Link from "next/link";
 import { AuthCheck } from "@/components/auth/auth-check";
 import { UserMenu } from "@/components/auth/user-menu";
+import ChatWidget from "@/components/chatwidget/ChatWidget";
 
 export default function Home() {
   return (
@@ -638,6 +639,7 @@ export default function Home() {
               </ul>
             </div>
           </div>
+          <ChatWidget />
           <div className="border-t border-gray-100 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
             <p className="text-sm text-gray-500 mb-4 md:mb-0">
               2025 WhatsBot AI. All rights reserved.
