@@ -3,7 +3,8 @@ import { BufferMemory } from 'langchain/memory';
 import { setupChatAgent } from './setup-chat-agent';
 import { getTools } from './tools';
 import { useBookingStore, BookingState } from '@/stores/bookingStore';
-import { AIMessage, HumanMessage } from '@langchain/core/messages';
+import { AIMessage, HumanMessage, BaseMessage } from '@langchain/core/messages';
+import { ChatMessageHistory } from 'langchain/stores/message/in_memory';
 
 // In-memory session storage
 const sessionMemory: { [key: string]: BufferMemory } = {};
@@ -22,11 +23,13 @@ export async function processMessage(sessionId: string, message: string): Promis
     // Initialize memory for this session if it doesn't exist
     if (!sessionMemory[sessionId]) {
       console.log('Initializing new memory');
+      const chatHistory = new ChatMessageHistory();
       const memory = new BufferMemory({
         memoryKey: "chat_history",
         returnMessages: true,
         inputKey: "input",
-        outputKey: "output"
+        outputKey: "output",
+        chatHistory
       });
 
       sessionMemory[sessionId] = memory;
@@ -42,12 +45,13 @@ export async function processMessage(sessionId: string, message: string): Promis
 
     // Get chat history from memory
     const history = await sessionMemory[sessionId].loadMemoryVariables({});
-    console.log('Loaded chat history:', history);
+    const messages = history.chat_history as BaseMessage[];
+    console.log('Loaded chat history:', messages);
 
     // Add booking state to context
     const contextWithState = {
       input: message,
-      chat_history: history.chat_history || [],
+      chat_history: messages || [],
       booking_state: JSON.stringify(currentBookingState, null, 2)
     };
 
@@ -64,17 +68,22 @@ export async function processMessage(sessionId: string, message: string): Promis
 
     console.log('Executor result:', result);
 
-    // Save the context using the memory's save method
+    // Save the conversation to memory with proper message formatting
     if (result.output) {
       console.log('Saving to memory:', {
         input: message,
         output: result.output
       });
 
-      await sessionMemory[sessionId].saveContext(
-        { input: message },
-        { output: result.output }
-      );
+      // Create message objects
+      const humanMessage = new HumanMessage(message);
+      const aiMessage = new AIMessage(result.output);
+
+      // Add messages to chat history
+      await sessionMemory[sessionId].chatHistory.addMessage(humanMessage);
+      await sessionMemory[sessionId].chatHistory.addMessage(aiMessage);
+
+      console.log('Updated chat history:', await sessionMemory[sessionId].chatHistory.getMessages());
 
       return result.output as string;
     } else {
