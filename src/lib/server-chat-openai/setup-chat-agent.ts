@@ -112,7 +112,7 @@ export async function setupChatAgent(
        Anda: [Proses booking dengan data lengkap]
        
        State booking saat ini:
-       ${bookingStateStr}
+       {booking_state}
        
        ALUR BOOKING YANG BENAR:
        1. Ketika pelanggan ingin booking, SELALU cek ketersediaan terlebih dahulu dengan check_availability
