@@ -1,8 +1,8 @@
+import { DynamicStructuredTool } from '@langchain/core/tools';
 import { ChatOpenAI } from '@langchain/openai';
-import { createOpenAIFunctionsAgent } from 'langchain/agents';
+import { AgentExecutor, createOpenAIFunctionsAgent } from 'langchain/agents';
 import { ChatPromptTemplate, MessagesPlaceholder } from '@langchain/core/prompts';
-import { AgentExecutor } from 'langchain/agents';
-import { getTools } from './tools';
+import { BookingState } from './tools';
 
 // Memory key for chat history
 const MEMORY_KEY = "chat_history";
@@ -42,7 +42,7 @@ export const BUSINESS_INFO = {
 };
 
 // Setup chat agent with LangChain
-export async function setupChatAgent() {
+export async function setupChatAgent(tools: DynamicStructuredTool[]) {
   // Initialize the model
   const model = new ChatOpenAI({
     temperature: 0,
@@ -50,9 +50,6 @@ export async function setupChatAgent() {
     openAIApiKey: process.env.OPENAI_API_KEY,
     streaming: false,
   });
-
-  // Get the tools
-  const tools = await getTools();
 
   // Create prompt template with memory
   const prompt = ChatPromptTemplate.fromMessages([
@@ -106,16 +103,14 @@ export async function setupChatAgent() {
        State booking saat ini:
        {booking_state}
        
-       Panduan status booking:
-       - initial: Belum ada booking atau baru mulai
-       - pending_confirmation: Sudah ada info lengkap, minta konfirmasi
-       - confirmed: Pelanggan sudah konfirmasi, lakukan booking
-       - completed: Booking selesai diproses
-       
-       Ketika status pending_confirmation:
-       1. Tampilkan semua detail booking
-       2. Minta konfirmasi dari pelanggan
-       3. Jangan proses booking sebelum dapat konfirmasi
+       ALUR BOOKING YANG BENAR:
+       1. Ketika pelanggan ingin booking, SELALU cek ketersediaan terlebih dahulu dengan check_availability
+       2. Setelah pelanggan memilih waktu, cek apakah sudah ada data pelanggan dengan nomor telepon tersebut
+       3. Jika data tidak lengkap, tanyakan satu per satu: nama, nomor telepon, layanan, tanggal, waktu
+       4. Setelah semua data lengkap, ubah status ke pending_confirmation dan tampilkan semua detail booking
+       5. Minta konfirmasi dari pelanggan
+       6. Jika pelanggan mengkonfirmasi, ubah status ke confirmed dan gunakan book_appointment
+       7. Setelah booking berhasil, ubah status ke completed
        
        Selalu bantu pelanggan dengan:
        - Informasi layanan dan harga
@@ -125,7 +120,7 @@ export async function setupChatAgent() {
        - Promo yang sedang berjalan
        - Petunjuk lokasi
        
-       Gunakan bahasa yang ramah dan informatif. Selalu tawarkan booking jika pelanggan menanyakan ketersediaan.`
+       Gunakan bahasa yang ramah dan informatif serta casual. Selalu tawarkan booking jika pelanggan menanyakan ketersediaan.`
     ],
     new MessagesPlaceholder(MEMORY_KEY),
     ["human", "{input}"],
@@ -135,17 +130,13 @@ export async function setupChatAgent() {
   // Create the agent
   const agent = await createOpenAIFunctionsAgent({
     llm: model,
-    tools,
     prompt,
+    tools
   });
 
   // Create the executor
-  const executor = AgentExecutor.fromAgentAndTools({
+  return new AgentExecutor({
     agent,
-    tools,
-    verbose: true,
-    returnIntermediateSteps: true,
+    tools
   });
-
-  return executor;
 }
