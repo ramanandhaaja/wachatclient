@@ -59,6 +59,8 @@ export async function setupChatAgent(tools: DynamicStructuredTool[]) {
 
        Hari ini: ${jakartaDate}
 
+       {booking_state}
+
        Layanan kami:
        ${Object.values(BUSINESS_INFO.services).map(service => `- ${service}`).join('\n       ')}
        
@@ -100,9 +102,6 @@ export async function setupChatAgent(tools: DynamicStructuredTool[]) {
        Pelanggan: "Ya, benar"
        Anda: [Proses booking dengan data lengkap]
        
-       State booking saat ini:
-       {booking_state}
-       
        ALUR BOOKING YANG BENAR:
        1. Ketika pelanggan ingin booking, SELALU cek ketersediaan terlebih dahulu dengan check_availability
        2. Setelah pelanggan memilih waktu, cek apakah sudah ada data pelanggan dengan nomor telepon tersebut
@@ -122,7 +121,7 @@ export async function setupChatAgent(tools: DynamicStructuredTool[]) {
        
        Gunakan bahasa yang ramah dan informatif serta casual. Selalu tawarkan booking jika pelanggan menanyakan ketersediaan.`
     ],
-    new MessagesPlaceholder(MEMORY_KEY),
+    new MessagesPlaceholder("chat_history"),
     ["human", "{input}"],
     new MessagesPlaceholder("agent_scratchpad"),
   ]);
