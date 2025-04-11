@@ -83,7 +83,7 @@ export async function POST(req: Request) {
     }
 
     // Check if conversation exists
-    let { data: conversation, error: conversationError } = await supabase
+    let { data: conversation } = await supabase
       .from("conversations")
       .select("*")
       .eq("id", sessionId)
