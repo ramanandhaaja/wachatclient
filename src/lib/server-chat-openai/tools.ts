@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { BUSINESS_INFO } from './setup-chat-agent';
 import { prisma } from '@/lib/prisma';
 import { toUTC } from '@/lib/utils';
+import { useBookingStore } from '@/stores/bookingStore';
 
 type ServiceInfo = {
   [key: string]: string;
@@ -43,7 +44,9 @@ const barbers: BarberInfo[] = [
 /**
  * Get tools for the LangChain chat agent
  */
-export async function getTools(currentState?: BookingState, updateCallback?: (updatedState: Partial<BookingState>) => void) {
+export async function getTools(sessionId: string) {
+  // Get a single store instance to use across all tools
+  const store = useBookingStore.getState();
   const checkAvailability = new DynamicStructuredTool({
     name: "check_availability",
     description: "Cek slot kosong untuk booking",
@@ -145,26 +148,24 @@ export async function getTools(currentState?: BookingState, updateCallback?: (up
         });
 
         if (client) {
-          // Update booking state if callback exists
-          if (updateCallback) {
-            updateCallback({
-              phone: phone,
-              name: client.name,
-              clientExists: true
-            });
-          }
+          // Update booking state
+          const bookingStore = useBookingStore.getState();
+          bookingStore.updateBookingState(sessionId, {
+            phone: phone,
+            name: client.name,
+            clientExists: true
+          });
           
           return `Klien ditemukan:
           Nama: ${client.name}
           Telepon: ${client.phone}`;
         } else {
-          // Update booking state if callback exists
-          if (updateCallback) {
-            updateCallback({
-              phone: phone,
-              clientExists: false
-            });
-          }
+          // Update booking state
+          const bookingStore = useBookingStore.getState();
+          bookingStore.updateBookingState(sessionId, {
+            phone: phone,
+            clientExists: false
+          });
           
           return "Klien dengan nomor telepon tersebut belum terdaftar. Silakan tanyakan nama pelanggan.";
         }
@@ -188,10 +189,7 @@ export async function getTools(currentState?: BookingState, updateCallback?: (up
       status: z.enum(['initial', 'pending_confirmation', 'confirmed', 'completed']).optional().describe("Status booking"),
     }),
     func: async ({ name, phone, service, date, time, barberId, status }) => {
-      // Only proceed if we have the update callback
-      if (!updateCallback) {
-        return "Tidak dapat mengupdate status booking.";
-      }
+      const currentState = store.getBookingState(sessionId);
 
       // Create update object with only provided fields
       const updateObj: Partial<BookingState> = {};
@@ -220,13 +218,10 @@ export async function getTools(currentState?: BookingState, updateCallback?: (up
       }
 
       // Update the booking state
-      updateCallback(updateObj);
+      store.updateBookingState(sessionId, updateObj);
 
-      // Format current booking state for display
-      const currentBookingState = {
-        ...currentState,
-        ...updateObj
-      };
+      // Get the updated state
+      const updatedState = store.getBookingState(sessionId);
 
       // Format current booking state for display
       let response = "Status booking telah diupdate.\n\n";
@@ -234,18 +229,18 @@ export async function getTools(currentState?: BookingState, updateCallback?: (up
       if (status === 'confirmed' && currentState?.status === 'pending_confirmation') {
         // Only update to confirmed if current state is pending_confirmation
         response = "Terima kasih atas konfirmasi Anda! Saya akan segera memproses booking Anda.";
-      } else if (currentBookingState.status === 'pending_confirmation') {
+      } else if (updatedState?.status === 'pending_confirmation') {
         response += `Detail booking:
-        • Nama: ${currentBookingState.name}
-        • Telepon: ${currentBookingState.phone}
-        • Layanan: ${currentBookingState.service}
-        • Tanggal: ${currentBookingState.date}
-        • Waktu: ${currentBookingState.time}
-        ${currentBookingState.barberId ? `• Barber: ${barbers.find(b => b.id === currentBookingState.barberId)?.name || 'Unknown'}` : ''}
+        • Nama: ${updatedState.name}
+        • Telepon: ${updatedState.phone}
+        • Layanan: ${updatedState.service}
+        • Tanggal: ${updatedState.date}
+        • Waktu: ${updatedState.time}
+        ${updatedState.barberId ? `• Barber: ${barbers.find(b => b.id === updatedState.barberId)?.name || 'Unknown'}` : ''}
         
         Apakah data di atas sudah benar? Silakan konfirmasi untuk melanjutkan proses booking.`;
       } else {
-        response += `Status booking saat ini: ${currentBookingState.status}`;
+        response += `Status booking saat ini: ${updatedState?.status}`;
       }
 
       return response;
@@ -265,12 +260,12 @@ export async function getTools(currentState?: BookingState, updateCallback?: (up
     }),
     func: async ({ date, time, service, name, phone, barberId }) => {
       try {
-        // Validate booking state if callback exists
-        if (updateCallback && currentState) {
-          // Check if status is confirmed
-          if (currentState.status !== 'confirmed') {
-            return "Booking belum dikonfirmasi oleh pelanggan. Silakan minta konfirmasi terlebih dahulu.";
-          }
+        // Get current booking state
+        const currentState = store.getBookingState(sessionId);
+
+        // Check if status is confirmed
+        if (!currentState || currentState.status !== 'confirmed') {
+          return "Booking belum dikonfirmasi oleh pelanggan. Silakan minta konfirmasi terlebih dahulu.";
         }
 
         // When a user enters 9 AM in the chat, they mean 9 AM WIB
@@ -349,12 +344,10 @@ export async function getTools(currentState?: BookingState, updateCallback?: (up
           },
         });
         
-        // Update booking state to completed if callback exists
-        if (updateCallback) {
-          updateCallback({
-            status: 'completed'
-          });
-        }
+        // Update booking state to completed
+        store.updateBookingState(sessionId, {
+          status: 'completed'
+        });
         
         // Format the response message - convert UTC times back to WIB for display
         const localStartTime = new Date(event.startTime);

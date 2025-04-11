@@ -1,13 +1,11 @@
+import { DynamicStructuredTool } from '@langchain/core/tools';
 import { BufferMemory } from 'langchain/memory';
 import { setupChatAgent } from './setup-chat-agent';
-import { getTools, BookingState } from './tools';
-import { DynamicStructuredTool } from '@langchain/core/tools';
+import { getTools } from './tools';
+import { useBookingStore, BookingState } from '@/stores/bookingStore';
 
-// Store conversation memory for different sessions
-const sessionMemories: Record<string, BufferMemory> = {};
-
-// Store booking state for different sessions
-const sessionBookingStates: Record<string, BookingState> = {};
+// In-memory session storage
+const sessionMemory: { [key: string]: BufferMemory } = {};
 
 // Maximum number of messages to keep in memory
 const MAX_MESSAGES = 10;
@@ -20,9 +18,9 @@ export async function processMessage(sessionId: string, message: string): Promis
   try {
     console.log('Processing message:', { sessionId, message });
 
-    // Initialize or retrieve memory for this session
-    if (!sessionMemories[sessionId]) {
-      console.log('Initializing new session memory');
+    // Initialize memory for this session if it doesn't exist
+    if (!sessionMemory[sessionId]) {
+      console.log('Initializing new memory');
       const memory = new BufferMemory({
         memoryKey: "chat_history",
         returnMessages: true,
@@ -43,51 +41,36 @@ export async function processMessage(sessionId: string, message: string): Promis
         }
       };
 
-      sessionMemories[sessionId] = memory;
+      sessionMemory[sessionId] = memory;
     }
 
-    // Initialize or retrieve booking state for this session
-    if (!sessionBookingStates[sessionId]) {
-      console.log('Initializing new booking state');
-      sessionBookingStates[sessionId] = {
-        status: 'initial'
-      };
+    // Initialize booking state if not exists
+    const bookingStore = useBookingStore.getState();
+    let currentBookingState = bookingStore.getBookingState(sessionId);
+    if (!currentBookingState) {
+      bookingStore.initializeSession(sessionId);
+      currentBookingState = bookingStore.getBookingState(sessionId);
     }
-
-    // Get current booking state
-    const currentBookingState = sessionBookingStates[sessionId];
-    console.log('Current booking state:', currentBookingState);
-
-    // Create a callback to update booking state
-    const updateBookingState = (updatedState: Partial<BookingState>) => {
-      console.log('Updating booking state:', updatedState);
-      sessionBookingStates[sessionId] = {
-        ...currentBookingState,
-        ...updatedState
-      };
-      console.log('New booking state:', sessionBookingStates[sessionId]);
-    };
-
-    // Setup the chat agent with current booking state and update callback
-    console.log('Setting up chat agent');
-    const tools = await getTools(currentBookingState, updateBookingState);
-    // Use type assertion to fix TypeScript error
-    const executor = await setupChatAgent(tools as DynamicStructuredTool[], currentBookingState);
 
     // Get chat history from memory
-    console.log('Loading chat history');
-    const history = await sessionMemories[sessionId].loadMemoryVariables({});
-    console.log('Chat history:', history);
-    
+    const history = await sessionMemory[sessionId].loadMemoryVariables({});
+
     // Add booking state to context
     const contextWithState = {
       input: message,
       chat_history: history.chat_history || [],
       booking_state: JSON.stringify(currentBookingState, null, 2)
     };
-    
-    console.log('Invoking executor with:', contextWithState);
 
+    // Get tools based on session ID
+    const tools = await getTools(sessionId);
+
+    // Setup the chat agent
+    console.log('Setting up chat agent');
+    const executor = await setupChatAgent(tools as DynamicStructuredTool[]);
+
+    // Invoke the executor with the context
+    console.log('Invoking executor with:', contextWithState);
     const result = await executor.invoke(contextWithState);
 
     console.log('Executor result:', result);
@@ -99,7 +82,7 @@ export async function processMessage(sessionId: string, message: string): Promis
         output: result.output
       });
 
-      await sessionMemories[sessionId].saveContext(
+      await sessionMemory[sessionId].saveContext(
         { input: message },
         { output: result.output }
       );

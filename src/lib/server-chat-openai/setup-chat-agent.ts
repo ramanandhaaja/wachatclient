@@ -1,10 +1,8 @@
-import { ChatOpenAI } from '@langchain/openai';
-import { createToolCallingAgent } from 'langchain/agents';
-import { ChatPromptTemplate, MessagesPlaceholder } from '@langchain/core/prompts';
-import { AgentExecutor } from 'langchain/agents';
-import { getTools } from './tools';
-import { BookingState } from './tools';
 import { DynamicStructuredTool } from '@langchain/core/tools';
+import { ChatOpenAI } from '@langchain/openai';
+import { AgentExecutor, createOpenAIFunctionsAgent } from 'langchain/agents';
+import { ChatPromptTemplate, MessagesPlaceholder } from '@langchain/core/prompts';
+import { BookingState } from './tools';
 
 // Memory key for chat history
 const MEMORY_KEY = "chat_history";
@@ -44,10 +42,7 @@ export const BUSINESS_INFO = {
 };
 
 // Setup chat agent with LangChain
-export async function setupChatAgent(
-  providedTools?: DynamicStructuredTool[],
-  bookingState?: BookingState
-) {
+export async function setupChatAgent(tools: DynamicStructuredTool[]) {
   // Initialize the model
   const model = new ChatOpenAI({
     temperature: 0,
@@ -55,12 +50,6 @@ export async function setupChatAgent(
     openAIApiKey: process.env.OPENAI_API_KEY,
     streaming: false,
   });
-
-  // Get the standard tools if not provided
-  const tools = providedTools || await getTools();
-
-  // Create booking state string for the prompt
-  const bookingStateStr = bookingState ? JSON.stringify(bookingState, null, 2) : '{ "status": "initial" }';
 
   // Create prompt template with memory
   const prompt = ChatPromptTemplate.fromMessages([
@@ -139,19 +128,15 @@ export async function setupChatAgent(
   ]);
 
   // Create the agent
-  const agent = await createToolCallingAgent({
+  const agent = await createOpenAIFunctionsAgent({
     llm: model,
-    tools,
     prompt,
+    tools
   });
 
   // Create the executor
-  const executor = AgentExecutor.fromAgentAndTools({
+  return new AgentExecutor({
     agent,
-    tools,
-    verbose: true,
-    returnIntermediateSteps: true,
+    tools
   });
-
-  return executor;
 }
