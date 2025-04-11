@@ -42,14 +42,43 @@ export const BUSINESS_INFO = {
 };
 
 // Setup chat agent with LangChain
-export async function setupChatAgent(tools: DynamicStructuredTool[]) {
+export async function setupChatAgent(tools: DynamicStructuredTool[], useServerKey: boolean = false) {
   // Initialize the model
+  // Determine which API key to use
+  const apiKey = useServerKey 
+    ? process.env.OPENAI_API_KEY_SERVER 
+    : process.env.OPENAI_API_KEY;
+  
+  //console.log("Using API key:", useServerKey ? "SERVER" : "PRIMARY", apiKey ? "(key is set)" : "(key is not set)");
+  
+  // Create the model with the selected API key
   const model = new ChatOpenAI({
     temperature: 0,
     modelName: process.env.NEXT_PUBLIC_OPENAI_MODEL,
-    openAIApiKey: process.env.OPENAI_API_KEY,
+    openAIApiKey: apiKey,
     streaming: false,
   });
+  
+  // Add a fallback mechanism to handle rate limit errors
+  const originalInvoke = model.invoke.bind(model);
+  model.invoke = async (...args) => {
+    try {
+      return await originalInvoke(...args);
+    } catch (error: any) {
+      // If we hit a rate limit error and have a server API key, try again with that
+      if (error.message && error.message.includes('429') && process.env.OPENAI_API_KEY_SERVER) {
+        //console.log("Rate limit hit, using server API key as fallback");
+        const fallbackModel = new ChatOpenAI({
+          temperature: 0,
+          modelName: process.env.NEXT_PUBLIC_OPENAI_MODEL,
+          openAIApiKey: process.env.OPENAI_API_KEY_SERVER,
+          streaming: false,
+        });
+        return await fallbackModel.invoke(...args);
+      }
+      throw error;
+    }
+  };
 
   // Create prompt template with memory
   const prompt = ChatPromptTemplate.fromMessages([

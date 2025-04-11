@@ -1,5 +1,8 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
+
+// Check if window is defined (client-side) or not (server-side)
+const isServer = typeof window === 'undefined';
 
 export type BookingState = {
   name?: string;
@@ -77,8 +80,20 @@ export const useBookingStore = create<BookingStore>()(
     }),
     {
       name: 'booking-store',
-      // Only persist on the server side
+      // Skip hydration to avoid hydration mismatch errors
       skipHydration: true,
+      // Use custom storage that checks for localStorage availability
+      storage: createJSONStorage(() => {
+        // Use a no-op storage when running on the server
+        if (isServer) {
+          return {
+            getItem: () => null,
+            setItem: () => {},
+            removeItem: () => {}
+          };
+        }
+        return localStorage;
+      })
     }
   )
 );

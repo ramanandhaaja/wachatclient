@@ -49,7 +49,7 @@ export async function processMessage(
     // Get chat history from memory
     const history = await sessionMemory[sessionId].loadMemoryVariables({});
     const messages = history.chat_history as BaseMessage[];
-    console.log("Loaded chat history:", messages);
+    //console.log("Loaded chat history:", messages);
 
     // Add booking state to context
     const contextWithState = {
@@ -66,17 +66,36 @@ export async function processMessage(
     const executor = await setupChatAgent(tools as DynamicStructuredTool[]);
 
     // Invoke the executor with the context
-    console.log("Invoking executor with:", contextWithState);
-    const result = await executor.invoke(contextWithState);
+    // console.log("Invoking executor with:", contextWithState);
+    
+    let result;
+    try {
+      result = await executor.invoke(contextWithState);
+    } catch (error: any) {
+      // Check if it's a rate limit error
+      if (error.message && error.message.includes('429') && process.env.OPENAI_API_KEY_SERVER) {
+        console.log("Rate limit hit, trying with server API key");
+        
+        // Create a new executor with the server API key
+        const serverTools = await getTools(sessionId);
+        const serverExecutor = await setupChatAgent(serverTools as DynamicStructuredTool[], true);
+        
+        // Try again with the server executor
+        result = await serverExecutor.invoke(contextWithState);
+      } else {
+        // If it's not a rate limit error or we don't have a server key, rethrow
+        throw error;
+      }
+    }
 
-    console.log("Executor result:", result);
+    //console.log("Executor result:", result);
 
     // Save the conversation to memory with proper message formatting
     if (result.output) {
-      console.log("Saving to memory:", {
-        input: message,
-        output: result.output,
-      });
+      //console.log("Saving to memory:", {
+      //  input: message,
+      //  output: result.output,
+      //});
 
       // Create message objects
       const humanMessage = new HumanMessage(message);
@@ -86,10 +105,10 @@ export async function processMessage(
       await sessionMemory[sessionId].chatHistory.addMessage(humanMessage);
       await sessionMemory[sessionId].chatHistory.addMessage(aiMessage);
 
-      console.log(
-        "Updated chat history:",
-        await sessionMemory[sessionId].chatHistory.getMessages()
-      );
+      //console.log(
+      //  "Updated chat history:",
+      //  await sessionMemory[sessionId].chatHistory.getMessages()
+      //);
 
       return result.output as string;
     } else {
