@@ -3,6 +3,7 @@ import { BufferMemory } from "langchain/memory";
 import { setupChatAgent } from "./setup-chat-agent";
 import { getTools } from "./tools";
 import { useBookingStore, BookingState } from "@/stores/bookingStore";
+import { AIMessage, HumanMessage } from "@langchain/core/messages";
 
 // In-memory session storage
 const sessionMemory: { [key: string]: BufferMemory } = {};
@@ -31,19 +32,6 @@ export async function processMessage(
         outputKey: "output",
       });
 
-      // Limit the number of messages by overriding the internal array
-      const originalSave = memory.saveContext.bind(memory);
-      memory.saveContext = async (input: any, output: any) => {
-        await originalSave(input, output);
-        const vars = await memory.loadMemoryVariables({});
-        if (vars.chat_history && vars.chat_history.length > MAX_MESSAGES) {
-          // Keep only the most recent messages
-          vars.chat_history = vars.chat_history.slice(-MAX_MESSAGES);
-          // @ts-ignore - Accessing internal property to update messages
-          memory.chatHistory.messages = vars.chat_history;
-        }
-      };
-
       sessionMemory[sessionId] = memory;
     }
 
@@ -57,6 +45,7 @@ export async function processMessage(
 
     // Get chat history from memory
     const history = await sessionMemory[sessionId].loadMemoryVariables({});
+    console.log("Loaded chat history:", history);
 
     // Add booking state to context
     const contextWithState = {
@@ -78,7 +67,7 @@ export async function processMessage(
 
     console.log("Executor result:", result);
 
-    // Save the conversation to memory
+    // Save the context using the memory's save method
     if (result.output) {
       console.log("Saving to memory:", {
         input: message,
@@ -92,14 +81,10 @@ export async function processMessage(
 
       return result.output as string;
     } else {
-      throw new Error("No output from executor");
+      return "I apologize, but I couldn't process your message properly.";
     }
-  } catch (err) {
-    console.error("Error processing message:", err);
-    if (err instanceof Error) {
-      console.error("Error details:", err.message);
-      console.error("Error stack:", err.stack);
-    }
-    return "I apologize, but I'm having trouble processing your message right now. Please try again later.";
+  } catch (error) {
+    console.error("Error processing message:", error);
+    return "I apologize, but an error occurred while processing your message.";
   }
 }
