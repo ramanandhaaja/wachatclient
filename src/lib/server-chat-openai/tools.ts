@@ -228,10 +228,13 @@ export async function getTools(currentState?: BookingState, updateCallback?: (up
         ...updateObj
       };
 
-      // Return formatted booking state
+      // Format current booking state for display
       let response = "Status booking telah diupdate.\n\n";
       
-      if (currentBookingState.status === 'pending_confirmation') {
+      if (status === 'confirmed' && currentState?.status === 'pending_confirmation') {
+        // Only update to confirmed if current state is pending_confirmation
+        response = "Terima kasih atas konfirmasi Anda! Saya akan segera memproses booking Anda.";
+      } else if (currentBookingState.status === 'pending_confirmation') {
         response += `Detail booking:
         • Nama: ${currentBookingState.name}
         • Telepon: ${currentBookingState.phone}
