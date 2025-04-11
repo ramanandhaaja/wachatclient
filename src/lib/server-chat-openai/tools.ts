@@ -19,6 +19,19 @@ type BarberInfo = {
   available: boolean;
 };
 
+// Define BookingState type to match the one in process-message.ts
+export type BookingState = {
+  name?: string;
+  phone?: string;
+  service?: string;
+  date?: string;
+  time?: string;
+  barberId?: string;
+  clientExists?: boolean;
+  missingFields?: string[];
+  status: 'initial' | 'pending_confirmation' | 'confirmed' | 'completed';
+};
+
 const barbers: BarberInfo[] = [
   { id: "1", name: "Pak Adi", speciality: "Classic cuts, Pompadour", available: true },
   { id: "2", name: "Mas Budi", speciality: "Kids cut, Modern style", available: true },
@@ -30,7 +43,7 @@ const barbers: BarberInfo[] = [
 /**
  * Get tools for the LangChain chat agent
  */
-export async function getTools() {
+export async function getTools(currentState?: BookingState, updateCallback?: (updatedState: Partial<BookingState>) => void) {
   const checkAvailability = new DynamicStructuredTool({
     name: "check_availability",
     description: "Cek slot kosong untuk booking",
@@ -104,25 +117,135 @@ export async function getTools() {
     name: "get_location",
     description: "Informasi lokasi dan petunjuk arah",
     schema: z.object({
-      type: z.string().describe("Tipe informasi: 'alamat' atau 'maps'"),
+      type: z.string().describe("Jenis informasi (alamat, petunjuk, parkir)"),
     }),
     func: async ({ type }) => {
-      const location: LocationInfo = {
-        alamat: `Barbershop kami berlokasi di:
-        ${BUSINESS_INFO.location.address}
-        ${BUSINESS_INFO.location.area}
-        ${BUSINESS_INFO.location.landmark}
-        
-        Landmark terdekat:
-        - Seberang Mall BSD
-        - Sebelah Bank BCA
-        - 100m dari Halte BSD`,
-        maps: `Anda bisa mengakses lokasi kami di Google Maps:
-        https://maps.google.com/?q=Barbershop+BSD
-        
-        Atau gunakan keyword "Barbershop BSD" di Gojek/Grab`
+      const locationInfo: LocationInfo = {
+        'alamat': `${BUSINESS_INFO.location.address}, ${BUSINESS_INFO.location.area} ${BUSINESS_INFO.location.landmark}`,
+        'petunjuk': `Dari arah Jakarta: Lewat tol JORR, keluar di exit BSD. Lurus hingga perempatan kedua, belok kanan. Barbershop ada di sebelah kanan, ${BUSINESS_INFO.location.landmark}`,
+        'parkir': `Tersedia parkir mobil dan motor di depan toko. Untuk weekend, disarankan datang lebih awal karena area parkir terbatas.`
       };
-      return location[type as keyof LocationInfo] || location.alamat;
+      return locationInfo[type.toLowerCase()] || `${BUSINESS_INFO.location.address}, ${BUSINESS_INFO.location.area} ${BUSINESS_INFO.location.landmark}`;
+    },
+  });
+
+  const checkClientExists = new DynamicStructuredTool({
+    name: "check_client_exists",
+    description: "Cek apakah klien dengan nomor telepon tertentu sudah ada di database",
+    schema: z.object({
+      phone: z.string().describe("Nomor telepon/WhatsApp pelanggan"),
+    }),
+    func: async ({ phone }) => {
+      try {
+        // Check if client exists in database
+        const client = await prisma.client.findFirst({
+          where: {
+            phone: phone,
+          },
+        });
+
+        if (client) {
+          // Update booking state if callback exists
+          if (updateCallback) {
+            updateCallback({
+              phone: phone,
+              name: client.name,
+              clientExists: true
+            });
+          }
+          
+          return `Klien ditemukan:
+          Nama: ${client.name}
+          Telepon: ${client.phone}`;
+        } else {
+          // Update booking state if callback exists
+          if (updateCallback) {
+            updateCallback({
+              phone: phone,
+              clientExists: false
+            });
+          }
+          
+          return "Klien dengan nomor telepon tersebut belum terdaftar. Silakan tanyakan nama pelanggan.";
+        }
+      } catch (error) {
+        console.error("Error checking client:", error);
+        return "Maaf, terjadi kesalahan saat memeriksa data pelanggan.";
+      }
+    },
+  });
+
+  const updateBookingState = new DynamicStructuredTool({
+    name: "update_booking_state",
+    description: "Update status booking dan data pelanggan",
+    schema: z.object({
+      name: z.string().optional().describe("Nama pelanggan"),
+      phone: z.string().optional().describe("Nomor telepon pelanggan"),
+      service: z.string().optional().describe("Layanan yang dipilih"),
+      date: z.string().optional().describe("Tanggal booking (format: YYYY-MM-DD)"),
+      time: z.string().optional().describe("Waktu booking (format: HH:MM)"),
+      barberId: z.string().optional().describe("ID barber yang dipilih"),
+      status: z.enum(['initial', 'pending_confirmation', 'confirmed', 'completed']).optional().describe("Status booking"),
+    }),
+    func: async ({ name, phone, service, date, time, barberId, status }) => {
+      // Only proceed if we have the update callback
+      if (!updateCallback) {
+        return "Tidak dapat mengupdate status booking.";
+      }
+
+      // Create update object with only provided fields
+      const updateObj: Partial<BookingState> = {};
+      if (name) updateObj.name = name;
+      if (phone) updateObj.phone = phone;
+      if (service) updateObj.service = service;
+      if (date) updateObj.date = date;
+      if (time) updateObj.time = time;
+      if (barberId) updateObj.barberId = barberId;
+      if (status) updateObj.status = status;
+
+      // Check for missing required fields if status is pending_confirmation
+      if (status === 'pending_confirmation') {
+        const requiredFields = ['name', 'phone', 'service', 'date', 'time'];
+        const missingFields = requiredFields.filter(field => {
+          // Check if field is missing in both current state and update
+          return !currentState?.[field as keyof BookingState] && !updateObj[field as keyof BookingState];
+        });
+
+        if (missingFields.length > 0) {
+          updateObj.missingFields = missingFields;
+          return `Masih ada data yang belum lengkap: ${missingFields.join(', ')}. Silakan lengkapi data tersebut sebelum konfirmasi.`;
+        } else {
+          updateObj.missingFields = [];
+        }
+      }
+
+      // Update the booking state
+      updateCallback(updateObj);
+
+      // Format current booking state for display
+      const currentBookingState = {
+        ...currentState,
+        ...updateObj
+      };
+
+      // Return formatted booking state
+      let response = "Status booking telah diupdate.\n\n";
+      
+      if (currentBookingState.status === 'pending_confirmation') {
+        response += `Detail booking:
+        • Nama: ${currentBookingState.name}
+        • Telepon: ${currentBookingState.phone}
+        • Layanan: ${currentBookingState.service}
+        • Tanggal: ${currentBookingState.date}
+        • Waktu: ${currentBookingState.time}
+        ${currentBookingState.barberId ? `• Barber: ${barbers.find(b => b.id === currentBookingState.barberId)?.name || 'Unknown'}` : ''}
+        
+        Apakah data di atas sudah benar? Silakan konfirmasi untuk melanjutkan proses booking.`;
+      } else {
+        response += `Status booking saat ini: ${currentBookingState.status}`;
+      }
+
+      return response;
     },
   });
 
@@ -139,6 +262,14 @@ export async function getTools() {
     }),
     func: async ({ date, time, service, name, phone, barberId }) => {
       try {
+        // Validate booking state if callback exists
+        if (updateCallback && currentState) {
+          // Check if status is confirmed
+          if (currentState.status !== 'confirmed') {
+            return "Booking belum dikonfirmasi oleh pelanggan. Silakan minta konfirmasi terlebih dahulu.";
+          }
+        }
+
         // When a user enters 9 AM in the chat, they mean 9 AM WIB
         // JavaScript's Date constructor will interpret this as 9 AM in the local timezone
         // which is already correct for WIB input
@@ -215,6 +346,13 @@ export async function getTools() {
           },
         });
         
+        // Update booking state to completed if callback exists
+        if (updateCallback) {
+          updateCallback({
+            status: 'completed'
+          });
+        }
+        
         // Format the response message - convert UTC times back to WIB for display
         const localStartTime = new Date(event.startTime);
         
@@ -236,5 +374,5 @@ export async function getTools() {
     },
   });
 
-  return [checkAvailability, getServiceInfo, getBarberInfo, getLocation, bookAppointment];
+  return [checkAvailability, getServiceInfo, getBarberInfo, getLocation, checkClientExists, updateBookingState, bookAppointment];
 }
