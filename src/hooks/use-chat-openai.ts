@@ -4,6 +4,7 @@ import { setupChatAgent } from '@/lib/server-chat-openai/setup-chat-agent';
 import { BaseMessage } from '@langchain/core/messages';
 import { ConversationSummaryMemory } from 'langchain/memory';
 import { ChatOpenAI } from '@langchain/openai';
+import { DynamicStructuredTool } from '@langchain/core/tools';
 
 // Store conversation memory for different sessions (client-side only)
 const clientSessionMemories: Record<string, ConversationSummaryMemory> = {};
@@ -38,8 +39,9 @@ export function useOpenAI() {
         });
       }
 
-      // Setup the agent
-      const executor = await setupChatAgent();
+      // Setup the agent with empty tools array for client-side chat
+      // Client-side chat doesn't need the booking tools
+      const executor = await setupChatAgent([] as DynamicStructuredTool[]);
 
       // Get chat history from memory
       const history = await clientSessionMemories[sessionId].loadMemoryVariables({});
