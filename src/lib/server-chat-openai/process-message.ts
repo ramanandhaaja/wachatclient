@@ -83,7 +83,7 @@ export async function processMessage(sessionId: string, message: string): Promis
     const contextWithState = {
       input: message,
       chat_history: history.chat_history || [],
-      booking_state: JSON.stringify(currentBookingState)
+      booking_state: currentBookingState
     };
     
     console.log('Invoking executor with:', contextWithState);
