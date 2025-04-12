@@ -53,20 +53,16 @@ export async function getTools(sessionId: string) {
     schema: z.object({
       date: z.string().describe("Tanggal untuk cek ketersediaan (format: YYYY-MM-DD)"),
       service: z.string().describe("Layanan yang ingin di-booking"),
-      barberId: z.string().optional().describe("ID barber yang diinginkan (opsional)"),
     }),
-    func: async ({ date, service, barberId }) => {
+    func: async ({ date, service }) => {
       // Placeholder: In a real implementation, this would check a database
-      if (barberId) {
-        const barber = barbers.find(b => b.id === barberId);
-        if (!barber) return "Maaf, barber tidak ditemukan.";
-        if (!barber.available) return "Maaf, barber sedang tidak available hari ini.";
-      }
       
       return `Slot tersedia untuk ${service} pada ${date}:
       - 10:00 WIB
-      - 14:30 WIB
-      - 16:15 WIB
+      - 10.30 WIB
+      - 11.00 WIB
+      - 11.30 WIB
+      - 12.00 WIB
       
       Silakan pilih waktu yang Anda inginkan untuk booking.`;
     },

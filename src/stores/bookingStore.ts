@@ -28,6 +28,7 @@ interface BookingStore {
   initializeSession: (sessionId: string) => void;
   updateBookingState: (sessionId: string, update: Partial<BookingState>) => void;
   getBookingState: (sessionId: string) => BookingState | undefined;
+  getBookingStateValue: (sessionId: string) => BookingState | null;
   clearSession: (sessionId: string) => void;
   clearAllSessions: () => void;
 }
@@ -65,6 +66,23 @@ export const useBookingStore = create<BookingStore>()(
 
       getBookingState: (sessionId: string) => {
         return get().sessions[sessionId];
+      },
+
+      getBookingStateValue: (sessionId: string) => {
+        const bookingState = get().sessions[sessionId];
+        if (!bookingState) return null;
+        
+        return {
+          name: bookingState.name,
+          phone: bookingState.phone,
+          service: bookingState.service,
+          date: bookingState.date,
+          time: bookingState.time,
+          barberId: bookingState.barberId,
+          clientExists: bookingState.clientExists,
+          missingFields: bookingState.missingFields,
+          status: bookingState.status
+        };
       },
 
       clearSession: (sessionId: string) => {

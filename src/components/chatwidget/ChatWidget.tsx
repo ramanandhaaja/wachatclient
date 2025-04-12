@@ -226,7 +226,7 @@ export default function ChatWidget() {
 
       {/* Chat Widget */}
       {isOpen && (
-        <div className="fixed bottom-20 right-4 w-[350px] md:w-[450px] lg:w-[550px] h-[650px] bg-white rounded-2xl shadow-xl overflow-hidden z-40 animate-fade-in">
+        <div className="fixed bottom-20 right-4 w-[350px] md:w-[450px] lg:w-[500px] h-[600px] bg-white rounded-2xl shadow-xl overflow-hidden z-40 animate-fade-in">
           <div className="flex flex-col h-full">
             {showFormInput ? (
               <FormBeforeChat onUserRegistered={handleUserRegistered} />

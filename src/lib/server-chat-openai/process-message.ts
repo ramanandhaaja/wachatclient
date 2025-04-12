@@ -46,6 +46,9 @@ export async function processMessage(
       currentBookingState = bookingStore.getBookingState(sessionId);
     }
 
+    console.log("Current booking state:", currentBookingState);
+    //console.log("Booking State value :", bookingStore.getBookingStateValue(sessionId));
+
     // Get chat history from memory
     const history = await sessionMemory[sessionId].loadMemoryVariables({});
     const messages = history.chat_history as BaseMessage[];

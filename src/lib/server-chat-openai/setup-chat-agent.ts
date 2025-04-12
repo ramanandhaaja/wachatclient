@@ -1,6 +1,6 @@
 import { DynamicStructuredTool } from '@langchain/core/tools';
 import { ChatOpenAI } from '@langchain/openai';
-import { AgentExecutor, createOpenAIFunctionsAgent } from 'langchain/agents';
+import { AgentExecutor, createOpenAIToolsAgent } from 'langchain/agents';
 import { ChatPromptTemplate, MessagesPlaceholder } from '@langchain/core/prompts';
 import { BookingState } from './tools';
 
@@ -52,11 +52,27 @@ export async function setupChatAgent(tools: DynamicStructuredTool[], useServerKe
   //console.log("Using API key:", useServerKey ? "SERVER" : "PRIMARY", apiKey ? "(key is set)" : "(key is not set)");
   
   // Create the model with the selected API key
-  const model = new ChatOpenAI({
+  const model2 = new ChatOpenAI({
     temperature: 0,
     modelName: process.env.NEXT_PUBLIC_OPENAI_MODEL,
     openAIApiKey: apiKey,
     streaming: false,
+  });
+
+  //gpt-4o-mini
+  // OpenRouter integration
+  const model = new ChatOpenAI({
+    modelName: 'openrouter/optimus-alpha',
+    temperature: 0.8,
+    streaming: true,
+    openAIApiKey: process.env.OPENROUTER_API_KEY,
+    configuration: {
+      baseURL: 'https://openrouter.ai/api/v1',
+      defaultHeaders: {
+        'HTTP-Referer': 'http://localhost:3000', // Site URL for rankings on openrouter.ai
+        'X-Title': 'Barbershop', // Site title for rankings on openrouter.ai
+      }
+    }
   });
   
   // Add a fallback mechanism to handle rate limit errors
@@ -102,14 +118,6 @@ export async function setupChatAgent(tools: DynamicStructuredTool[], useServerKe
        ${BUSINESS_INFO.location.area}
        ${BUSINESS_INFO.location.landmark}
        
-       Informasi penting:
-       - Menerima booking online atau walk-in
-       - Tersedia 5 barber profesional
-       - Bisa request barber favorit
-       - Setiap barber sudah berpengalaman min. 5 tahun
-       - Belum tersedia layanan home service
-       - Anak-anak welcome (tersedia kursi khusus)
-       
        Promo:
        - ${BUSINESS_INFO.promos.weekday}
        - ${BUSINESS_INFO.promos.weekend}
@@ -120,16 +128,6 @@ export async function setupChatAgent(tools: DynamicStructuredTool[], useServerKe
        3. Untuk layanan, gunakan nama layanan yang sesuai dari daftar di atas
        4. Jika pelanggan sudah memberikan nama dan nomor telepon, tanyakan konfirmasi
        5. Jangan tanya ulang informasi yang sudah diberikan pelanggan
-       
-       Contoh percakapan booking yang baik:
-       Pelanggan: "Mau booking besok jam 2"
-       Anda: [Cek ketersediaan untuk besok]
-       Pelanggan: "Untuk potong rambut biasa"
-       Anda: [Konfirmasi harga dan minta nama/nomor]
-       Pelanggan: "Nama saya Budi 08123456789"
-       Anda: [Tunjukkan detail booking dan minta konfirmasi]
-       Pelanggan: "Ya, benar"
-       Anda: [Proses booking dengan data lengkap]
        
        ALUR BOOKING YANG BENAR:
        1. Ketika pelanggan ingin booking, SELALU cek ketersediaan terlebih dahulu dengan check_availability
@@ -148,23 +146,27 @@ export async function setupChatAgent(tools: DynamicStructuredTool[], useServerKe
        - Promo yang sedang berjalan
        - Petunjuk lokasi
        
-       Gunakan bahasa yang ramah dan informatif serta casual. Selalu tawarkan booking jika pelanggan menanyakan ketersediaan.`
+       Gunakan bahasa yang ramah dan informatif serta casual. Selalu tawarkan booking jika pelanggan menanyakan ketersediaan.
+       
+       Gunakan tools yang tersedia untuk membantu pelanggan dengan efektif. Pastikan untuk menggunakan tools yang tepat sesuai kebutuhan pelanggan.`
     ],
     new MessagesPlaceholder("chat_history"),
     ["human", "{input}"],
     new MessagesPlaceholder("agent_scratchpad"),
   ]);
 
-  // Create the agent
-  const agent = await createOpenAIFunctionsAgent({
+  // Create the agent using the newer tools API
+  const agent = await createOpenAIToolsAgent({
     llm: model,
     prompt,
-    tools
+    tools,  
   });
 
-  // Create the executor
-  return new AgentExecutor({
+  // Create the executor and explicitly return it
+  const executor = new AgentExecutor({
     agent,
-    tools
+    tools,
   });
+  
+  return executor;
 }
