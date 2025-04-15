@@ -16,30 +16,6 @@ const jakartaDate = new Intl.DateTimeFormat('id-ID', {
   day: '2-digit'
 }).format(now).split('/').reverse().join('-');
 
-// Shared business information
-export const BUSINESS_INFO = {
-  services: {
-    'potong': 'Potong rambut pria (Rp 50.000)',
-    'anak': 'Potong rambut anak (Rp 35.000)',
-    'komplit': 'Potong + cuci + pijat (Rp 85.000)',
-    'jenggot': 'Grooming jenggot (Rp 35.000)',
-    'creambath': 'Creambath (Rp 75.000)',
-    'warna': 'Pewarnaan rambut (mulai Rp 150.000)',
-  },
-  hours: {
-    weekday: '09.00 - 21.00 WIB',
-    weekend: '09.00 - 18.00 WIB'
-  },
-  location: {
-    address: 'Jl. Raya Serpong No. 123',
-    area: 'BSD City, Tangerang Selatan',
-    landmark: '(Sebelah Bank BCA)'
-  },
-  promos: {
-    weekday: 'Diskon 20% untuk pelajar/mahasiswa (Senin-Kamis)',
-    weekend: 'Paket Grooming Komplit diskon 15%'
-  }
-};
 
 // Setup chat agent with LangChain
 export async function setupChatAgent(tools: DynamicStructuredTool[], useServerKey: boolean = false) {
@@ -106,26 +82,17 @@ export async function setupChatAgent(tools: DynamicStructuredTool[], useServerKe
 
        {booking_state}
 
-       Layanan kami:
-       ${Object.values(BUSINESS_INFO.services).map(service => `- ${service}`).join('\n       ')}
-       
-       Jam Operasional:
-       - Senin-Jumat: ${BUSINESS_INFO.hours.weekday}
-       - Sabtu-Minggu: ${BUSINESS_INFO.hours.weekend}
-       
-       Lokasi:
-       ${BUSINESS_INFO.location.address}
-       ${BUSINESS_INFO.location.area}
-       ${BUSINESS_INFO.location.landmark}
-       
-       Promo:
-       - ${BUSINESS_INFO.promos.weekday}
-       - ${BUSINESS_INFO.promos.weekend}
-       
+       PENTING: JANGAN PERNAH membuat jawaban sendiri atau menggunakan informasi yang tidak dari tools!
+       - SELALU gunakan get_service_info untuk informasi layanan dan harga
+       - SELALU gunakan get_location untuk informasi lokasi dan petunjuk arah
+       - SELALU gunakan get_hours untuk informasi jam operasional
+       - SELALU gunakan check_availability untuk cek slot kosong
+       - SELALU gunakan check_client_exists untuk cek data pelanggan
+
        Panduan untuk booking:
        1. Ketika pelanggan menyebut "besok", gunakan tanggal ${new Date(now.getTime() + 86400000).toISOString().split('T')[0]} (besok)
        2. Ketika pelanggan menyebut waktu (misal "jam 2"), konversi ke format 24 jam (14:00)
-       3. Untuk layanan, gunakan nama layanan yang sesuai dari daftar di atas
+       3. HANYA gunakan layanan yang tersedia dari get_service_info
        4. Jika pelanggan sudah memberikan nama dan nomor telepon, tanyakan konfirmasi
        5. Jangan tanya ulang informasi yang sudah diberikan pelanggan
        
@@ -138,17 +105,14 @@ export async function setupChatAgent(tools: DynamicStructuredTool[], useServerKe
        6. Jika pelanggan mengkonfirmasi, ubah status ke confirmed dan gunakan book_appointment
        7. Setelah booking berhasil, ubah status ke completed
        
-       Selalu bantu pelanggan dengan:
-       - Informasi layanan dan harga
-       - Booking appointment
-       - Cek ketersediaan slot
-       - Pilihan barber
-       - Promo yang sedang berjalan
-       - Petunjuk lokasi
+       PANDUAN PENGGUNAAN TOOLS:
+       - Untuk informasi layanan/harga: WAJIB gunakan get_service_info, JANGAN membuat daftar sendiri
+       - Untuk lokasi/petunjuk arah: WAJIB gunakan get_location, JANGAN membuat petunjuk sendiri
+       - Untuk jam operasional: WAJIB gunakan get_hours, JANGAN menyebutkan jam sendiri
+       - Untuk promo: WAJIB gunakan get_service_info dengan parameter "promo"
+       - Untuk cek slot: WAJIB gunakan check_availability, JANGAN menebak ketersediaan
        
-       Gunakan bahasa yang ramah dan informatif serta casual. Selalu tawarkan booking jika pelanggan menanyakan ketersediaan.
-       
-       Gunakan tools yang tersedia untuk membantu pelanggan dengan efektif. Pastikan untuk menggunakan tools yang tepat sesuai kebutuhan pelanggan.`
+       Gunakan bahasa yang ramah dan informatif serta casual. Selalu tawarkan booking jika pelanggan menanyakan ketersediaan.`
     ],
     new MessagesPlaceholder("chat_history"),
     ["human", "{input}"],
@@ -166,6 +130,7 @@ export async function setupChatAgent(tools: DynamicStructuredTool[], useServerKe
   const executor = new AgentExecutor({
     agent,
     tools,
+    verbose: true
   });
   
   return executor;

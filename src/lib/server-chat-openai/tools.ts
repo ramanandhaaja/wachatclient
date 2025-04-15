@@ -1,24 +1,9 @@
 import { DynamicStructuredTool } from '@langchain/core/tools';
 import { z } from 'zod';
-import { BUSINESS_INFO } from './setup-chat-agent';
 import { prisma } from '@/lib/prisma';
 import { toUTC } from '@/lib/utils';
 import { useBookingStore } from '@/stores/bookingStore';
 
-type ServiceInfo = {
-  [key: string]: string;
-};
-
-type LocationInfo = {
-  [key: string]: string;
-};
-
-type BarberInfo = {
-  id: string;
-  name: string;
-  speciality: string;
-  available: boolean;
-};
 
 // Define BookingState type to match the one in process-message.ts
 export type BookingState = {
@@ -33,13 +18,6 @@ export type BookingState = {
   status: 'initial' | 'pending_confirmation' | 'confirmed' | 'completed';
 };
 
-const barbers: BarberInfo[] = [
-  { id: "1", name: "Pak Adi", speciality: "Classic cuts, Pompadour", available: true },
-  { id: "2", name: "Mas Budi", speciality: "Kids cut, Modern style", available: true },
-  { id: "3", name: "Bang Dedi", speciality: "Coloring, Fade specialist", available: true },
-  { id: "4", name: "Pak Eko", speciality: "Beard grooming, Traditional cuts", available: true },
-  { id: "5", name: "Mas Fajar", speciality: "Korean style, Trendy cuts", available: true }
-];
 
 /**
  * Get tools for the LangChain chat agent
@@ -47,6 +25,123 @@ const barbers: BarberInfo[] = [
 export async function getTools(sessionId: string) {
   // Get a single store instance to use across all tools
   const store = useBookingStore.getState();
+
+  const getServiceInfo = new DynamicStructuredTool({
+    name: "get_service_info",
+    description: "Informasi layanan servis dan harga",
+    schema: z.object({
+      service: z.string().describe("Nama layanan yang ingin dicek"),
+    }),
+    func: async ({ service }) => {
+      const businessInfo = await prisma.businessInfo.findFirst({
+        where: {
+          userId: process.env.BUSINESS_OWNER_ID
+        },
+        select: {
+          services: true,
+          promos: true
+        }
+      });
+
+      if (!businessInfo) {
+        return 'Maaf, informasi layanan belum tersedia.';
+      }
+
+      const services = businessInfo.services as Record<string, string | Record<string, string>>;
+      const promos = businessInfo.promos as Record<string, string | Record<string, string>>;
+
+      // Handle promo request
+      if (service.toLowerCase() === 'promo') {
+        if (!promos || Object.keys(promos).length === 0) {
+          return 'Maaf, tidak ada promo saat ini.';
+        }
+
+        const promoValues = Object.entries(promos)
+          .map(([key, value]) => {
+            if (typeof value === 'string') {
+              return value;
+            } else if (typeof value === 'object' && value !== null) {
+              return Object.values(value).join(', ');
+            }
+            return null;
+          })
+          .filter(Boolean);
+
+        return promoValues.length > 0
+          ? `Promo saat ini:\n- ${promoValues.join('\n- ')}`
+          : 'Maaf, tidak ada promo saat ini.';
+      }
+
+      // Handle service request
+      const requestedService = service.toLowerCase();
+      if (requestedService in services) {
+        const value = services[requestedService];
+        if (typeof value === 'string') {
+          return value;
+        } else if (typeof value === 'object' && value !== null) {
+          return Object.values(value).join(', ');
+        }
+      }
+
+      // If service not found, list all available services
+      const allServices = Object.entries(services)
+        .map(([key, value]) => {
+          const serviceInfo = typeof value === 'string' ? value : Object.values(value).join(', ');
+          return `${key}: ${serviceInfo}`;
+        });
+
+      return allServices.length > 0
+        ? `Maaf, layanan '${service}' tidak ditemukan. Berikut daftar layanan kami:\n- ${allServices.join('\n- ')}`
+        : 'Maaf, belum ada daftar layanan tersedia.';
+    },
+  });
+
+  const getLocation = new DynamicStructuredTool({
+    name: "get_location",
+    description: "Informasi lokasi dan petunjuk arah",
+    schema: z.object({
+      type: z.string().describe("Jenis informasi (alamat, petunjuk, parkir)"),
+    }),
+    func: async ({ type }) => {
+      const businessInfo = await prisma.businessInfo.findFirst({
+        where: {
+          userId: process.env.BUSINESS_OWNER_ID
+        },
+        select: {
+          location: true
+        }
+      });
+
+      if (!businessInfo) {
+        return 'Maaf, informasi lokasi belum tersedia.';
+      }
+
+      const location = businessInfo.location as Record<string, string | Record<string, string>>;
+      
+      // If the requested type exists directly in location object, return it
+      const requestedType = type.toLowerCase();
+      if (requestedType in location) {
+        const value = location[requestedType];
+        if (typeof value === 'string') {
+          return value;
+        } else if (typeof value === 'object' && value !== null) {
+          // If it's an object, concatenate all values
+          return Object.values(value).join(', ');
+        }
+      }
+      
+      // If type not found, return all location info concatenated
+      const allValues = Object.entries(location)
+        .filter(([_, value]) => typeof value === 'string')
+        .map(([_, value]) => value as string);
+      
+      return allValues.length > 0 
+        ? allValues.join(', ')
+        : 'Maaf, informasi lokasi yang diminta tidak tersedia.';
+    },
+  });
+  
+
   const checkAvailability = new DynamicStructuredTool({
     name: "check_availability",
     description: "Cek slot kosong untuk booking",
@@ -65,66 +160,6 @@ export async function getTools(sessionId: string) {
       - 12.00 WIB
       
       Silakan pilih waktu yang Anda inginkan untuk booking.`;
-    },
-  });
-
-  const getServiceInfo = new DynamicStructuredTool({
-    name: "get_service_info",
-    description: "Informasi layanan dan harga",
-    schema: z.object({
-      service: z.string().describe("Nama layanan yang ingin dicek"),
-    }),
-    func: async ({ service }) => {
-      const services: ServiceInfo = {
-        'potong': `${BUSINESS_INFO.services.potong} (30-45 menit)`,
-        'anak': `${BUSINESS_INFO.services.anak} (20-30 menit)`,
-        'komplit': `${BUSINESS_INFO.services.komplit} (60 menit)`,
-        'jenggot': `${BUSINESS_INFO.services.jenggot} (20 menit)`,
-        'creambath': `${BUSINESS_INFO.services.creambath} (45-60 menit)`,
-        'warna': `${BUSINESS_INFO.services.warna} (90-120 menit)`,
-        'promo': `Promo saat ini:
-        - ${BUSINESS_INFO.promos.weekday}
-        - ${BUSINESS_INFO.promos.weekend}`
-      };
-      return services[service.toLowerCase()] || 'Maaf, layanan tersebut belum ada. Silakan cek daftar layanan kami.';
-    },
-  });
-
-  const getBarberInfo = new DynamicStructuredTool({
-    name: "get_barber_info",
-    description: "Informasi tentang barber yang tersedia",
-    schema: z.object({
-      barberId: z.string().optional().describe("ID barber spesifik (opsional)"),
-    }),
-    func: async ({ barberId }) => {
-      if (barberId) {
-        const barber = barbers.find(b => b.id === barberId);
-        if (!barber) return "Maaf, barber tidak ditemukan.";
-        return `${barber.name}
-        Spesialisasi: ${barber.speciality}
-        Status: ${barber.available ? 'Available' : 'Tidak available'}`;
-      }
-      
-      return `Daftar Barber kami:
-      ${barbers.map(b => `- ${b.name} (${b.speciality})`).join('\n      ')}
-      
-      Semua barber kami berpengalaman minimal 5 tahun.`;
-    },
-  });
-
-  const getLocation = new DynamicStructuredTool({
-    name: "get_location",
-    description: "Informasi lokasi dan petunjuk arah",
-    schema: z.object({
-      type: z.string().describe("Jenis informasi (alamat, petunjuk, parkir)"),
-    }),
-    func: async ({ type }) => {
-      const locationInfo: LocationInfo = {
-        'alamat': `${BUSINESS_INFO.location.address}, ${BUSINESS_INFO.location.area} ${BUSINESS_INFO.location.landmark}`,
-        'petunjuk': `Dari arah Jakarta: Lewat tol JORR, keluar di exit BSD. Lurus hingga perempatan kedua, belok kanan. Barbershop ada di sebelah kanan, ${BUSINESS_INFO.location.landmark}`,
-        'parkir': `Tersedia parkir mobil dan motor di depan toko. Untuk weekend, disarankan datang lebih awal karena area parkir terbatas.`
-      };
-      return locationInfo[type.toLowerCase()] || `${BUSINESS_INFO.location.address}, ${BUSINESS_INFO.location.area} ${BUSINESS_INFO.location.landmark}`;
     },
   });
 
@@ -232,7 +267,6 @@ export async function getTools(sessionId: string) {
         • Layanan: ${updatedState.service}
         • Tanggal: ${updatedState.date}
         • Waktu: ${updatedState.time}
-        ${updatedState.barberId ? `• Barber: ${barbers.find(b => b.id === updatedState.barberId)?.name || 'Unknown'}` : ''}
         
         Apakah data di atas sudah benar? Silakan konfirmasi untuk melanjutkan proses booking.`;
       } else {
@@ -288,12 +322,6 @@ export async function getTools(sessionId: string) {
         // If barberId is provided, add it to the request
         if (barberId) {
           eventData.providerId = barberId;
-          
-          // If we have a barber ID, try to get the name
-          const barber = barbers.find(b => b.id === barberId);
-          if (barber) {
-            eventData.providerName = barber.name;
-          }
         }
         
         // First, check if client with this phone number already exists
@@ -366,5 +394,5 @@ export async function getTools(sessionId: string) {
     },
   });
 
-  return [checkAvailability, getServiceInfo, getBarberInfo, getLocation, checkClientExists, updateBookingState, bookAppointment];
+  return [checkAvailability, getServiceInfo, getLocation, checkClientExists, updateBookingState, bookAppointment];
 }
