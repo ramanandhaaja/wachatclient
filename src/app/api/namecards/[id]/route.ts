@@ -5,8 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { nameCardSchema } from "@/lib/schemas/namecard";
 
 export async function GET(
-  req: Request,
-  { params }: { params: { id: string } }
+  request: Request,
+  context: { params: { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -16,7 +16,7 @@ export async function GET(
 
     const card = await prisma.nameCard.findUnique({
       where: {
-        id: params.id,
+        id: context.params.id,
         userId: session.user.id,
       },
     });
@@ -33,8 +33,8 @@ export async function GET(
 }
 
 export async function PATCH(
-  req: Request,
-  { params }: { params: { id: string } }
+  request: Request,
+  context: { params: { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -42,12 +42,12 @@ export async function PATCH(
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const body = await req.json();
+    const body = await request.json();
     const validatedData = nameCardSchema.parse(body);
 
     const card = await prisma.nameCard.update({
       where: {
-        id: params.id,
+        id: context.params.id,
         userId: session.user.id,
       },
       data: validatedData,
@@ -61,8 +61,8 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  req: Request,
-  { params }: { params: { id: string } }
+  request: Request,
+  context: { params: { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -72,7 +72,7 @@ export async function DELETE(
 
     await prisma.nameCard.delete({
       where: {
-        id: params.id,
+        id: context.params.id,
         userId: session.user.id,
       },
     });
