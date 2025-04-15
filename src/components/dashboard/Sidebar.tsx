@@ -97,7 +97,8 @@ export function Sidebar() {
       icon: <Mail className="h-5 w-5" />,
       isExpandable: true,
       submenu: [
-        { title: "Chat", href: "/dashboard/conversation/chat" },
+        { title: "Web Chat", href: "/dashboard/conversation/chat" },
+        { title: "Whatsapp", href: "/dashboard/conversation/whatsapp" },
         { title: "Knowledge Base", href: "/dashboard/conversation/knowledge-base" },
         //{ title: "Feedback", href: "/dashboard/conversation/feedback" },
         //{ title: "Unassigned", href: "/dashboard/conversation/unassigned" },

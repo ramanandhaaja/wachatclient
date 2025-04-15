@@ -46,7 +46,7 @@ export default function ChatPage() {
     conversations, 
     isLoading: loadingConversations, 
     error: conversationsError 
-  } = useConversations('web');
+  } = useConversations('whatsapp');
 
   // Load active conversation and messages
   const {

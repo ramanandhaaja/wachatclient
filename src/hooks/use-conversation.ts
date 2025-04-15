@@ -33,15 +33,21 @@ export interface Conversation {
   updated_at: string;
   assigned_admin_id: string | null;
   is_bot_active: boolean;
+  source: 'web' | 'whatsapp';
 }
 
 // Fetch conversations from Supabase
-async function fetchConversations() {
-  const { data, error } = await supabase
+async function fetchConversations(source?: 'web' | 'whatsapp') {
+  let query = supabase
     .from('conversations')
     .select('*')
     .order('last_message_time', { ascending: false });
 
+  if (source) {
+    query = query.eq('source', source);
+  }
+
+  const { data, error } = await query;
   if (error) throw error;
   return data || [];
 }
@@ -59,12 +65,12 @@ async function fetchMessages(conversationId: string) {
 }
 
 // Hook to manage conversations
-export function useConversations() {
+export function useConversations(source?: 'web' | 'whatsapp') {
   const queryClient = useQueryClient();
 
   const { data: conversations, isLoading, error } = useQuery<Conversation[]>({
-    queryKey: ['conversations'],
-    queryFn: fetchConversations,
+    queryKey: ['conversations', source],
+    queryFn: () => fetchConversations(source),
   });
 
   // Set up real-time subscription

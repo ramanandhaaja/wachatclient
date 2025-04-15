@@ -102,6 +102,7 @@ export async function POST(req: Request) {
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
           is_bot_active: true,
+          source: 'web'
         })
         .select()
         .single();

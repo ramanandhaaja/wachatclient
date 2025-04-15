@@ -26,6 +26,7 @@ export type ChatMessage = {
   timestamp: string;
   is_read: boolean;
   metadata?: any;
+  source: 'web' | 'whatsapp';
 };
 
 export type Conversation = {
@@ -42,15 +43,6 @@ export type Conversation = {
   is_bot_active: boolean;
 };
 
-export type ChatUser = {
-  id: string;
-  phone: string;
-  name?: string;
-  profile_image?: string;
-  created_at: string;
-  last_active?: string;
-  metadata?: any;
-};
 
 /**
  * Fetches all conversations from Supabase

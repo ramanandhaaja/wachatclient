@@ -227,6 +227,7 @@ export async function POST(request: Request) {
                       created_at: new Date().toISOString(),
                       updated_at: new Date().toISOString(),
                       is_bot_active: true,
+                      source: 'whatsapp'
                     })
                     .select("id")
                     .single();

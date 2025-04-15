@@ -3,6 +3,7 @@ import { ChatOpenAI } from '@langchain/openai';
 import { AgentExecutor, createOpenAIToolsAgent } from 'langchain/agents';
 import { ChatPromptTemplate, MessagesPlaceholder } from '@langchain/core/prompts';
 import { BookingState } from './tools';
+import { prisma } from '@/lib/prisma';
 
 // Memory key for chat history
 const MEMORY_KEY = "chat_history";
@@ -17,8 +18,76 @@ const jakartaDate = new Intl.DateTimeFormat('id-ID', {
 }).format(now).split('/').reverse().join('-');
 
 
+// Helper function to get service information
+async function getServiceInformation(service: string) {
+  const businessInfo = await prisma.businessInfo.findFirst({
+    where: {
+      userId: process.env.BUSINESS_OWNER_ID
+    },
+    select: {
+      services: true,
+      promos: true
+    }
+  });
+
+  if (!businessInfo) {
+    return 'Maaf, informasi layanan belum tersedia.';
+  }
+
+  const services = businessInfo.services as Record<string, string | Record<string, string>>;
+  const promos = businessInfo.promos as Record<string, string | Record<string, string>>;
+
+  // Handle promo request
+  if (service.toLowerCase() === 'promo') {
+    if (!promos || Object.keys(promos).length === 0) {
+      return 'Maaf, tidak ada promo saat ini.';
+    }
+
+    const promoValues = Object.entries(promos)
+      .map(([key, value]) => {
+        if (typeof value === 'string') {
+          return value;
+        } else if (typeof value === 'object' && value !== null) {
+          return Object.values(value).join(', ');
+        }
+        return null;
+      })
+      .filter(Boolean);
+
+    return promoValues.length > 0
+      ? `Promo saat ini:\n- ${promoValues.join('\n- ')}`
+      : 'Maaf, tidak ada promo saat ini.';
+  }
+
+  // Handle service request
+  const requestedService = service.toLowerCase();
+  if (requestedService in services) {
+    const value = services[requestedService];
+    if (typeof value === 'string') {
+      return value;
+    } else if (typeof value === 'object' && value !== null) {
+      return Object.values(value).join(', ');
+    }
+  }
+
+  // If service not found, list all available services
+  const allServices = Object.entries(services)
+    .map(([key, value]) => {
+      const serviceInfo = typeof value === 'string' ? value : Object.values(value).join(', ');
+      return `${key}: ${serviceInfo}`;
+    });
+
+  return allServices.length > 0
+    ? `Berikut daftar layanan kami:\n- ${allServices.join('\n- ')}`
+    : 'Maaf, belum ada daftar layanan tersedia.';
+}
+
+
 // Setup chat agent with LangChain
 export async function setupChatAgent(tools: DynamicStructuredTool[], useServerKey: boolean = false) {
+  // Get service information first
+  const serviceList = await getServiceInformation('');
+
   // Initialize the model
   // Determine which API key to use
   const apiKey = useServerKey 
@@ -81,6 +150,9 @@ export async function setupChatAgent(tools: DynamicStructuredTool[], useServerKe
        Hari ini: ${jakartaDate}
 
        {booking_state}
+
+       Daftar Layanan Kami:
+       ${serviceList}
 
        PENTING: JANGAN PERNAH membuat jawaban sendiri atau menggunakan informasi yang tidak dari tools!
        - SELALU gunakan get_service_info untuk informasi layanan dan harga

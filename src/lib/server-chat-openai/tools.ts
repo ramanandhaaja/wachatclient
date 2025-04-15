@@ -91,7 +91,7 @@ export async function getTools(sessionId: string) {
         });
 
       return allServices.length > 0
-        ? `Maaf, layanan '${service}' tidak ditemukan. Berikut daftar layanan kami:\n- ${allServices.join('\n- ')}`
+        ? `Berikut daftar layanan kami:\n- ${allServices.join('\n- ')}`
         : 'Maaf, belum ada daftar layanan tersedia.';
     },
   });
