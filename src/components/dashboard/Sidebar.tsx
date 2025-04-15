@@ -82,6 +82,11 @@ export function Sidebar() {
       icon: <BookOpen className="h-5 w-5" />,
     },
     {
+      title: "Name Card",
+      href: "/dashboard/namecard",
+      icon: <BookOpen className="h-5 w-5" />,
+    },
+    {
       title: "Calendar",
       href: "/dashboard/calendar",
       icon: <Calendar className="h-5 w-5" />,
