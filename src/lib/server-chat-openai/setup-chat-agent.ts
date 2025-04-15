@@ -18,75 +18,29 @@ const jakartaDate = new Intl.DateTimeFormat('id-ID', {
 }).format(now).split('/').reverse().join('-');
 
 
-// Helper function to get service information
-async function getServiceInformation(service: string) {
+// Helper function to get system prompt
+async function getSystemPrompt() {
   const businessInfo = await prisma.businessInfo.findFirst({
     where: {
       userId: process.env.BUSINESS_OWNER_ID
     },
     select: {
-      services: true,
-      promos: true
+      systemPrompt: true
     }
   });
 
-  if (!businessInfo) {
-    return 'Maaf, informasi layanan belum tersedia.';
+  if (!businessInfo || !businessInfo.systemPrompt) {
+    return 'You are a helpful AI assistant.';
   }
 
-  const services = businessInfo.services as Record<string, string | Record<string, string>>;
-  const promos = businessInfo.promos as Record<string, string | Record<string, string>>;
-
-  // Handle promo request
-  if (service.toLowerCase() === 'promo') {
-    if (!promos || Object.keys(promos).length === 0) {
-      return 'Maaf, tidak ada promo saat ini.';
-    }
-
-    const promoValues = Object.entries(promos)
-      .map(([key, value]) => {
-        if (typeof value === 'string') {
-          return value;
-        } else if (typeof value === 'object' && value !== null) {
-          return Object.values(value).join(', ');
-        }
-        return null;
-      })
-      .filter(Boolean);
-
-    return promoValues.length > 0
-      ? `Promo saat ini:\n- ${promoValues.join('\n- ')}`
-      : 'Maaf, tidak ada promo saat ini.';
-  }
-
-  // Handle service request
-  const requestedService = service.toLowerCase();
-  if (requestedService in services) {
-    const value = services[requestedService];
-    if (typeof value === 'string') {
-      return value;
-    } else if (typeof value === 'object' && value !== null) {
-      return Object.values(value).join(', ');
-    }
-  }
-
-  // If service not found, list all available services
-  const allServices = Object.entries(services)
-    .map(([key, value]) => {
-      const serviceInfo = typeof value === 'string' ? value : Object.values(value).join(', ');
-      return `${key}: ${serviceInfo}`;
-    });
-
-  return allServices.length > 0
-    ? `Berikut daftar layanan kami:\n- ${allServices.join('\n- ')}`
-    : 'Maaf, belum ada daftar layanan tersedia.';
+  return businessInfo.systemPrompt;
 }
 
 
 // Setup chat agent with LangChain
 export async function setupChatAgent(tools: DynamicStructuredTool[], useServerKey: boolean = false) {
-  // Get service information first
-  const serviceList = await getServiceInformation('');
+  // Get system prompt
+  const systemPrompt = await getSystemPrompt();
 
   // Initialize the model
   // Determine which API key to use
@@ -145,14 +99,11 @@ export async function setupChatAgent(tools: DynamicStructuredTool[], useServerKe
   const prompt = ChatPromptTemplate.fromMessages([
     [
       "system",
-      `Anda adalah asisten virtual yang ramah untuk barbershop kami. Berkomunikasi dalam Bahasa Indonesia yang sopan dan profesional.
+      `${systemPrompt}
 
        Hari ini: ${jakartaDate}
 
        {booking_state}
-
-       Daftar Layanan Kami:
-       ${serviceList}
 
        PENTING: JANGAN PERNAH membuat jawaban sendiri atau menggunakan informasi yang tidak dari tools!
        - SELALU gunakan get_service_info untuk informasi layanan dan harga
@@ -161,29 +112,13 @@ export async function setupChatAgent(tools: DynamicStructuredTool[], useServerKe
        - SELALU gunakan check_availability untuk cek slot kosong
        - SELALU gunakan check_client_exists untuk cek data pelanggan
 
-       Panduan untuk booking:
-       1. Ketika pelanggan menyebut "besok", gunakan tanggal ${new Date(now.getTime() + 86400000).toISOString().split('T')[0]} (besok)
-       2. Ketika pelanggan menyebut waktu (misal "jam 2"), konversi ke format 24 jam (14:00)
-       3. HANYA gunakan layanan yang tersedia dari get_service_info
-       4. Jika pelanggan sudah memberikan nama dan nomor telepon, tanyakan konfirmasi
-       5. Jangan tanya ulang informasi yang sudah diberikan pelanggan
-       
-       ALUR BOOKING YANG BENAR:
-       1. Ketika pelanggan ingin booking, SELALU cek ketersediaan terlebih dahulu dengan check_availability
-       2. Setelah pelanggan memilih waktu, cek apakah sudah ada data pelanggan dengan nomor telepon tersebut
-       3. Jika data tidak lengkap, tanyakan satu per satu: nama, nomor telepon, layanan, tanggal, waktu
-       4. Setelah semua data lengkap, ubah status ke pending_confirmation dan tampilkan semua detail booking
-       5. Minta konfirmasi dari pelanggan
-       6. Jika pelanggan mengkonfirmasi, ubah status ke confirmed dan gunakan book_appointment
-       7. Setelah booking berhasil, ubah status ke completed
-       
        PANDUAN PENGGUNAAN TOOLS:
        - Untuk informasi layanan/harga: WAJIB gunakan get_service_info, JANGAN membuat daftar sendiri
        - Untuk lokasi/petunjuk arah: WAJIB gunakan get_location, JANGAN membuat petunjuk sendiri
        - Untuk jam operasional: WAJIB gunakan get_hours, JANGAN menyebutkan jam sendiri
        - Untuk promo: WAJIB gunakan get_service_info dengan parameter "promo"
        - Untuk cek slot: WAJIB gunakan check_availability, JANGAN menebak ketersediaan
-       
+      
        Gunakan bahasa yang ramah dan informatif serta casual. Selalu tawarkan booking jika pelanggan menanyakan ketersediaan.`
     ],
     new MessagesPlaceholder("chat_history"),

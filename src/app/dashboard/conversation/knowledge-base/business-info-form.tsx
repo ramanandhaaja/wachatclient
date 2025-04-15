@@ -13,6 +13,7 @@ export interface BusinessInfoData {
   hours: Record<string, string>;
   location: Record<string, string>;
   promos: Record<string, string>;
+  systemPrompt: string;
 }
 
 interface BusinessInfoFormProps {
@@ -23,6 +24,27 @@ interface BusinessInfoFormProps {
 
 
 // Reference business info for autofill
+const SYSTEM_PROMPT_REFERENCE = 
+`Anda adalah asisten virtual yang ramah untuk barbershop kami. Berkomunikasi dalam Bahasa Indonesia yang sopan dan profesional.
+
+Panduan untuk booking:
+1. Ketika pelanggan menyebut "besok", gunakan tanggal yang sesuai
+2. Ketika pelanggan menyebut waktu (misal "jam 2"), konversi ke format 24 jam (14:00)
+3. HANYA gunakan layanan yang tersedia dari get_service_info
+4. Jika pelanggan sudah memberikan nama dan nomor telepon, tanyakan konfirmasi
+5. Jangan tanya ulang informasi yang sudah diberikan pelanggan
+       
+ALUR BOOKING YANG BENAR:
+1. Ketika pelanggan ingin booking, SELALU cek ketersediaan terlebih dahulu dengan check_availability
+2. Setelah pelanggan memilih waktu, cek apakah sudah ada data pelanggan dengan nomor telepon tersebut
+3. Jika data tidak lengkap, tanyakan satu per satu: nama, nomor telepon, layanan, tanggal, waktu
+4. Setelah semua data lengkap, ubah status ke pending_confirmation dan tampilkan semua detail booking
+5. Minta konfirmasi dari pelanggan
+6. Jika pelanggan mengkonfirmasi, ubah status ke confirmed dan gunakan book_appointment
+7. Setelah booking berhasil, ubah status ke completed
+
+Gunakan bahasa yang ramah dan informatif serta casual. Selalu tawarkan booking jika pelanggan menanyakan ketersediaan.`;
+
 const BUSINESS_INFO = {
   services: {
     'potong': 'Potong rambut pria (Rp 50.000)',
@@ -65,6 +87,7 @@ export default function BusinessInfoForm({ initialData, onSubmit, userId }: Busi
   const [hours, setHours] = useState<{ id: string; key: string; value: string }[]>(toArray(initialData?.hours));
   const [location, setLocation] = useState<{ id: string; key: string; value: string }[]>(toArray(initialData?.location));
   const [promos, setPromos] = useState<{ id: string; key: string; value: string }[]>(toArray(initialData?.promos));
+  const [systemPrompt, setSystemPrompt] = useState<string>(initialData?.systemPrompt || '');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -81,7 +104,6 @@ export default function BusinessInfoForm({ initialData, onSubmit, userId }: Busi
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setMessage(null);
     try {
       await onSubmit({
         id: initialData?.id,
@@ -90,6 +112,7 @@ export default function BusinessInfoForm({ initialData, onSubmit, userId }: Busi
         hours: toObject(hours),
         location: toObject(location),
         promos: toObject(promos),
+        systemPrompt,
       });
       setMessage("Business info saved successfully!");
     } catch (err: any) {
@@ -101,8 +124,9 @@ export default function BusinessInfoForm({ initialData, onSubmit, userId }: Busi
 
 
   return (
-    <Card className="w-full max-w-xl">
-      <form onSubmit={handleSubmit} className="bg-transparent p-0 w-full">
+    <form onSubmit={handleSubmit} className="flex gap-8">
+    <Card className="w-full max-w-xl ml-8">
+      <div className="bg-transparent p-0 w-full">
         <CardHeader className="flex flex-row justify-between items-center pb-2">
           <h2 className="text-xl font-bold">Business Info</h2>
           <Button
@@ -237,7 +261,38 @@ export default function BusinessInfoForm({ initialData, onSubmit, userId }: Busi
           </Button>
           {message && <div className="mt-2 text-center text-green-600 font-medium">{message}</div>}
         </CardFooter>
-      </form>
+      </div>
     </Card>
+      <Card className="w-full max-w-xl h-fit mr-8">
+        <CardHeader className="flex flex-row justify-between items-center pb-2">
+          <h2 className="text-xl font-bold">System Prompt</h2>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setSystemPrompt(SYSTEM_PROMPT_REFERENCE)}
+          >
+            Autofill System Prompt
+          </Button>
+        </CardHeader>
+        <CardContent>
+          <Textarea
+            value={systemPrompt}
+            onChange={(e) => setSystemPrompt(e.target.value)}
+            placeholder="Enter your system prompt here..."
+            className="min-h-[300px]"
+          />
+        </CardContent>
+        <CardFooter>
+        <div className="flex flex-col items-center gap-2">
+        <Button type="submit" className="w-full max-w-xs" disabled={loading}>
+          {loading ? "Saving..." : "Save All Changes"}
+        </Button>
+        {message && <div className="text-center text-green-600 font-medium">{message}</div>}
+      </div>
+        </CardFooter>
+      </Card>
+      
+    </form>
   );
 }

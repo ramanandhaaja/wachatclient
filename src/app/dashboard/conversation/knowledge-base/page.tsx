@@ -15,6 +15,7 @@ async function getBusinessInfo(userId: string): Promise<BusinessInfoData | null>
     hours: info.hours as Record<string, string>,
     location: info.location as Record<string, string>,
     promos: info.promos as Record<string, string>,
+    systemPrompt: info.systemPrompt || '',
   };
 }
 
@@ -28,6 +29,7 @@ async function saveBusinessInfo(data: BusinessInfoData): Promise<void> {
         hours: data.hours,
         location: data.location,
         promos: data.promos,
+        systemPrompt: data.systemPrompt,
       },
     });
   } else {
@@ -38,6 +40,7 @@ async function saveBusinessInfo(data: BusinessInfoData): Promise<void> {
         hours: data.hours,
         location: data.location,
         promos: data.promos,
+        systemPrompt: data.systemPrompt,
       },
     });
   }
@@ -61,7 +64,7 @@ export default async function KnowledgeBasePage() {
     <div className="h-[calc(100vh-2rem)] overflow-y-auto bg-white rounded-lg shadow-sm">
       <div className="w-full pt-12 pb-12">
         <BusinessInfoForm
-          initialData={initialData || { userId, services: {}, hours: {}, location: {}, promos: {} }}
+          initialData={initialData || { userId, services: {}, hours: {}, location: {}, promos: {}, systemPrompt: '' }}
           onSubmit={handleSubmit}
           userId={userId}
         />
