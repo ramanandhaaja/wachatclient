@@ -98,11 +98,12 @@ export function Sidebar() {
       isExpandable: true,
       submenu: [
         { title: "Chat", href: "/dashboard/conversation/chat" },
-        { title: "Feedback", href: "/dashboard/conversation/feedback" },
-        { title: "Unassigned", href: "/dashboard/conversation/unassigned" },
-        { title: "All", href: "/dashboard/conversation/all" },
-        { title: "Blocked", href: "/dashboard/conversation/blocked" },
-        { title: "Trash", href: "/dashboard/conversation/trash" },
+        { title: "Knowledge Base", href: "/dashboard/conversation/knowledge-base" },
+        //{ title: "Feedback", href: "/dashboard/conversation/feedback" },
+        //{ title: "Unassigned", href: "/dashboard/conversation/unassigned" },
+        //{ title: "All", href: "/dashboard/conversation/all" },
+        //{ title: "Blocked", href: "/dashboard/conversation/blocked" },
+        //{ title: "Trash", href: "/dashboard/conversation/trash" },
       ]
     },
   ];

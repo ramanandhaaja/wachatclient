@@ -55,6 +55,7 @@ model User {
   availability       Availability[]
   events             Event[]
   phoneNumbers       UserPhone[]    // Relation to multiple phone numbers
+  businessInfos      BusinessInfo[] // Relation to business tools/info
 }
 
 model Availability {
@@ -123,4 +124,20 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+model BusinessInfo {
+  id        String   @id @default(cuid())
+  userId    String
+  services  Json
+  hours     Json
+  location  Json
+  promos    Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Optional: relate to User
+  user      User?    @relation(fields: [userId], references: [id])
+
+  @@index([userId])
 }

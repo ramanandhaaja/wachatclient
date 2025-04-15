@@ -52,7 +52,7 @@ export async function setupChatAgent(tools: DynamicStructuredTool[], useServerKe
   //console.log("Using API key:", useServerKey ? "SERVER" : "PRIMARY", apiKey ? "(key is set)" : "(key is not set)");
   
   // Create the model with the selected API key
-  const model2 = new ChatOpenAI({
+  const model = new ChatOpenAI({
     temperature: 0,
     modelName: process.env.NEXT_PUBLIC_OPENAI_MODEL,
     openAIApiKey: apiKey,
@@ -61,7 +61,7 @@ export async function setupChatAgent(tools: DynamicStructuredTool[], useServerKe
 
   //gpt-4o-mini
   // OpenRouter integration
-  const model = new ChatOpenAI({
+  const model2 = new ChatOpenAI({
     modelName: 'openrouter/optimus-alpha',
     temperature: 0.8,
     streaming: true,
