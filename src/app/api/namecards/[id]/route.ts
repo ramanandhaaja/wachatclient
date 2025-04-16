@@ -6,15 +6,9 @@ import { nameCardSchema } from "@/lib/schemas/namecard";
 
 export const dynamic = 'force-dynamic';
 
-interface RouteContext {
-  params: {
-    id: string;
-  };
-}
-
 export async function GET(
   request: NextRequest,
-  context: RouteContext
+  context: { params: { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -42,7 +36,7 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  context: RouteContext
+  context: { params: { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -70,7 +64,7 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  context: RouteContext
+  context: { params: { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
