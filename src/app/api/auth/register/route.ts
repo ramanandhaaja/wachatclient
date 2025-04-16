@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { hash } from "bcrypt";
+import { hash } from "bcryptjs";
 import { z } from "zod";
 
 // Define a schema for input validation
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
     }
     
     // Hash the password
-    const hashedPassword = await hash(password, 10);
+    const hashedPassword = await hash(password, 10); // bcryptjs hash is async and compatible
     
     // Create the user - using a try-catch to handle any Prisma errors
     try {

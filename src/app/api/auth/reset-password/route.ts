@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { hash } from "bcrypt";
+import { hash } from "bcryptjs";
 import { z } from "zod";
 
 // Define a schema for input validation
@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
     console.log(`User found with token: ${user.id}`);
     
     // Hash the new password
-    const hashedPassword = await hash(password, 10);
+    const hashedPassword = await hash(password, 10); // bcryptjs hash is async and compatible
     
     console.log('Password hashed, updating user record');
     
