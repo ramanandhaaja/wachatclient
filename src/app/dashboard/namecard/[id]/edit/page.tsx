@@ -25,15 +25,16 @@ async function getNameCard(id: string, userId: string) {
 export default async function EditNameCardPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
+  const { id } = await params;
   const session = await getServerSession(authOptions);
 
   if (!session?.user) {
     redirect('/auth/login');
   }
 
-  const nameCard = await getNameCard(params.id, session.user.id);
+  const nameCard = await getNameCard(id, session.user.id);
 
   if (!nameCard) {
     notFound();
@@ -55,6 +56,6 @@ export default async function EditNameCardPage({
   };
 
   return (
-    <CardForm initialData={formData} id={params.id} />
+    <CardForm initialData={formData} id={id} />
   );
 }
