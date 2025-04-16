@@ -4,18 +4,16 @@ import { CardPreview } from "@/components/namecard/card-preview";
 import { CardLayout } from "@/components/namecard/card-layout";
 import { prisma } from "@/lib/prisma";
 
-interface CardPageProps {
-  params: {
-    id: string;
-  };
-}
-
 export async function generateMetadata({
   params,
-}: CardPageProps): Promise<Metadata> {
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
   const card = await prisma.nameCard.findUnique({
     where: {
-      id: params.id,
+      id,
+
     },
     select: {
       name: true,
@@ -38,10 +36,15 @@ export async function generateMetadata({
   };
 }
 
-export default async function CardPage({ params }: CardPageProps) {
+export default async function CardPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
   const card = await prisma.nameCard.findUnique({
     where: {
-      id: params.id,
+      id,
     },
   });
 
