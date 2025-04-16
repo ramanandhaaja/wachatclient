@@ -1,12 +1,15 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { nameCardSchema } from "@/lib/schemas/namecard";
 
+// Using exact Next.js App Router types
+type Params = { id: string };
+
 export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
+  req: Request | NextRequest,
+  { params }: { params: Params }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -33,8 +36,8 @@ export async function GET(
 }
 
 export async function PATCH(
-  request: Request,
-  { params }: { params: { id: string } }
+  req: Request | NextRequest,
+  { params }: { params: Params }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -42,7 +45,7 @@ export async function PATCH(
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const body = await request.json();
+    const body = await req.json();
     const validatedData = nameCardSchema.parse(body);
 
     const card = await prisma.nameCard.update({
@@ -61,8 +64,8 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
+  req: Request | NextRequest,
+  { params }: { params: Params }
 ) {
   try {
     const session = await getServerSession(authOptions);
