@@ -20,13 +20,13 @@ async function getNameCard(id: string, userId: string) {
   }
 }
 
-interface EditNameCardPageProps {
-  params: {
-    id: string;
-  };
-}
 
-export default async function EditNameCardPage({ params }: EditNameCardPageProps) {
+
+export default async function EditNameCardPage({
+  params,
+}: {
+  params: { id: string };
+}) {
   const session = await getServerSession(authOptions);
 
   if (!session?.user) {
