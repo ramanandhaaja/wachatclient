@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(
   request: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -18,7 +18,7 @@ export async function GET(
 
     const card = await prisma.nameCard.findUnique({
       where: {
-        id: context.params.id,
+        id: params.id,
         userId: session.user.id,
       },
     });
@@ -36,7 +36,7 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -49,7 +49,7 @@ export async function PATCH(
 
     const card = await prisma.nameCard.update({
       where: {
-        id: context.params.id,
+        id: params.id,
         userId: session.user.id,
       },
       data: validatedData,
@@ -64,7 +64,7 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -74,7 +74,7 @@ export async function DELETE(
 
     await prisma.nameCard.delete({
       where: {
-        id: context.params.id,
+        id: params.id,
         userId: session.user.id,
       },
     });
