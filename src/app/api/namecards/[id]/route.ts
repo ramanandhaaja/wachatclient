@@ -6,10 +6,12 @@ import { nameCardSchema } from "@/lib/schemas/namecard";
 
 export const dynamic = 'force-dynamic';
 
+
 export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -18,7 +20,7 @@ export async function GET(
 
     const card = await prisma.nameCard.findUnique({
       where: {
-        id: params.id,
+        id: id,
         userId: session.user.id,
       },
     });
@@ -35,9 +37,10 @@ export async function GET(
 }
 
 export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { id: string } }
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -49,7 +52,7 @@ export async function PATCH(
 
     const card = await prisma.nameCard.update({
       where: {
-        id: params.id,
+        id: id,
         userId: session.user.id,
       },
       data: validatedData,
@@ -63,9 +66,10 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -74,7 +78,7 @@ export async function DELETE(
 
     await prisma.nameCard.delete({
       where: {
-        id: params.id,
+        id: id,
         userId: session.user.id,
       },
     });
