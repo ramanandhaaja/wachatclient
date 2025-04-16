@@ -4,12 +4,17 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { nameCardSchema } from "@/lib/schemas/namecard";
 
-// Using exact Next.js App Router types
-type Params = { id: string };
+export const PAGE_SEGMENT_CONFIG = { dynamic: 'force-dynamic' };
+
+interface RouteContext {
+  params: {
+    id: string;
+  };
+}
 
 export async function GET(
-  req: Request | NextRequest,
-  { params }: { params: Params }
+  request: NextRequest,
+  context: RouteContext
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -19,7 +24,7 @@ export async function GET(
 
     const card = await prisma.nameCard.findUnique({
       where: {
-        id: params.id,
+        id: context.params.id,
         userId: session.user.id,
       },
     });
@@ -36,8 +41,8 @@ export async function GET(
 }
 
 export async function PATCH(
-  req: Request | NextRequest,
-  { params }: { params: Params }
+  request: NextRequest,
+  context: RouteContext
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -45,12 +50,12 @@ export async function PATCH(
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const body = await req.json();
+    const body = await request.json();
     const validatedData = nameCardSchema.parse(body);
 
     const card = await prisma.nameCard.update({
       where: {
-        id: params.id,
+        id: context.params.id,
         userId: session.user.id,
       },
       data: validatedData,
@@ -64,8 +69,8 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  req: Request | NextRequest,
-  { params }: { params: Params }
+  request: NextRequest,
+  context: RouteContext
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -75,7 +80,7 @@ export async function DELETE(
 
     await prisma.nameCard.delete({
       where: {
-        id: params.id,
+        id: context.params.id,
         userId: session.user.id,
       },
     });
