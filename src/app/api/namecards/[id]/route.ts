@@ -5,7 +5,6 @@ import { prisma } from "@/lib/prisma";
 import { nameCardSchema } from "@/lib/schemas/namecard";
 
 export const dynamic = 'force-dynamic';
-export const runtime = 'edge';
 
 interface RouteContext {
   params: {
