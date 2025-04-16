@@ -7,11 +7,12 @@ import { nameCardSchema } from "@/lib/schemas/namecard";
 export const dynamic = 'force-dynamic';
 
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: any
 ) {
-  const { id } = await params;
+  const { id } = params;
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -36,11 +37,12 @@ export async function GET(
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function PATCH(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: any
 ) {
-  const { id } = await params;
+  const { id } = params;
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -65,11 +67,12 @@ export async function PATCH(
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function DELETE(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: any
 ) {
-  const { id } = await params;
+  const { id } = params;
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
