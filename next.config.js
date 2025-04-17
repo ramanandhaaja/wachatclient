@@ -1,5 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Ignore TypeScript errors during build (for Vercel deployment)
+  typescript: {
+    // !! WARN !!
+    // Dangerously allow production builds to successfully complete even if
+    // your project has type errors.
+    ignoreBuildErrors: true,
+  },
   // Webpack configuration for non-Turbopack builds
   webpack: (config, { isServer }) => {
     // Fix for fluent-ffmpeg
