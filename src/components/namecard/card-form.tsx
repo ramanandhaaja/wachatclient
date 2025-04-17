@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -27,13 +28,10 @@ interface CardFormProps {
 }
 
 export function CardForm({ initialData, id }: CardFormProps) {
-  const router = useRouter();
-  const [activeTab, setActiveTab] = useState("details");
-  const isEditing = !!id;
-
   const form = useForm<NameCardFormValues>({
     resolver: zodResolver(nameCardSchema),
     defaultValues: {
+      ...initialData,
       name: initialData?.name || "",
       title: initialData?.title || "",
       company: initialData?.company || "",
@@ -46,8 +44,23 @@ export function CardForm({ initialData, id }: CardFormProps) {
       instagram: initialData?.instagram || "",
       profileImage: initialData?.profileImage || "",
       coverImage: initialData?.coverImage || "",
+      aiChatAgent: initialData?.aiChatAgent ?? false,
+      aiVoiceCallAgent: initialData?.aiVoiceCallAgent ?? false,
     },
   });
+  // Ensure form values are updated when initialData changes (important for edit)
+  useEffect(() => {
+    if (initialData) {
+      form.reset({
+        ...initialData,
+        aiChatAgent: initialData.aiChatAgent ?? false,
+        aiVoiceCallAgent: initialData.aiVoiceCallAgent ?? false,
+      });
+    }
+  }, [initialData, form]);
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState("details");
+  const isEditing = !!id;
 
   const { useCreate, useUpdate } = useNameCard();
   const createCard = useCreate();
@@ -81,8 +94,9 @@ export function CardForm({ initialData, id }: CardFormProps) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div>
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="details">Card Details</TabsTrigger>
+              <TabsTrigger value="ai-agent">AI Agent</TabsTrigger>
               <TabsTrigger value="appearance">Appearance</TabsTrigger>
             </TabsList>
 
@@ -223,6 +237,45 @@ export function CardForm({ initialData, id }: CardFormProps) {
                             <Input placeholder="https://instagram.com/username" {...field} />
                           </FormControl>
                           <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="ai-agent" className="space-y-4">
+                  <div className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="aiChatAgent"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                          <FormControl>
+                            <input
+                              type="checkbox"
+                              className="accent-primary border rounded"
+                              checked={!!field.value}
+                              onChange={e => field.onChange(e.target.checked)}
+                            />
+                          </FormControl>
+                          <FormLabel className="font-medium">Chat Agent</FormLabel>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="aiVoiceCallAgent"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                          <FormControl>
+                            <input
+                              type="checkbox"
+                              className="accent-primary border rounded"
+                              checked={!!field.value}
+                              onChange={e => field.onChange(e.target.checked)}
+                            />
+                          </FormControl>
+                          <FormLabel className="font-medium">Voice Call Agent</FormLabel>
                         </FormItem>
                       )}
                     />

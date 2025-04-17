@@ -159,6 +159,8 @@ model NameCard {
   instagram    String?
   profileImage String?
   coverImage   String?
+  aiChatAgent  Boolean  @default(false)
+  aiVoiceCallAgent Boolean @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   

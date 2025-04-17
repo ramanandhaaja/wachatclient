@@ -53,6 +53,8 @@ export default async function EditNameCardPage({
     instagram: nameCard.instagram || '',
     profileImage: nameCard.profileImage || '',
     coverImage: nameCard.coverImage || '',
+    aiChatAgent: nameCard.aiChatAgent ?? false,
+    aiVoiceCallAgent: nameCard.aiVoiceCallAgent ?? false,
   };
 
   return (

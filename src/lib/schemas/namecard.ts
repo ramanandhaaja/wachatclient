@@ -13,6 +13,8 @@ export const nameCardSchema = z.object({
   instagram: z.string().url("Invalid Instagram URL").optional().or(z.literal("")),
   profileImage: z.string().optional(),
   coverImage: z.string().optional(),
+  aiChatAgent: z.boolean().optional().default(false),
+  aiVoiceCallAgent: z.boolean().optional().default(false),
 });
 
 export type NameCardFormValues = z.infer<typeof nameCardSchema>;
