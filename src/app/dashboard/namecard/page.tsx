@@ -150,12 +150,14 @@ export default function NameCardDashboard() {
                             email: card.email || "",
                             phone: card.phone || "",
                             website: card.website || "",
-                            location: "",
-                            linkedin: "",
-                            twitter: "",
-                            instagram: "",
-                            profileImage: "",
-                            coverImage: "",
+                            location: card.location || "",
+                            linkedin: card.linkedin || "",
+                            twitter: card.twitter || "",
+                            instagram: card.instagram || "",
+                            profileImage: card.profileImage || "",
+                            coverImage: card.coverImage || "",
+                            aiChatAgent: card.aiChatAgent ?? false,
+                            aiVoiceCallAgent: card.aiVoiceCallAgent ?? false,
                           }}
                         />
                         <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">

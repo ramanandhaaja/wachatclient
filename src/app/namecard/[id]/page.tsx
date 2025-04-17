@@ -66,6 +66,8 @@ export default async function CardPage({
           linkedin: card.linkedin || undefined,
           twitter: card.twitter || undefined,
           instagram: card.instagram || undefined,
+          aiChatAgent: card.aiChatAgent || false,
+          aiVoiceCallAgent: card.aiVoiceCallAgent || false,
           profileImage: card.profileImage || undefined,
           coverImage: card.coverImage || undefined,
         }}

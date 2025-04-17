@@ -1,11 +1,21 @@
 "use client";
 
+import React from "react";
+import Script from "next/script";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Phone, Mail, Globe, MapPin, Linkedin, Twitter, Instagram } from "lucide-react";
+import {
+  Phone,
+  Mail,
+  Globe,
+  MapPin,
+  Linkedin,
+  Twitter,
+  Instagram,
+} from "lucide-react";
 import type { NameCardFormValues } from "@/lib/schemas/namecard";
 
 interface CardPreviewProps {
@@ -13,7 +23,12 @@ interface CardPreviewProps {
   size?: "sm" | "default";
 }
 
-export function CardPreview({ formValues, size = "default" }: CardPreviewProps) {
+import { useEffect, useState } from "react";
+
+export function CardPreview({
+  formValues,
+  size = "default",
+}: CardPreviewProps) {
   const {
     name,
     title,
@@ -27,7 +42,14 @@ export function CardPreview({ formValues, size = "default" }: CardPreviewProps) 
     instagram,
     profileImage,
     coverImage,
+    aiChatAgent,
+    aiVoiceCallAgent,
   } = formValues;
+
+  const [isClient, setIsClient] = useState(false);
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const initials = name
     .split(" ")
@@ -36,10 +58,12 @@ export function CardPreview({ formValues, size = "default" }: CardPreviewProps) 
     .toUpperCase();
 
   return (
-    <Card className={cn(
-      "overflow-hidden mx-auto bg-white shadow-lg",
-      size === "sm" ? "max-w-sm" : "max-w-md"
-    )}>
+    <Card
+      className={cn(
+        "overflow-hidden mx-auto bg-white shadow-lg",
+        size === "sm" ? "max-w-sm" : "max-w-md"
+      )}
+    >
       {coverImage ? (
         <div className="relative h-40">
           <Image
@@ -55,30 +79,42 @@ export function CardPreview({ formValues, size = "default" }: CardPreviewProps) 
       )}
       <CardContent className="p-8">
         <div className="flex flex-col items-center -mt-24">
-          <Avatar className={cn(
-            "border-4 border-background shadow-md bg-background",
-            size === "sm" ? "w-20 h-20" : "w-24 h-24"
-          )}>
+          <Avatar
+            className={cn(
+              "border-4 border-background shadow-md bg-background",
+              size === "sm" ? "w-20 h-20" : "w-24 h-24"
+            )}
+          >
             <AvatarImage src={profileImage} alt={name} />
-            <AvatarFallback className="text-xl font-medium">{initials}</AvatarFallback>
+            <AvatarFallback className="text-xl font-medium">
+              {initials}
+            </AvatarFallback>
           </Avatar>
 
-          <h2 className={cn(
-            "mt-4 font-bold tracking-tight",
-            size === "sm" ? "text-xl" : "text-2xl"
-          )}>{name || "Your Name"}</h2>
+          <h2
+            className={cn(
+              "mt-4 font-bold tracking-tight",
+              size === "sm" ? "text-xl" : "text-2xl"
+            )}
+          >
+            {name || "Your Name"}
+          </h2>
           <div className="mt-1 space-y-1 text-center">
-            <p className={cn(
-              "text-muted-foreground",
-              size === "sm" ? "text-base" : "text-lg"
-            )}>
+            <p
+              className={cn(
+                "text-muted-foreground",
+                size === "sm" ? "text-base" : "text-lg"
+              )}
+            >
               {title || "Your Title"}
             </p>
             {company && (
-              <p className={cn(
-                "font-medium",
-                size === "sm" ? "text-base" : "text-lg"
-              )}>
+              <p
+                className={cn(
+                  "font-medium",
+                  size === "sm" ? "text-base" : "text-lg"
+                )}
+              >
                 {company}
               </p>
             )}
@@ -126,7 +162,11 @@ export function CardPreview({ formValues, size = "default" }: CardPreviewProps) 
           {/* WhatsApp Button */}
           {phone && (
             <Button className="w-full mt-6 gap-2" asChild>
-              <a href={`https://wa.me/${phone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer">
+              <a
+                href={`https://wa.me/${phone.replace(/\D/g, "")}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 <svg
                   viewBox="0 0 24 24"
                   className="w-5 h-5"
@@ -137,6 +177,23 @@ export function CardPreview({ formValues, size = "default" }: CardPreviewProps) 
                 Add me on WhatsApp
               </a>
             </Button>
+          )}
+
+          {/* Elevenlabs */}
+          {aiVoiceCallAgent && isClient && (
+            <div className="mt-4 w-full flex justify-center">
+              {/* ElevenLabs Convai Widget (client-only) */}
+              <elevenlabs-convai
+                agent-id="mYBbjVrZtaABCei4JmhH"
+                mode="inline"
+              ></elevenlabs-convai>
+              {/* Use next/script for proper script loading */}
+              <Script
+                src="https://elevenlabs.io/convai-widget/index.js"
+                strategy="afterInteractive"
+                async
+              />
+            </div>
           )}
         </div>
       </CardContent>
