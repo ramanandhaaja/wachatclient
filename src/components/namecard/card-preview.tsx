@@ -24,6 +24,7 @@ interface CardPreviewProps {
 }
 
 import { useEffect, useState } from "react";
+import { ElevenLabsConvaiInline } from "./ElevenLabsConvaiInline";
 
 export function CardPreview({
   formValues,
@@ -181,21 +182,28 @@ export function CardPreview({
 
           {/* Elevenlabs */}
           {aiVoiceCallAgent && isClient && (
-            <div className="mt-4 w-full flex justify-center">
-              {/* ElevenLabs Convai Widget (client-only) */}
-              <elevenlabs-convai
-                agent-id="mYBbjVrZtaABCei4JmhH"
-                mode="inline"
-              ></elevenlabs-convai>
-              {/* Use next/script for proper script loading */}
-              <Script
-                src="https://elevenlabs.io/convai-widget/index.js"
-                strategy="afterInteractive"
-                async
-              />
-            </div>
-          )}
-        </div>
+  <div className="-mt-10 w-full flex justify-center items-center relative force-center-elevenlabs">
+    {/* ElevenLabs Convai Widget (client-only, TSX component) */}
+    <ElevenLabsConvaiInline />
+    <style jsx global>{`
+      .force-center-elevenlabs elevenlabs-convai,
+      .force-center-elevenlabs * {
+        box-shadow: none !important;
+        filter: none !important;
+      }
+      .force-center-elevenlabs elevenlabs-convai {
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+        left: 0 !important;
+        right: 0 !important;
+        position: relative !important;
+      }
+    `}</style>
+  </div>
+)}        </div>
       </CardContent>
     </Card>
   );
