@@ -18,9 +18,10 @@ import QRCode from "react-qr-code";
 
 interface ShareCardProps {
   card: NameCardFormValues & { id: string };
+  className?: string;
 }
 
-export function ShareCard({ card }: ShareCardProps) {
+export function ShareCard({ card, className }: ShareCardProps) {
   const [activeTab, setActiveTab] = useState("qr");
 
   // TODO: Update with your actual domain
@@ -51,7 +52,7 @@ export function ShareCard({ card }: ShareCardProps) {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="ml-2">Share</Button>
+        <Button variant="outline" size="sm" className={className}>Share</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md p-0">
         <div className="px-6 py-5">

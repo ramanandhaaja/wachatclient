@@ -150,46 +150,48 @@ export default function NameCardDashboard() {
                             email: card.email || "",
                             phone: card.phone || "",
                             website: card.website || "",
-                            location: "",
-                            linkedin: "",
-                            twitter: "",
-                            instagram: "",
-                            profileImage: "",
-                            coverImage: "",
+                            location: card.location || "",
+                            linkedin: card.linkedin || "",
+                            twitter: card.twitter || "",
+                            instagram: card.instagram || "",
+                            profileImage: card.profileImage || "",
+                            coverImage: card.coverImage || "",
+                            aiChatAgent: card.aiChatAgent ?? false,
+                            aiVoiceCallAgent: card.aiVoiceCallAgent ?? false,
                           }}
                         />
                         <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <div className="flex gap-2">
-                            <Link href={`/dashboard/namecard/${card.id}/edit`}>
-                              <Button variant="secondary" size="sm">Edit</Button>
-                            </Link>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button variant="destructive" size="sm">
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Delete Name Card</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Are you sure you want to delete this name card? This action cannot be undone.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction
-                                    onClick={() => deleteCard(card.id)}
-                                    className="bg-destructive text-white hover:bg-destructive/90"
-                                  >
-                                    Delete
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                            <ShareCard card={card} />
-                          </div>
-                        </div>
+  <div className="flex items-center gap-2">
+    <Link href={`/dashboard/namecard/${card.id}/edit`} className="flex">
+      <Button variant="secondary" size="sm" className="min-w-[64px]">Edit</Button>
+    </Link>
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button variant="destructive" size="sm" className="aspect-square w-8 p-0 flex items-center justify-center">
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete Name Card</AlertDialogTitle>
+          <AlertDialogDescription>
+            Are you sure you want to delete this name card? This action cannot be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() => deleteCard(card.id)}
+            className="bg-destructive text-white hover:bg-destructive/90"
+          >
+            Delete
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    <ShareCard card={card} className="min-w-[64px] flex-shrink-0" />
+  </div>
+</div>
                       </div>
                 ))}
               </div>
