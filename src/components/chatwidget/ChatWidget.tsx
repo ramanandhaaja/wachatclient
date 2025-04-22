@@ -1,65 +1,49 @@
 // components/ChatWidget.tsx
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { Send, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { FormBeforeChat } from "./FormBeforeChat";
-
-// Match your DB schema
-interface DbMessage {
-  id: string;
-  conversation_id: string;
-  sender_id: string | null;
-  sender_type: string;
-  content: string;
-  media_url: string | null;
-  media_type: string | null;
-  timestamp: string;
-  is_read: boolean;
-  metadata: any;
-}
-
-// For UI display purposes, we use a simplified version
-interface ChatMessage {
-  id: string;
-  sender_type: string;
-  content: string;
-  timestamp: string;
-}
+import { useConversation } from "@/hooks/use-conversation";
 
 export default function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  // const [isLoading, setIsLoading] = useState(false);
   const [input, setInput] = useState("");
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: "welcome-message",
-      sender_type: "admin",
-      content:
-        "Halo! Selamat datang di chatbot kami! Ada yang bisa saya bantu?",
-      timestamp: new Date().toISOString(),
-    },
-  ]);
-  const [messagesError, setMessagesError] = useState<string | null>(null);
+  // const [messages, setMessages] = useState<ChatMessage[]>([
+  //   {
+  //     id: "welcome-message",
+  //     sender_type: "admin",
+  //     content:
+  //       "Halo! Selamat datang di chatbot kami! Ada yang bisa saya bantu?",
+  //     timestamp: new Date().toISOString(),
+  //   },
+  // ]);
+  // const [messagesError, setMessagesError] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
   const [showFormInput, setShowFormInput] = useState(true);
+  const [localStateMessages, setLocalStateMessages] = useState<any[]>([]);
   const [sessionId, setSessionId] = useState("");
   const [userName, setUserName] = useState("");
   const [userPhone, setUserPhone] = useState("");
-
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Scroll to bottom of messages
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  const {
+    messages,
+    isLoading,
+    error: messagesError,
+  } = useConversation(sessionId || null);
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+  const welcomeMessage = {
+    id: "welcome-message",
+    conversation_id: sessionId || "",
+    sender_type: "admin",
+    content: "Halo! Selamat datang di chatbot kami! Ada yang bisa saya bantu?",
+    timestamp: new Date().toISOString(),
+  };
 
   useEffect(() => {
     const storedSession = sessionStorage.getItem("userWebChatSession");
@@ -72,7 +56,7 @@ export default function ChatWidget() {
         setShowFormInput(false);
 
         // Load previous messages if needed
-        loadPreviousMessages(session.session_id);
+        // loadPreviousMessages(session.session_id);
       } else {
         sessionStorage.removeItem("userWebChatSession");
         setShowFormInput(true);
@@ -82,56 +66,61 @@ export default function ChatWidget() {
     }
   }, []);
 
-  const loadPreviousMessages = async (sessionId: string) => {
-    setIsLoading(true);
-    try {
-      const response = await fetch(
-        `/api/webhook/web-chatbot?sessionId=${sessionId}`,
-        {
-          method: "GET",
-        }
-      );
+  useEffect(() => {
+    if (!messages || localStateMessages.length === 0) return;
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch messages");
-      }
-
-      const data = await response.json();
-
-      if (data.messages && Array.isArray(data.messages)) {
-        // Map database messages to chat messages
-        const formattedMessages = data.messages.map((msg: DbMessage) => ({
-          id: msg.id,
-          sender_type: msg.sender_type,
-          content: msg.content,
-          timestamp: msg.timestamp,
-        }));
-
-        if (formattedMessages.length > 0) {
-          setMessages(formattedMessages);
-        }
-      }
-    } catch (error) {
-      console.error("Error loading previous messages:", error);
-      setMessagesError("Failed to load previous messages");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    setLocalStateMessages((pending) =>
+      pending.filter(
+        (pendingMsg) =>
+          !messages.some(
+            (realMsg) =>
+              realMsg.sender_type === pendingMsg.sender_type &&
+              realMsg.content === pendingMsg.content &&
+              // Optionally: check timestamp is close (within 60s)
+              Math.abs(
+                new Date(realMsg.timestamp).getTime() -
+                  new Date(pendingMsg.timestamp).getTime()
+              ) < 60000
+          )
+      )
+    );
+  }, [messages]);
 
   const toggleChat = () => {
     setIsOpen(!isOpen);
   };
 
-  const handleUserRegistered = (
-    newSessionId: string,
+  const handleUserRegistered = async (
     newUserName: string,
     newUserPhone: string
   ) => {
-    setSessionId(newSessionId);
+    // Call API to find or create conversation
+    const res = await fetch("/api/webhook/web-chatbot/registration", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userPhone: newUserPhone, userName: newUserName }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      // handle error
+      return;
+    }
+    setSessionId(data.conversationId);
     setUserName(newUserName);
     setUserPhone(newUserPhone);
     setShowFormInput(false);
+
+    // Store in sessionStorage
+    sessionStorage.setItem(
+      "userWebChatSession",
+      JSON.stringify({
+        session_id: data.conversationId,
+        user: newUserName,
+        phone: newUserPhone,
+        hasConversation: true,
+        expiresAt: Date.now() + 24 * 60 * 60 * 1000, // or your expiry logic
+      })
+    );
   };
 
   const handleSendMessage = async (e: React.FormEvent) => {
@@ -139,79 +128,102 @@ export default function ChatWidget() {
 
     if (!input.trim()) return;
 
+    const tempId = `temp-${Date.now()}`;
     const userMessage = input;
+
+    //local state message object
+    const localStateMessage = {
+      id: tempId,
+      conversation_id: sessionId,
+
+      sender_type: "user",
+      content: userMessage,
+      timestamp: new Date().toISOString(),
+      pending: true,
+    };
     setInput("");
     setIsSending(true);
-
-    // Generate a temporary ID for the user message
-    const tempUserId = `temp-${Date.now()}`;
-
-    // Add user message to chat immediately
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: tempUserId,
-        sender_type: "user",
-        content: userMessage,
-        timestamp: new Date().toISOString(),
-      },
-    ]);
+    setLocalStateMessages((prev) => [...prev, localStateMessage]);
 
     try {
-      const response = await fetch("/api/webhook/web-chatbot", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          message: userMessage,
-          sessionId,
-          userName,
-          userPhone,
-        }),
-      });
+      // Check for firstMessage flag in session storage
+      const storedSession = sessionStorage.getItem("userWebChatSession");
+      const isFirstMessage =
+        storedSession && !JSON.parse(storedSession).hasConversation;
+
+      const response = await fetch(
+        "/api/webhook/web-chatbot/sending-existing-message",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            message: userMessage,
+            sessionId,
+            userName: isFirstMessage ? userName : undefined,
+            userPhone: isFirstMessage ? userPhone : undefined,
+          }),
+        }
+      );
 
       if (!response.ok) {
         throw new Error("Failed to send message");
       }
 
-      const data = await response.json();
-
-      // Add assistant response to chat
-      setMessages((prev) => [
-        ...prev,
-        {
-          id:
-            data.messages?.find(
-              (m: DbMessage) =>
-                m.sender_type === "admin" && m.content === data.response
-            )?.id || `admin-${Date.now()}`,
-          sender_type: "admin",
-          content: data.response,
-          timestamp: new Date().toISOString(),
-        },
-      ]);
+      // If this was the first message, update the session storage to indicate we now have a conversation
+      if (isFirstMessage && storedSession) {
+        const session = JSON.parse(storedSession);
+        session.hasConversation = true;
+        sessionStorage.setItem("userWebChatSession", JSON.stringify(session));
+      }
     } catch (error) {
       console.error("Error:", error);
-      // Add error message to chat
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: `error-${Date.now()}`,
-          sender_type: "admin",
-          content: "Sorry, something went wrong. Please try again.",
-          timestamp: new Date().toISOString(),
-        },
-      ]);
     } finally {
       setIsSending(false);
     }
   };
 
+  const mergedMessages = useMemo(() => {
+    const realIds = new Set((messages || []).map((msg) => msg.id));
+    return [
+      ...(messages || []),
+      ...localStateMessages.filter((msg) => !realIds.has(msg.id)),
+    ];
+  }, [messages, localStateMessages]);
+
   const formatTime = (timestamp: string) => {
     const date = new Date(timestamp);
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   };
+
+  const displayMessages = useMemo(() => {
+    if (!mergedMessages || mergedMessages.length === 0) {
+      return [welcomeMessage];
+    }
+
+    // If there are messages, check if the welcome message is already present
+    const hasWelcomeMessage = mergedMessages.some(
+      (msg) => msg.id === "welcome-message"
+    );
+
+    // If welcome message isn't present and these are the first messages loaded,
+    // add it at the beginning
+    if (!hasWelcomeMessage) {
+      return [welcomeMessage, ...mergedMessages];
+    }
+
+    return mergedMessages;
+  }, [mergedMessages]);
+
+  // Scroll to bottom of messages
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [mergedMessages]);
 
   return (
     <>
@@ -258,7 +270,7 @@ export default function ChatWidget() {
                     </div>
                   ) : (
                     <>
-                      {messages.map((message) => (
+                      {displayMessages.map((message) => (
                         <div
                           key={message.id}
                           className={`flex ${
@@ -312,11 +324,13 @@ export default function ChatWidget() {
                   )}
 
                   {/* Error message */}
-                  {messagesError && (
+                  {messagesError && messages.length !== 0 && (
                     <div className="flex justify-start">
                       <div className="max-w-[70%] rounded-lg p-3 bg-red-100 text-red-800">
                         <div className="text-xs opacity-70 mb-1">Error</div>
-                        <p>{messagesError}</p>
+                        <p>
+                          Maaf sedang terjadi kesalahan, coba beberapa saat lagi
+                        </p>
                       </div>
                     </div>
                   )}

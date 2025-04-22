@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 
 interface FormBeforeChatProps {
-  onUserRegistered: (sessionId: string, name: string, phone: string) => void;
+  onUserRegistered: (name: string, phone: string) => Promise<void>;
 }
 
 export function FormBeforeChat({ onUserRegistered }: FormBeforeChatProps) {
@@ -18,36 +18,8 @@ export function FormBeforeChat({ onUserRegistered }: FormBeforeChatProps) {
 
     setIsLoading(true);
     try {
-      // Send initial message to create conversation
-      const response = await fetch("/api/webhook/web-chatbot", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          message: "Hello, I'm starting a new conversation.",
-          sessionId,
-          userName,
-          userPhone,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to initialize conversation");
-      }
-
-      // Store session in sessionStorage
-      const sessionData = {
-        session_id: sessionId,
-        user: userName,
-        phone: userPhone,
-        loginTime: new Date().toISOString(),
-        expiresAt: new Date().getTime() + 30 * 60 * 1000, // 30 minutes from now
-      };
-      sessionStorage.setItem("userWebChatSession", JSON.stringify(sessionData));
-
       // Notify parent component that user registration is complete
-      onUserRegistered(sessionId, userName, userPhone);
+      await onUserRegistered(userName, userPhone);
     } catch (error) {
       console.error("Error initializing conversation:", error);
     } finally {
