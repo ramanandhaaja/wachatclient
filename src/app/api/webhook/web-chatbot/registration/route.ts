@@ -47,6 +47,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: createError.message }, { status: 500 });
     }
 
+    // Insert welcome message for new conversation
+    await supabase.from("messages").insert({
+      conversation_id: created.id,
+      sender_type: "admin",
+      content:
+        "Halo! Selamat datang di chatbot kami! Ada yang bisa saya bantu?",
+      timestamp: new Date().toISOString(),
+      is_read: false,
+      metadata: { is_welcome: true },
+    });
+
     return NextResponse.json({ conversationId: created.id, isNew: true });
   } catch (error) {
     console.error("Error in find-or-create-conversation endpoint:", error);
