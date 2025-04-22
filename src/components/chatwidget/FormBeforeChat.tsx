@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 
 interface FormBeforeChatProps {
-  onUserRegistered: (name: string, phone: string) => void;
+  onUserRegistered: (name: string, phone: string) => Promise<void>;
 }
 
 export function FormBeforeChat({ onUserRegistered }: FormBeforeChatProps) {
@@ -19,7 +19,7 @@ export function FormBeforeChat({ onUserRegistered }: FormBeforeChatProps) {
     setIsLoading(true);
     try {
       // Notify parent component that user registration is complete
-      onUserRegistered(userName, userPhone);
+      await onUserRegistered(userName, userPhone);
     } catch (error) {
       console.error("Error initializing conversation:", error);
     } finally {
