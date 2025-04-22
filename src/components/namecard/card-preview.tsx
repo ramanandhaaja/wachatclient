@@ -29,6 +29,7 @@ import { useEffect, useState } from "react";
 import { ElevenLabsConvaiInline } from "./ElevenLabsConvaiInline";
 import NameCardChatWidget from "@/components/chatwidget/NameCardChatWidget";
 import { ShareCard } from "./share-card";
+import QRCode from "react-qr-code";
 
 export function CardPreview({
   formValues,
@@ -279,6 +280,24 @@ export function CardPreview({
           )}{" "}
         </div>
       </CardContent>
+      {/* QR Code for vCard */}
+      <div className="flex flex-col items-center my-4">
+        <span className="mb-2 text-sm text-muted-foreground">Scan to Save Contact</span>
+        <QRCode
+          value={[
+            'BEGIN:VCARD',
+            'VERSION:3.0',
+            `FN:${name}`,
+            title ? `TITLE:${title}` : '',
+            company ? `ORG:${company}` : '',
+            phone ? `TEL;TYPE=CELL:${phone}` : '',
+            email ? `EMAIL;TYPE=INTERNET:${email}` : '',
+            website ? `URL:${website}` : '',
+            'END:VCARD',
+          ].filter(Boolean).join('\n')}
+          size={128}
+        />
+      </div>
       {/* Save Contact to Phone Button */}
       <div className="mt-2 flex justify-center">
         <Button
@@ -313,3 +332,4 @@ export function CardPreview({
     </Card>
   );
 }
+
