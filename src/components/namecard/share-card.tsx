@@ -54,7 +54,7 @@ export function ShareCard({ card, className }: ShareCardProps) {
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className={className}>Share</Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md p-0">
+      <DialogContent className="max-w-md p-0">
         <div className="px-6 py-5">
           <DialogHeader className="mb-4">
             <DialogTitle className="text-lg mb-1">Share Your Name Card</DialogTitle>

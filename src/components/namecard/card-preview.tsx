@@ -21,15 +21,18 @@ import type { NameCardFormValues } from "@/lib/schemas/namecard";
 
 interface CardPreviewProps {
   formValues: NameCardFormValues;
+  id: string;
   size?: "sm" | "default";
 }
 
 import { useEffect, useState } from "react";
 import { ElevenLabsConvaiInline } from "./ElevenLabsConvaiInline";
 import NameCardChatWidget from "@/components/chatwidget/NameCardChatWidget";
+import { ShareCard } from "./share-card";
 
 export function CardPreview({
   formValues,
+  id,
   size = "default",
 }: CardPreviewProps) {
   const {
@@ -63,10 +66,14 @@ export function CardPreview({
   return (
     <Card
       className={cn(
-        "overflow-hidden mx-auto bg-white shadow-lg",
+        "overflow-hidden mx-auto bg-white shadow-lg relative",
         size === "sm" ? "max-w-sm" : "max-w-md"
       )}
     >
+      {/* Share Button at Top Right */}
+      <div className="absolute top-4 right-4 z-20">
+        <ShareCard card={{ ...formValues, id }} />
+      </div>
       {coverImage ? (
         <div className="relative h-40">
           <Image

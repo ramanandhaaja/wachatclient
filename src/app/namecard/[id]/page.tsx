@@ -71,6 +71,7 @@ export default async function CardPage({
           profileImage: card.profileImage || undefined,
           coverImage: card.coverImage || undefined,
         }}
+        id={card.id}
       />
     </CardLayout>
   );

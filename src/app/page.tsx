@@ -27,7 +27,7 @@ export default function Home() {
               height={40}
               className="h-10 w-10"
             />
-            <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">WhatsBot AI</span>
+            <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">Cardify</span>
           </div>
           <nav className="hidden md:flex gap-8">
             <Link
@@ -111,14 +111,14 @@ export default function Home() {
             <div className="flex flex-col justify-center space-y-6">
               <div className="space-y-4">
                 <div className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5">
-                  <span className="text-xs font-medium text-blue-700">AI-Powered WhatsApp Automation</span>
+                  <span className="text-xs font-medium text-blue-700">AI-Powered Digital Name Cards</span>
                 </div>
                 <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl/none">
-                  <span className="block">Elevate Customer Engagement</span>
-                  <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600 block">with AI WhatsApp Chatbots</span>
+                  <span className="block">Make Every Connection Count</span>
+                  <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600 block">with AI Digital Name Cards</span>
                 </h1>
                 <p className="max-w-[600px] text-lg text-gray-600 md:text-xl">
-                  Transform how you connect with customers through WhatsApp. Automate support, boost sales, and deliver 24/7 personalized conversations.
+                  Share your contact, brand, and story instantly with Cardify. Network smarter, make memorable introductions, and grow your business with AI-powered digital cards.
                 </p>
               </div>
               
@@ -147,7 +147,7 @@ export default function Home() {
                   ))}
                 </div>
                 <p className="text-sm text-gray-500">
-                  <span className="font-semibold text-gray-900">500+</span> businesses trust WhatsBot AI
+                  <span className="font-semibold text-gray-900">500+</span> businesses trust Cardify
                 </p>
               </div>
             </div>
@@ -211,21 +211,21 @@ export default function Home() {
         <div className="container mx-auto px-4 md:px-6">
           <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
             <div className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5 mb-4">
-              <span className="text-xs font-medium text-blue-700">Powerful Features</span>
+              <span className="text-xs font-medium text-blue-700">Why Cardify?</span>
             </div>
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
-              Everything You Need to <span className="text-blue-600">Automate WhatsApp</span>
+              Everything You Need for Smart Networking
             </h2>
             <p className="max-w-[800px] text-lg text-gray-600 md:text-xl">
-              Our platform combines AI intelligence with WhatsApp's reach to transform how you connect with customers.
+              Cardify uses AI to help you share, connect, and follow up—no paper, no hassle, just smarter networking.
             </p>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-8">
             {[
               {
-                title: "Seamless WhatsApp Integration",
-                description: "Connect your business WhatsApp in minutes with our no-code integration process",
+                title: "Instant Digital Card Sharing",
+                description: "Share your contact details, social links, and more with a single tap or scan—no app required.",
                 icon: (
                   <svg className="h-7 w-7 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
@@ -233,8 +233,8 @@ export default function Home() {
                 ),
               },
               {
-                title: "AI-Powered Conversations",
-                description: "Our GPT-powered AI understands natural language and responds intelligently to customer queries",
+                title: "AI-Powered Introductions",
+                description: "Let Cardify craft smart, personalized introductions and follow-ups for every new connection.",
                 icon: (
                   <svg className="h-7 w-7 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
@@ -242,8 +242,8 @@ export default function Home() {
                 ),
               },
               {
-                title: "24/7 Automated Support",
-                description: "Let our chatbots handle inquiries around the clock, never missing a customer message",
+                title: "Smart Contact Management",
+                description: "Organize, tag, and search all your contacts. Cardify keeps your network at your fingertips.",
                 icon: (
                   <svg className="h-7 w-7 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -251,8 +251,8 @@ export default function Home() {
                 ),
               },
               {
-                title: "No-Code Conversation Builder",
-                description: "Design custom conversation flows and responses with our visual drag-and-drop builder",
+                title: "No-Code Card Designer",
+                description: "Customize your card's look, feel, and info with our drag-and-drop builder—no design skills needed.",
                 icon: (
                   <svg className="h-7 w-7 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
@@ -260,8 +260,8 @@ export default function Home() {
                 ),
               },
               {
-                title: "Detailed Analytics Dashboard",
-                description: "Track engagement, response times, and conversion rates with insightful reports",
+                title: "Connection Analytics",
+                description: "See who viewed your card, when, and where. Track your networking impact with real-time insights.",
                 icon: (
                   <svg className="h-7 w-7 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
@@ -269,8 +269,8 @@ export default function Home() {
                 ),
               },
               {
-                title: "Multilingual Support",
-                description: "Communicate with customers in their preferred language with automatic translation",
+                title: "Multilingual Cards",
+                description: "Share your card in any language—Cardify auto-translates so you connect globally.",
                 icon: (
                   <svg className="h-7 w-7 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
@@ -301,13 +301,13 @@ export default function Home() {
         <div className="container mx-auto px-4 md:px-6">
           <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
             <div className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5 mb-4">
-              <span className="text-xs font-medium text-blue-700">Simple Process</span>
+              <span className="text-xs font-medium text-blue-700">How Cardify Works</span>
             </div>
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
-              How WhatsBot AI <span className="text-blue-600">Works</span>
+              How Cardify <span className="text-blue-600">Works</span>
             </h2>
             <p className="max-w-[800px] text-lg text-gray-600 md:text-xl">
-              Get started in minutes and transform your customer communication
+              Get started in minutes and transform how you connect, share, and grow your network
             </p>
           </div>
           
@@ -315,20 +315,20 @@ export default function Home() {
             {[
               {
                 step: "1",
-                title: "Connect Your WhatsApp",
-                description: "Link your WhatsApp Business account to our platform with a few simple clicks",
+                title: "Create Your Card",
+                description: "Design your digital name card—add your info, logo, and choose your style.",
                 image: "https://images.unsplash.com/photo-1611746869696-b0fcc35a7075?q=80&w=2940&auto=format&fit=crop"
               },
               {
                 step: "2",
-                title: "Customize Your Bot",
-                description: "Set up responses, conversation flows, and automated actions to match your business needs",
+                title: "Share Instantly",
+                description: "Send your card via QR code, link, or NFC. No app needed for your new contacts.",
                 image: "https://images.unsplash.com/photo-1586880244406-556ebe35f282?q=80&w=2787&auto=format&fit=crop"
               },
               {
                 step: "3",
-                title: "Launch & Optimize",
-                description: "Your AI assistant is ready to engage with customers while you monitor performance",
+                title: "Grow Your Network",
+                description: "Let Cardify's AI help you follow up, remember details, and turn contacts into real relationships.",
                 image: "https://images.unsplash.com/photo-1563986768494-4dee2763ff3f?q=80&w=2940&auto=format&fit=crop"
               },
             ].map((step, index) => (
@@ -365,36 +365,36 @@ export default function Home() {
         <div className="container mx-auto px-4 md:px-6">
           <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
             <div className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5 mb-4">
-              <span className="text-xs font-medium text-blue-700">Customer Stories</span>
+              <span className="text-xs font-medium text-blue-700">User Stories</span>
             </div>
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
-              Why Businesses <span className="text-blue-600">Love WhatsBot AI</span>
+              Why Businesses <span className="text-blue-600">Love Cardify</span>
             </h2>
             <p className="max-w-[800px] text-lg text-gray-600 md:text-xl">
-              See how businesses are transforming their customer interactions
+              See how professionals and teams are building real connections with Cardify
             </p>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-8">
             {[
               {
-                quote: "Our WhatsApp chatbot handles over 70% of customer inquiries automatically. We've reduced response time from hours to seconds while cutting support costs by 40%.",
+                quote: "Cardify made it so easy to share my contact and portfolio at events. People remember me, and I never run out of cards!",
                 author: "Sarah Johnson",
-                role: "Customer Support Manager",
-                company: "RetailPlus",
+                role: "Product Designer",
+                company: "Freelance",
                 image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=2787&auto=format&fit=crop"
               },
               {
-                quote: "Since implementing WhatsBot AI, our lead conversion has increased by 35%. The automated follow-ups have been a game-changer for our sales team.",
+                quote: "Our team uses Cardify for all our networking events. The AI follow-ups are a game-changer for building real business relationships.",
                 author: "Michael Chen",
                 role: "Sales Director",
                 company: "GrowthCo",
                 image: "https://images.unsplash.com/photo-1563986768494-4dee2763ff3f?q=80&w=2787&auto=format&fit=crop"
               },
               {
-                quote: "The multi-language support has allowed us to expand into new markets without hiring additional staff. Our customers love getting instant responses in their native language.",
+                quote: "I landed two new clients last month just by sharing my Cardify card. The analytics let me know who viewed my card and when.",
                 author: "Emily Rodriguez",
-                role: "Operations Manager",
+                role: "Consultant",
                 company: "GlobalServe",
                 image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=2788&auto=format&fit=crop"
               },
@@ -441,10 +441,10 @@ export default function Home() {
               <span className="text-xs font-medium text-blue-700">Simple Pricing</span>
             </div>
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
-              Plans for <span className="text-blue-600">Every Business Size</span>
+              Plans for <span className="text-blue-600">Every Networker</span>
             </h2>
             <p className="max-w-[800px] text-lg text-gray-600 md:text-xl">
-              Start with our free plan and upgrade as your business grows
+              Start for free and unlock pro features as you grow your network
             </p>
           </div>
           
@@ -453,12 +453,12 @@ export default function Home() {
               {
                 name: "Starter",
                 price: "Free",
-                description: "Perfect for small businesses just getting started",
+                description: "For individuals and freelancers starting out",
                 features: [
-                  "500 messages/month",
-                  "Basic AI chatbot",
-                  "Standard templates",
-                  "8-hour support response",
+                  "Unlimited card shares",
+                  "Basic AI follow-ups",
+                  "Standard card templates",
+                  "Email support",
                   "Basic analytics"
                 ],
                 cta: "Start Free",
@@ -469,11 +469,11 @@ export default function Home() {
                 name: "Professional",
                 price: "$49",
                 period: "/month",
-                description: "Ideal for growing businesses with more demands",
+                description: "Best for teams, startups, and professionals",
                 features: [
-                  "10,000 messages/month",
-                  "Advanced AI capabilities",
-                  "Custom conversation flows",
+                  "Unlimited card shares",
+                  "Advanced AI follow-ups",
+                  "Custom card designs",
                   "Priority support (4hr)",
                   "Detailed analytics",
                   "Team collaboration"
@@ -485,14 +485,14 @@ export default function Home() {
               {
                 name: "Enterprise",
                 price: "Custom",
-                description: "For large businesses with specific requirements",
+                description: "For organizations with unique needs",
                 features: [
-                  "Unlimited messages",
-                  "Premium AI capabilities",
-                  "Advanced customization",
+                  "Unlimited card shares",
+                  "Premium AI features",
+                  "Custom integrations",
                   "Dedicated support",
                   "API access",
-                  "Custom integrations",
+                  "Custom onboarding",
                   "SLA guarantees"
                 ],
                 cta: "Contact Sales",
@@ -544,11 +544,10 @@ export default function Home() {
         <div className="container mx-auto px-4 md:px-6 relative z-10">
           <div className="max-w-3xl mx-auto flex flex-col items-center justify-center space-y-8 text-center">
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
-              Ready to Transform Your Customer Experience?
+              Ready to Make Every Connection Count?
             </h2>
             <p className="text-lg md:text-xl text-blue-100 max-w-xl">
-              Join businesses saving 20+ hours per week on customer service
-              while increasing engagement and sales by up to 40%.
+              Join thousands of professionals and teams who network smarter, never lose a contact, and grow their business with Cardify.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <Button
@@ -556,14 +555,14 @@ export default function Home() {
                 variant="secondary"
                 className="bg-white text-blue-600 hover:bg-gray-100 shadow-lg hover:shadow-xl transition-all duration-200 font-medium px-8"
               >
-                Start Your Free Trial
+                Start Free
               </Button>
               <Button
                 size="lg"
                 variant="outline"
                 className="bg-transparent text-white border-white hover:bg-white/10 transition-all duration-200 font-medium px-8"
               >
-                Schedule Demo
+                See Cardify in Action
               </Button>
             </div>
             <div className="pt-4 text-sm text-blue-100">
@@ -586,10 +585,10 @@ export default function Home() {
                   height={32}
                   className="h-8 w-8"
                 />
-                <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">WhatsBot AI</span>
+                <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">Cardify</span>
               </div>
               <p className="text-gray-600 mb-4 max-w-md">
-                Transforming customer engagement through AI-powered WhatsApp automation.
+                Cardify helps you connect, share, and grow your network with AI-powered digital name cards.
               </p>
               <div className="flex space-x-4">
                 {['twitter', 'facebook', 'instagram', 'linkedin'].map(social => (
@@ -642,7 +641,7 @@ export default function Home() {
           <ChatWidget />
           <div className="border-t border-gray-100 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
             <p className="text-sm text-gray-500 mb-4 md:mb-0">
-              2025 WhatsBot AI. All rights reserved.
+              2025 Cardify. All rights reserved.
             </p>
             <div className="flex space-x-6">
               {['Terms', 'Privacy', 'Cookies', 'GDPR'].map(item => (

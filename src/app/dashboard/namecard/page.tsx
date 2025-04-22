@@ -1,6 +1,12 @@
 "use client";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,7 +23,14 @@ import { CardPreview } from "@/components/namecard/card-preview";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { PlusCircle, Users, QrCode, ExternalLink, Activity, Loader2 } from "lucide-react";
+import {
+  PlusCircle,
+  Users,
+  QrCode,
+  ExternalLink,
+  Activity,
+  Loader2,
+} from "lucide-react";
 import { ShareCard } from "../../../components/namecard/share-card";
 import { useNameCard } from "@/hooks/use-namecard";
 
@@ -68,7 +81,9 @@ export default function NameCardDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">Total Cards</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-500">
+              Total Cards
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center">
@@ -80,7 +95,9 @@ export default function NameCardDashboard() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">Card Views</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-500">
+              Card Views
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center">
@@ -92,7 +109,9 @@ export default function NameCardDashboard() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">QR Scans</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-500">
+              QR Scans
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center">
@@ -104,7 +123,9 @@ export default function NameCardDashboard() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">Link Clicks</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-500">
+              Link Clicks
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center">
@@ -126,7 +147,9 @@ export default function NameCardDashboard() {
             {cards.length === 0 ? (
               <div className="text-center py-12">
                 <h3 className="text-lg font-medium mb-2">No cards yet</h3>
-                <p className="text-gray-600 mb-4">Create your first digital name card to get started</p>
+                <p className="text-gray-600 mb-4">
+                  Create your first digital name card to get started
+                </p>
                 <Link href="/dashboard/namecard/create">
                   <Button>Create Card</Button>
                 </Link>
@@ -143,6 +166,7 @@ export default function NameCardDashboard() {
                       <div key={card.id} className="relative group">
                         <CardPreview
                           size="sm"
+                          id={card.id}
                           formValues={{
                             name: card.name,
                             title: card.title,
@@ -160,42 +184,57 @@ export default function NameCardDashboard() {
                             aiVoiceCallAgent: card.aiVoiceCallAgent ?? false,
                           }}
                         />
-                        <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-  <div className="flex items-center gap-2">
-    <Link href={`/dashboard/namecard/${card.id}/edit`} className="flex">
-      <Button variant="secondary" size="sm" className="min-w-[64px]">Edit</Button>
-    </Link>
-    <AlertDialog>
-      <AlertDialogTrigger asChild>
-        <Button variant="destructive" size="sm" className="aspect-square w-8 p-0 flex items-center justify-center">
-          <Trash2 className="h-4 w-4" />
-        </Button>
-      </AlertDialogTrigger>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Delete Name Card</AlertDialogTitle>
-          <AlertDialogDescription>
-            Are you sure you want to delete this name card? This action cannot be undone.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction
-            onClick={() => deleteCard(card.id)}
-            className="bg-destructive text-white hover:bg-destructive/90"
-          >
-            Delete
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
-    <ShareCard card={card} className="min-w-[64px] flex-shrink-0" />
-  </div>
-</div>
+                        <div className="absolute top-4 left-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="flex items-center gap-2">
+                            <Link
+                              href={`/dashboard/namecard/${card.id}/edit`}
+                              className="flex"
+                            >
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                className="min-w-[64px]"
+                              >
+                                Edit
+                              </Button>
+                            </Link>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  className="aspect-square w-8 p-0 flex items-center justify-center"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>
+                                    Delete Name Card
+                                  </AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to delete this name
+                                    card? This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => deleteCard(card.id)}
+                                    className="bg-destructive text-white hover:bg-destructive/90"
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        </div>
                       </div>
-                ))}
-              </div>
-              )}
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </TabsContent>
@@ -204,11 +243,15 @@ export default function NameCardDashboard() {
             <Card>
               <CardHeader>
                 <CardTitle>Card Performance</CardTitle>
-                <CardDescription>View statistics for all your digital name cards</CardDescription>
+                <CardDescription>
+                  View statistics for all your digital name cards
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="h-[300px] flex items-center justify-center bg-gray-100 rounded-md">
-                  <p className="text-gray-500">Detailed analytics coming soon!</p>
+                  <p className="text-gray-500">
+                    Detailed analytics coming soon!
+                  </p>
                 </div>
               </CardContent>
             </Card>
