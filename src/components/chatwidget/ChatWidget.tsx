@@ -37,14 +37,6 @@ export default function ChatWidget() {
     error: messagesError,
   } = useConversation(sessionId || null);
 
-  const welcomeMessage = {
-    id: "welcome-message",
-    conversation_id: sessionId || "",
-    sender_type: "admin",
-    content: "Halo! Selamat datang di chatbot kami! Ada yang bisa saya bantu?",
-    timestamp: new Date().toISOString(),
-  };
-
   useEffect(() => {
     const storedSession = sessionStorage.getItem("userWebChatSession");
     if (storedSession) {
@@ -197,25 +189,6 @@ export default function ChatWidget() {
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   };
 
-  const displayMessages = useMemo(() => {
-    if (!mergedMessages || mergedMessages.length === 0) {
-      return [welcomeMessage];
-    }
-
-    // If there are messages, check if the welcome message is already present
-    const hasWelcomeMessage = mergedMessages.some(
-      (msg) => msg.id === "welcome-message"
-    );
-
-    // If welcome message isn't present and these are the first messages loaded,
-    // add it at the beginning
-    if (!hasWelcomeMessage) {
-      return [welcomeMessage, ...mergedMessages];
-    }
-
-    return mergedMessages;
-  }, [mergedMessages]);
-
   // Scroll to bottom of messages
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -270,7 +243,7 @@ export default function ChatWidget() {
                     </div>
                   ) : (
                     <>
-                      {displayMessages.map((message) => (
+                      {mergedMessages.map((message) => (
                         <div
                           key={message.id}
                           className={`flex ${
