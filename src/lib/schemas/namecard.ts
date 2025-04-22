@@ -1,7 +1,8 @@
 import { z } from "zod";
 
 export const nameCardSchema = z.object({
-  name: z.string().min(1, "Name is required"),
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
   title: z.string().min(1, "Job title is required"),
   company: z.string().optional(),
   email: z.string().email("Invalid email address"),

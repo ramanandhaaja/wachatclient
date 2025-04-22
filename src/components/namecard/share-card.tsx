@@ -39,7 +39,8 @@ export function ShareCard({ card, className }: ShareCardProps) {
   };
 
   const shareViaEmail = () => {
-    const subject = encodeURIComponent(`${card.name}'s Digital Name Card`);
+    const fullName = [card.firstName, card.lastName].filter(Boolean).join(" ").trim();
+    const subject = encodeURIComponent(`${fullName}'s Digital Name Card`);
     const body = encodeURIComponent(`Here's my digital name card: ${cardUrl}`);
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
   };

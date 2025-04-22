@@ -168,7 +168,8 @@ export default function NameCardDashboard() {
                           size="sm"
                           id={card.id}
                           formValues={{
-                            name: card.name,
+                            firstName: card.firstName || "",
+                            lastName: card.lastName || "",
                             title: card.title,
                             company: card.company || "",
                             email: card.email || "",

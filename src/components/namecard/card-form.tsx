@@ -32,7 +32,8 @@ export function CardForm({ initialData, id }: CardFormProps) {
     resolver: zodResolver(nameCardSchema),
     defaultValues: {
       ...initialData,
-      name: initialData?.name || "",
+      firstName: initialData?.firstName || "",
+      lastName: initialData?.lastName || "",
       title: initialData?.title || "",
       company: initialData?.company || "",
       email: initialData?.email || "",
@@ -53,6 +54,8 @@ export function CardForm({ initialData, id }: CardFormProps) {
     if (initialData) {
       form.reset({
         ...initialData,
+        firstName: initialData.firstName || "",
+        lastName: initialData.lastName || "",
         aiChatAgent: initialData.aiChatAgent ?? false,
         aiVoiceCallAgent: initialData.aiVoiceCallAgent ?? false,
       });
@@ -105,19 +108,34 @@ export function CardForm({ initialData, id }: CardFormProps) {
                 <TabsContent value="details" className="space-y-4">
                   {/* Basic Info Section */}
                   <div className="space-y-4">
-                    <FormField
-                      control={form.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Name</FormLabel>
-                          <FormControl>
-                            <Input placeholder="John Doe" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    <div className="flex gap-4">
+                      <FormField
+                        control={form.control}
+                        name="firstName"
+                        render={({ field }) => (
+                          <FormItem className="w-1/2">
+                            <FormLabel>First Name</FormLabel>
+                            <FormControl>
+                              <Input placeholder="First Name" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="lastName"
+                        render={({ field }) => (
+                          <FormItem className="w-1/2">
+                            <FormLabel>Last Name</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Last Name" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
                     <FormField
                       control={form.control}
                       name="title"
@@ -326,7 +344,7 @@ export function CardForm({ initialData, id }: CardFormProps) {
         <div className="hidden lg:block">
           <div className="sticky top-8">
             <h3 className="text-lg font-medium mb-4">Live Preview</h3>
-            <CardPreview formValues={formValues} />
+            <CardPreview formValues={formValues} id={id} />
           </div>
         </div>
       </div>

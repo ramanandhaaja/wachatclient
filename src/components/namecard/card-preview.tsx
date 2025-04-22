@@ -37,7 +37,8 @@ export function CardPreview({
   size = "default",
 }: CardPreviewProps) {
   const {
-    name,
+    firstName,
+    lastName,
     title,
     company,
     email,
@@ -58,11 +59,10 @@ export function CardPreview({
     setIsClient(true);
   }, []);
 
-  const initials = name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase();
+  const fullName = [firstName, lastName].filter(Boolean).join(" ").trim();
+  const initials = fullName
+    ? fullName.split(" ").map((n) => n[0]).join("").toUpperCase()
+    : "YN";
 
   return (
     <Card
@@ -96,7 +96,7 @@ export function CardPreview({
               size === "sm" ? "w-20 h-20" : "w-24 h-24"
             )}
           >
-            <AvatarImage src={profileImage} alt={name} />
+            <AvatarImage src={profileImage} alt={fullName || "Your Name"} />
             <AvatarFallback className="text-xl font-medium">
               {initials}
             </AvatarFallback>
@@ -108,7 +108,7 @@ export function CardPreview({
               size === "sm" ? "text-xl" : "text-2xl"
             )}
           >
-            {name || "Your Name"}
+            {fullName || "Your Name"}
           </h2>
           <div className="mt-1 space-y-1 text-center">
             <p
@@ -287,7 +287,7 @@ export function CardPreview({
           value={[
             'BEGIN:VCARD',
             'VERSION:3.0',
-            `FN:${name}`,
+            `FN:${fullName}`,
             title ? `TITLE:${title}` : '',
             company ? `ORG:${company}` : '',
             phone ? `TEL;TYPE=CELL:${phone}` : '',
@@ -299,7 +299,7 @@ export function CardPreview({
         />
       </div>
       {/* Save Contact to Phone Button */}
-      <div className="mt-2 flex justify-center">
+      <div className="mt-2 py-2 mx-4 flex justify-center">
         <Button
           type="button"
           className="w-full max-w-xs"
@@ -307,7 +307,7 @@ export function CardPreview({
             const vCard = [
               'BEGIN:VCARD',
               'VERSION:3.0',
-              `FN:${name}`,
+              `FN:${fullName}`,
               title ? `TITLE:${title}` : '',
               company ? `ORG:${company}` : '',
               phone ? `TEL;TYPE=CELL:${phone}` : '',
@@ -319,7 +319,7 @@ export function CardPreview({
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `${name.replace(/\s+/g, '_') || 'contact'}.vcf`;
+            a.download = `${(fullName || 'contact').replace(/\s+/g, '_')}.vcf`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -329,6 +329,11 @@ export function CardPreview({
           Save Contact to Phone
         </Button>
       </div>
+      {typeof window !== 'undefined' && navigator.userAgent.includes('Android') && (
+        <div className="mt-0 py-2 mx-4 text-xs text-muted-foreground text-center">
+          After downloading, tap the file in your Downloads folder to add to Contacts.
+        </div>
+      )}
     </Card>
   );
 }

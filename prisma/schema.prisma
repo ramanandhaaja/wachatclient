@@ -147,7 +147,8 @@ model BusinessInfo {
 model NameCard {
   id           String   @id @default(cuid())
   userId       String
-  name         String
+  firstName    String?
+  lastName     String?
   title        String?
   company      String?
   email        String?

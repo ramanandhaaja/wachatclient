@@ -13,10 +13,10 @@ export async function generateMetadata({
   const card = await prisma.nameCard.findUnique({
     where: {
       id,
-
     },
     select: {
-      name: true,
+      firstName: true,
+      lastName: true,
       title: true,
       company: true,
     },
@@ -29,8 +29,8 @@ export async function generateMetadata({
   }
 
   return {
-    title: `${card.name}'s Name Card`,
-    description: `${card.name}${card.title ? ` - ${card.title}` : ""}${
+    title: `${card.firstName} ${card.lastName}'s Name Card`,
+    description: `${card.firstName} ${card.lastName}${card.title ? ` - ${card.title}` : ""}${
       card.company ? ` at ${card.company}` : ""
     }`,
   };
@@ -56,7 +56,8 @@ export default async function CardPage({
     <CardLayout>
       <CardPreview
         formValues={{
-          name: card.name,
+          firstName: card.firstName || "",
+          lastName: card.lastName || "",
           email: card.email || "",
           title: card.title || "",
           phone: card.phone || "",

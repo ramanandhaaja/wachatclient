@@ -41,7 +41,8 @@ export default async function EditNameCardPage({
   }
 
   const formData = {
-    name: nameCard.name,
+    firstName: nameCard.firstName || '',
+    lastName: nameCard.lastName || '',
     email: nameCard.email || '',
     title: nameCard.title || '',
     phone: nameCard.phone || '',
