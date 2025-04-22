@@ -279,6 +279,37 @@ export function CardPreview({
           )}{" "}
         </div>
       </CardContent>
+      {/* Save Contact to Phone Button */}
+      <div className="mt-2 flex justify-center">
+        <Button
+          type="button"
+          className="w-full max-w-xs"
+          onClick={() => {
+            const vCard = [
+              'BEGIN:VCARD',
+              'VERSION:3.0',
+              `FN:${name}`,
+              title ? `TITLE:${title}` : '',
+              company ? `ORG:${company}` : '',
+              phone ? `TEL;TYPE=CELL:${phone}` : '',
+              email ? `EMAIL;TYPE=INTERNET:${email}` : '',
+              website ? `URL:${website}` : '',
+              'END:VCARD',
+            ].filter(Boolean).join('\n');
+            const blob = new Blob([vCard], { type: 'text/vcard' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${name.replace(/\s+/g, '_') || 'contact'}.vcf`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+          }}
+        >
+          Save Contact to Phone
+        </Button>
+      </div>
     </Card>
   );
 }
