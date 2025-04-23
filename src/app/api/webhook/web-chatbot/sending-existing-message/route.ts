@@ -60,7 +60,7 @@ export async function POST(req: Request) {
     // 4. Store AI/admin response
     const { error: aiMessageError } = await supabase.from("messages").insert({
       conversation_id: sessionId,
-      sender_type: "admin",
+      sender_type: "bot",
       content: aiResponse,
       timestamp: new Date().toISOString(),
       is_read: false,
@@ -100,7 +100,7 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({
-      response: aiResponse, // Uncomment if using AI
+      response: aiResponse,
       messages,
     });
   } catch (error) {
