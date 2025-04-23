@@ -154,7 +154,10 @@ model NameCard {
   email        String?
   phone        String?
   website      String?
-  location     String?
+  address1     String?
+  address2     String?
+  city         String?
+  postcode     String?
   linkedin     String?
   twitter      String?
   instagram    String?

@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from 'react';
 import Script from "next/script";
 import Image from "next/image";
 import Link from "next/link";
@@ -25,7 +25,6 @@ interface CardPreviewProps {
   size?: "sm" | "default";
 }
 
-import { useEffect, useState } from "react";
 import { ElevenLabsConvaiInline } from "./ElevenLabsConvaiInline";
 import NameCardChatWidget from "@/components/chatwidget/NameCardChatWidget";
 import { ShareCard } from "./share-card";
@@ -44,7 +43,10 @@ export function CardPreview({
     email,
     phone,
     website,
-    location,
+    address1,
+    address2,
+    city,
+    postcode,
     linkedin,
     twitter,
     instagram,
@@ -57,6 +59,13 @@ export function CardPreview({
   const [isClient, setIsClient] = useState(false);
   useEffect(() => {
     setIsClient(true);
+  }, []);
+
+  const [isAndroid, setIsAndroid] = useState(false);
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setIsAndroid(navigator.userAgent.includes('Android'));
+    }
   }, []);
 
   const fullName = [firstName, lastName].filter(Boolean).join(" ").trim();
@@ -188,6 +197,34 @@ export function CardPreview({
                 </div>
               </div>
             )}
+            {(address1 || address2 || city || postcode) && (
+              <div className="flex items-center gap-3 mt-3">
+                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10">
+                  <MapPin className="h-5 w-5 text-primary" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-sm text-muted-foreground">Address</span>
+                  <Link
+                    href={`https://www.google.com/maps/search/${encodeURIComponent([
+                      address1,
+                      address2,
+                      city,
+                      postcode
+                    ].filter(Boolean).join(', '))}`}
+                    className="text-sm font-medium"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    prefetch={false}
+                  >
+                    <span>
+                      {address1 && <>{address1}<br /></>}
+                      {address2 && <>{address2}<br /></>}
+                      {[city, postcode].filter(Boolean).join(' ')}
+                    </span>
+                  </Link>
+                </div>
+              </div>
+            )}
           </div>
           {/* WhatsApp, LinkedIn, Twitter, Instagram Buttons */}
           {(phone || linkedin || twitter || instagram) && (
@@ -280,61 +317,39 @@ export function CardPreview({
           )}{" "}
         </div>
       </CardContent>
-      {/* QR Code for vCard */}
-      <div className="flex flex-col items-center my-4">
-        <span className="mb-2 text-sm text-muted-foreground">Scan to Save Contact</span>
-        <QRCode
-          value={[
-            'BEGIN:VCARD',
-            'VERSION:3.0',
-            `FN:${fullName}`,
-            title ? `TITLE:${title}` : '',
-            company ? `ORG:${company}` : '',
-            phone ? `TEL;TYPE=CELL:${phone}` : '',
-            email ? `EMAIL;TYPE=INTERNET:${email}` : '',
-            website ? `URL:${website}` : '',
-            'END:VCARD',
-          ].filter(Boolean).join('\n')}
-          size={128}
-        />
-      </div>
       {/* Save Contact to Phone Button */}
-      <div className="mt-2 py-2 mx-4 flex justify-center">
-        <Button
-          type="button"
-          className="w-full max-w-xs"
-          onClick={() => {
-            const vCard = [
-              'BEGIN:VCARD',
-              'VERSION:3.0',
-              `FN:${fullName}`,
-              title ? `TITLE:${title}` : '',
-              company ? `ORG:${company}` : '',
-              phone ? `TEL;TYPE=CELL:${phone}` : '',
-              email ? `EMAIL;TYPE=INTERNET:${email}` : '',
-              website ? `URL:${website}` : '',
-              'END:VCARD',
-            ].filter(Boolean).join('\n');
-            const blob = new Blob([vCard], { type: 'text/vcard' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${(fullName || 'contact').replace(/\s+/g, '_')}.vcf`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-          }}
-        >
-          Save Contact to Phone
-        </Button>
-      </div>
-      {typeof window !== 'undefined' && navigator.userAgent.includes('Android') && (
-        <div className="mt-0 py-2 mx-4 text-xs text-muted-foreground text-center">
-          After downloading, tap the file in your Downloads folder to add to Contacts.
+      {!isAndroid && (
+        <div className="mt-2 py-2 mx-4 flex justify-center">
+          <Button
+            type="button"
+            className="w-full max-w-xs"
+            onClick={() => {
+              const vCard = [
+                'BEGIN:VCARD',
+                'VERSION:3.0',
+                `FN:${fullName}`,
+                title ? `TITLE:${title}` : '',
+                company ? `ORG:${company}` : '',
+                phone ? `TEL;TYPE=CELL:${phone}` : '',
+                email ? `EMAIL;TYPE=INTERNET:${email}` : '',
+                website ? `URL:${website}` : '',
+                'END:VCARD',
+              ].filter(Boolean).join('\n');
+              const blob = new Blob([vCard], { type: 'text/vcard' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `${(fullName || 'contact').replace(/\s+/g, '_')}.vcf`;
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              URL.revokeObjectURL(url);
+            }}
+          >
+            Save Contact to Phone
+          </Button>
         </div>
       )}
     </Card>
   );
 }
-

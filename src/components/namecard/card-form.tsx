@@ -39,7 +39,10 @@ export function CardForm({ initialData, id }: CardFormProps) {
       email: initialData?.email || "",
       phone: initialData?.phone || "",
       website: initialData?.website || "",
-      location: initialData?.location || "",
+      address1: initialData?.address1 || "",
+      address2: initialData?.address2 || "",
+      city: initialData?.city || "",
+      postcode: initialData?.postcode || "",
       linkedin: initialData?.linkedin || "",
       twitter: initialData?.twitter || "",
       instagram: initialData?.instagram || "",
@@ -56,6 +59,19 @@ export function CardForm({ initialData, id }: CardFormProps) {
         ...initialData,
         firstName: initialData.firstName || "",
         lastName: initialData.lastName || "",
+        company: initialData.company || "",
+        email: initialData.email || "",
+        phone: initialData.phone || "",
+        website: initialData.website || "",
+        address1: initialData.address1 || "",
+        address2: initialData.address2 || "",
+        city: initialData.city || "",
+        postcode: initialData.postcode || "",
+        linkedin: initialData.linkedin || "",
+        twitter: initialData.twitter || "",
+        instagram: initialData.instagram || "",
+        profileImage: initialData.profileImage || "",
+        coverImage: initialData.coverImage || "",
         aiChatAgent: initialData.aiChatAgent ?? false,
         aiVoiceCallAgent: initialData.aiVoiceCallAgent ?? false,
       });
@@ -188,19 +204,60 @@ export function CardForm({ initialData, id }: CardFormProps) {
                         </FormItem>
                       )}
                     />
-                    <FormField
-                      control={form.control}
-                      name="location"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Location</FormLabel>
-                          <FormControl>
-                            <Input placeholder="City, Country" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    <div className="grid grid-cols-1 gap-4">
+  <FormField
+    control={form.control}
+    name="address1"
+    render={({ field }) => (
+      <FormItem>
+        <FormLabel>Address Line 1</FormLabel>
+        <FormControl>
+          <Input placeholder="123 Main St" {...field} />
+        </FormControl>
+        <FormMessage />
+      </FormItem>
+    )}
+  />
+  <FormField
+    control={form.control}
+    name="address2"
+    render={({ field }) => (
+      <FormItem>
+        <FormLabel>Address Line 2</FormLabel>
+        <FormControl>
+          <Input placeholder="Apartment, suite, etc. (optional)" {...field} />
+        </FormControl>
+        <FormMessage />
+      </FormItem>
+    )}
+  />
+  <FormField
+    control={form.control}
+    name="city"
+    render={({ field }) => (
+      <FormItem>
+        <FormLabel>City</FormLabel>
+        <FormControl>
+          <Input placeholder="City" {...field} />
+        </FormControl>
+        <FormMessage />
+      </FormItem>
+    )}
+  />
+  <FormField
+    control={form.control}
+    name="postcode"
+    render={({ field }) => (
+      <FormItem>
+        <FormLabel>Postcode</FormLabel>
+        <FormControl>
+          <Input placeholder="Postcode" {...field} />
+        </FormControl>
+        <FormMessage />
+      </FormItem>
+    )}
+  />
+</div>
                   </div>
 
                   {/* Social Links Section */}
