@@ -37,7 +37,7 @@ export async function POST(req: Request) {
           user_phone: userPhone,
           user_name: userName,
           source: "web",
-          status: "open",
+          status: "active",
         },
       ])
       .select("id")
@@ -50,13 +50,23 @@ export async function POST(req: Request) {
     // Insert welcome message for new conversation
     await supabase.from("messages").insert({
       conversation_id: created.id,
-      sender_type: "admin",
+      sender_type: "bot",
       content:
         "Halo! Selamat datang di chatbot kami! Ada yang bisa saya bantu?",
       timestamp: new Date().toISOString(),
       is_read: false,
       metadata: { is_welcome: true },
     });
+
+    await supabase
+      .from("conversations")
+      .update({
+        last_message:
+          "Halo! Selamat datang di chatbot kami! Ada yang bisa saya bantu?",
+        last_message_time: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", created.id);
 
     return NextResponse.json({ conversationId: created.id, isNew: true });
   } catch (error) {
