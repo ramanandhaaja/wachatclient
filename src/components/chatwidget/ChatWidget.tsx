@@ -8,21 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { FormBeforeChat } from "./FormBeforeChat";
 import { useConversation } from "@/hooks/use-conversation";
+import { format } from "date-fns";
 
 export default function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
-  // const [isLoading, setIsLoading] = useState(false);
   const [input, setInput] = useState("");
-  // const [messages, setMessages] = useState<ChatMessage[]>([
-  //   {
-  //     id: "welcome-message",
-  //     sender_type: "admin",
-  //     content:
-  //       "Halo! Selamat datang di chatbot kami! Ada yang bisa saya bantu?",
-  //     timestamp: new Date().toISOString(),
-  //   },
-  // ]);
-  // const [messagesError, setMessagesError] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
   const [showFormInput, setShowFormInput] = useState(true);
   const [localStateMessages, setLocalStateMessages] = useState<any[]>([]);
@@ -110,7 +100,7 @@ export default function ChatWidget() {
         user: newUserName,
         phone: newUserPhone,
         hasConversation: true,
-        expiresAt: Date.now() + 24 * 60 * 60 * 1000, // or your expiry logic
+        expiresAt: Date.now() + 24 * 60 * 60 * 1000,
       })
     );
   };
@@ -184,19 +174,66 @@ export default function ChatWidget() {
     ];
   }, [messages, localStateMessages]);
 
+  // Scroll to bottom of messages
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+  useEffect(() => {
+    scrollToBottom();
+  }, [mergedMessages, isOpen]);
+
   const formatTime = (timestamp: string) => {
     const date = new Date(timestamp);
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   };
 
-  // Scroll to bottom of messages
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  function getDateLabel(timestamp: string) {
+    const date = new Date(timestamp);
+    const now = new Date();
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [mergedMessages]);
+    const dateNoTime = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate()
+    );
+    const nowNoTime = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate()
+    );
+    const diffInDays = Math.floor(
+      (nowNoTime.getTime() - dateNoTime.getTime()) / (24 * 60 * 60 * 1000)
+    );
+
+    if (diffInDays === 0) return "Today";
+    if (diffInDays === 1) return "Yesterday";
+    return format(date, "dd/MM/yyyy");
+  }
+
+  // Group messages by date label
+  function groupMessagesByDate(messages: any[]) {
+    const groups: { type: string; label?: string; message?: any }[] = [];
+    let lastLabel: string | null = null;
+
+    messages.forEach((msg) => {
+      const label = getDateLabel(msg.timestamp || msg.last_message_time);
+      if (label !== lastLabel) {
+        groups.push({ type: "label", label });
+        lastLabel = label;
+      }
+      groups.push({ type: "message", message: msg });
+    });
+
+    return groups;
+  }
+
+  // flag messages send by admin no matter what sender_type is
+  const adminMessages = mergedMessages.map((msg) => ({
+    ...msg,
+    sender_type: msg.sender_type === "bot" ? "admin" : msg.sender_type,
+  }));
+
+  const groupedMessages = groupMessagesByDate(adminMessages);
 
   return (
     <>
@@ -243,38 +280,49 @@ export default function ChatWidget() {
                     </div>
                   ) : (
                     <>
-                      {mergedMessages.map((message) => (
-                        <div
-                          key={message.id}
-                          className={`flex ${
-                            message.sender_type === "user"
-                              ? "justify-end"
-                              : "justify-start"
-                          }`}
-                        >
+                      {groupedMessages.map((item, idx) =>
+                        item.type === "label" ? (
                           <div
-                            className={`max-w-[70%] rounded-lg p-3 ${
-                              message.sender_type === "admin"
-                                ? "bg-gray-100 text-gray-800"
-                                : message.sender_type === "user"
-                                ? "bg-green-100 text-gray-800"
-                                : "bg-blue-100 text-blue-800"
-                            }`}
+                            key={`label-${idx}`}
+                            className="flex justify-center items-center text-gray-700 my-6 "
                           >
-                            {message.sender_type !== "user" && (
-                              <div className="text-xs opacity-70 mb-1">
-                                {message.sender_type === "admin"
-                                  ? "Admin"
-                                  : "Bot"}
-                              </div>
-                            )}
-                            <p>{message.content}</p>
-                            <div className="text-xs text-gray-500 text-right mt-1">
-                              {formatTime(message.timestamp)}
+                            <div className=" text-sm border border-gray-200 rounded-lg px-2 py-2">
+                              {item.label}
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        ) : (
+                          <div
+                            key={item.message.id}
+                            className={`flex ${
+                              item.message.sender_type === "user"
+                                ? "justify-end"
+                                : "justify-start"
+                            }`}
+                          >
+                            <div
+                              className={`max-w-[70%] rounded-lg p-3 ${
+                                item.message.sender_type === "admin"
+                                  ? "bg-gray-100 text-gray-800"
+                                  : item.message.sender_type === "user"
+                                  ? "bg-green-100 text-gray-800"
+                                  : "bg-blue-100 text-blue-800"
+                              }`}
+                            >
+                              {item.message.sender_type !== "user" && (
+                                <div className="text-xs opacity-70 mb-1">
+                                  {item.message.sender_type === "admin"
+                                    ? "Admin"
+                                    : "Bot"}
+                                </div>
+                              )}
+                              <p>{item.message.content}</p>
+                              <div className="text-xs text-gray-500 text-right mt-1">
+                                {formatTime(item.message.timestamp)}
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      )}
                     </>
                   )}
 
