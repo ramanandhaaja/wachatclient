@@ -222,149 +222,151 @@ export default function NameCardChatWidget() {
 
       {/* Chat Widget */}
       {isOpen && (
-        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 w-[420px] md:w-[420px] lg:w-[420px] h-[600px] bg-white rounded-2xl shadow-xl overflow-hidden z-[9999] animate-fade-in">
-          {/* Close Button */}
-          <button
-            type="button"
-            aria-label="Close chat"
-            className="absolute top-3 right-3 z-10 rounded-full p-2 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary"
-            onClick={() => setIsOpen(false)}
-          >
-            <X size={20} />
-          </button>
-          <div className="flex flex-col h-full">
-            {showFormInput ? (
-              <FormBeforeChat onUserRegistered={handleUserRegistered} />
-            ) : (
-              <>
-                <div className="p-4 border-b border-gray-200 flex items-center gap-2">
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage
-                      src={
-                        "https://api.dicebear.com/7.x/initials/svg?seed=Admin"
-                      }
-                    />
-                    <AvatarFallback>AD</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <h2 className="font-semibold">Admin</h2>
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                      <span className="text-xs text-gray-500">Active</span>
+        <div className="fixed inset-0 flex items-center justify-center z-[9999] animate-fade-in">
+          <div className="relative w-full max-w-[420px] h-[95vh] bg-white rounded-2xl shadow-xl overflow-hidden m-4 md:m-8 flex flex-col">
+            {/* Close Button */}
+            <button
+              type="button"
+              aria-label="Close chat"
+              className="absolute top-3 right-3 z-10 rounded-full p-2 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary"
+              onClick={() => setIsOpen(false)}
+            >
+              <X size={20} />
+            </button>
+            <div className="flex flex-col h-full">
+              {showFormInput ? (
+                <FormBeforeChat onUserRegistered={handleUserRegistered} />
+              ) : (
+                <div className="flex-1 flex flex-col h-full">
+                  <div className="p-4 border-b border-gray-200 flex items-center gap-2">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage
+                        src={
+                          "https://api.dicebear.com/7.x/initials/svg?seed=Admin"
+                        }
+                      />
+                      <AvatarFallback>AD</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <h2 className="font-semibold">Admin</h2>
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                        <span className="text-xs text-gray-500">Active</span>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Messages area */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                  {isLoading ? (
-                    <div className="flex justify-center items-center h-full">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                    </div>
-                  ) : (
-                    <>
-                      {mergedMessages.map((message) => (
-                        <div
-                          key={message.id}
-                          className={`flex ${
-                            message.sender_type === "user"
-                              ? "justify-end"
-                              : "justify-start"
-                          }`}
-                        >
+                  {/* Messages area */}
+                  <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                    {isLoading ? (
+                      <div className="flex justify-center items-center h-full">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                      </div>
+                    ) : (
+                      <>
+                        {mergedMessages.map((message) => (
                           <div
-                            className={`max-w-[70%] rounded-lg p-3 ${
-                              message.sender_type === "admin"
-                                ? "bg-gray-100 text-gray-800"
-                                : message.sender_type === "user"
-                                ? "bg-green-100 text-gray-800"
-                                : "bg-blue-100 text-blue-800"
+                            key={message.id}
+                            className={`flex ${
+                              message.sender_type === "user"
+                                ? "justify-end"
+                                : "justify-start"
                             }`}
                           >
-                            {message.sender_type !== "user" && (
-                              <div className="text-xs opacity-70 mb-1">
-                                {message.sender_type === "admin"
-                                  ? "Admin"
-                                  : "Bot"}
+                            <div
+                              className={`max-w-[70%] rounded-lg p-3 ${
+                                message.sender_type === "admin"
+                                  ? "bg-gray-100 text-gray-800"
+                                  : message.sender_type === "user"
+                                  ? "bg-green-100 text-gray-800"
+                                  : "bg-blue-100 text-blue-800"
+                              }`}
+                            >
+                              {message.sender_type !== "user" && (
+                                <div className="text-xs opacity-70 mb-1">
+                                  {message.sender_type === "admin"
+                                    ? "Admin"
+                                    : "Bot"}
+                                </div>
+                              )}
+                              <p>{message.content}</p>
+                              <div className="text-xs text-gray-500 text-right mt-1">
+                                {formatTime(message.timestamp)}
                               </div>
-                            )}
-                            <p>{message.content}</p>
-                            <div className="text-xs text-gray-500 text-right mt-1">
-                              {formatTime(message.timestamp)}
+                            </div>
+                          </div>
+                        ))}
+                      </>
+                    )}
+
+                    {/* Loading indicator */}
+                    {isSending && (
+                      <div className="flex justify-start">
+                        <div className="max-w-[70%] rounded-lg p-3 bg-gray-100 text-gray-800">
+                          <div className="text-xs opacity-70 mb-1">Admin</div>
+                          <div className="flex items-center space-x-2">
+                            <div className="animate-bounce">•</div>
+                            <div className="animate-bounce [animation-delay:0.2s]">
+                              •
+                            </div>
+                            <div className="animate-bounce [animation-delay:0.4s]">
+                              •
                             </div>
                           </div>
                         </div>
-                      ))}
-                    </>
-                  )}
+                      </div>
+                    )}
 
-                  {/* Loading indicator */}
-                  {isSending && (
-                    <div className="flex justify-start">
-                      <div className="max-w-[70%] rounded-lg p-3 bg-gray-100 text-gray-800">
-                        <div className="text-xs opacity-70 mb-1">Admin</div>
-                        <div className="flex items-center space-x-2">
-                          <div className="animate-bounce">•</div>
-                          <div className="animate-bounce [animation-delay:0.2s]">
-                            •
-                          </div>
-                          <div className="animate-bounce [animation-delay:0.4s]">
-                            •
-                          </div>
+                    {/* Error message */}
+                    {messagesError && messages && messages.length !== 0 && (
+                      <div className="flex justify-start">
+                        <div className="max-w-[70%] rounded-lg p-3 bg-red-100 text-red-800">
+                          <div className="text-xs opacity-70 mb-1">Error</div>
+                          <p>Maaf sedang terjadi kesalahan, coba beberapa saat lagi</p>
                         </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
-                  {/* Error message */}
-                  {messagesError && messages && messages.length !== 0 && (
-                    <div className="flex justify-start">
-                      <div className="max-w-[70%] rounded-lg p-3 bg-red-100 text-red-800">
-                        <div className="text-xs opacity-70 mb-1">Error</div>
-                        <p>Maaf sedang terjadi kesalahan, coba beberapa saat lagi</p>
-                      </div>
-                    </div>
-                  )}
+                    {/* Invisible div for scrolling to bottom */}
+                    <div ref={messagesEndRef} />
+                  </div>
 
-                  {/* Invisible div for scrolling to bottom */}
-                  <div ref={messagesEndRef} />
-                </div>
-
-                {/* Input area */}
-                <div className="mt-auto">
-                  <form
-                    onSubmit={handleSendMessage}
-                    className="border-t border-gray-200 p-4 flex items-center gap-2"
-                  >
-                    <Input
-                      placeholder="Type a message..."
-                      className="flex-1"
-                      value={input}
-                      onChange={(e) => setInput(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && !e.shiftKey) {
-                          e.preventDefault();
-                          handleSendMessage(e);
-                        }
-                      }}
-                    />
-                    <Button
-                      type="submit"
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 w-8 p-0"
-                      disabled={isSending || !input.trim()}
+                  {/* Input area */}
+                  <div className="mt-auto">
+                    <form
+                      onSubmit={handleSendMessage}
+                      className="border-t border-gray-200 p-4 flex items-center gap-2"
                     >
-                      {isSending ? (
-                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-t-transparent border-green-500"></span>
-                      ) : (
-                        <Send size={16} />
-                      )}
-                    </Button>
-                  </form>
+                      <Input
+                        placeholder="Type a message..."
+                        className="flex-1"
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && !e.shiftKey) {
+                            e.preventDefault();
+                            handleSendMessage(e);
+                          }
+                        }}
+                      />
+                      <Button
+                        type="submit"
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                        disabled={isSending || !input.trim()}
+                      >
+                        {isSending ? (
+                          <span className="h-4 w-4 animate-spin rounded-full border-2 border-t-transparent border-green-500"></span>
+                        ) : (
+                          <Send size={16} />
+                        )}
+                      </Button>
+                    </form>
+                  </div>
                 </div>
-              </>
-            )}
+              )}
+            </div>
           </div>
         </div>
       )}
