@@ -24,6 +24,8 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { CardPreview } from "./card-preview";
 import { useNameCard } from "@/hooks/use-namecard";
+import { uploadImageToSupabase } from "@/lib/upload-image";
+import Image from "next/image";
 
 interface CardFormProps {
   initialData?: NameCardFormValues;
@@ -392,12 +394,100 @@ export function CardForm({ initialData, id }: CardFormProps) {
                       name="profileImage"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Profile Image URL</FormLabel>
+                          <FormLabel>
+                            Profile Image
+                          </FormLabel>
                           <FormControl>
-                            <Input
-                              placeholder="https://example.com/profile.jpg"
-                              {...field}
-                            />
+                            <div className="bg-white rounded-lg shadow p-4 flex flex-col items-center border border-gray-100">
+                              <div
+                                className="w-full flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-6 cursor-pointer hover:border-primary transition"
+                                onClick={() =>
+                                  document
+                                    .getElementById("profile-image-upload")
+                                    ?.click()
+                                }
+                                tabIndex={0}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter")
+                                    document
+                                      .getElementById("profile-image-upload")
+                                      ?.click();
+                                }}
+                                role="button"
+                                aria-label="Upload profile image"
+                              >
+                                {typeof field.value === "string" && field.value.length > 0 ? (
+  <div className="w-full flex flex-col items-center gap-2">
+    <Image
+      src={field.value}
+      alt="Profile Preview"
+      width={80}
+      height={80}
+      className="rounded-md border object-cover"
+    />
+    <Button
+      type="button"
+      className="mt-2"
+      variant="secondary"
+      size="sm"
+      onClick={() => field.onChange(null)}
+    >
+      Remove Image
+    </Button>
+  </div>
+) : (
+  <>
+    <svg
+      className="mx-auto h-12 w-12 text-gray-400"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M3 16.5V19a2 2 0 002 2h14a2 2 0 002-2v-2.5M16.5 12.5L12 17m0 0l-4.5-4.5M12 17V3"
+      />
+    </svg>
+    <p className="mt-2 text-sm text-gray-500">
+      Optimize profile size 80 x 80 px
+    </p>
+    <Button
+      type="button"
+      className="mt-3"
+      variant="default"
+      size="sm"
+    >
+      Upload Image
+    </Button>
+    <Input
+      id="profile-image-upload"
+      type="file"
+      accept="image/*"
+      className="hidden"
+      onChange={async (e) => {
+        const file = e.target.files?.[0];
+        if (file) {
+          const url = await uploadImageToSupabase(
+            file,
+            "coverimage",
+            id
+          );
+          if (url) {
+            field.onChange(url);
+            toast.success("Image uploaded!");
+          } else {
+            toast.error("Failed to upload image");
+          }
+        }
+      }}
+    />
+  </>
+)}
+                              </div>
+                            </div>
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -408,12 +498,105 @@ export function CardForm({ initialData, id }: CardFormProps) {
                       name="coverImage"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Cover Image URL</FormLabel>
+                          <FormLabel>
+                            Cover Image 
+                          </FormLabel>
                           <FormControl>
-                            <Input
-                              placeholder="https://example.com/cover.jpg"
-                              {...field}
-                            />
+                            <div className="bg-white rounded-lg shadow p-4 flex flex-col items-center border border-gray-100">
+                              <div
+                                className="w-full flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-6 cursor-pointer hover:border-primary transition"
+                                onClick={() =>
+                                  document
+                                    .getElementById("cover-image-upload")
+                                    ?.click()
+                                }
+                                tabIndex={0}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter")
+                                    document
+                                      .getElementById("cover-image-upload")
+                                      ?.click();
+                                }}
+                                role="button"
+                                aria-label="Upload cover image"
+                              >
+                                {!field.value ? (
+                                  <>
+                                    <svg
+                                      className="mx-auto h-12 w-12 text-gray-400"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      strokeWidth="1.5"
+                                      viewBox="0 0 24 24"
+                                      aria-hidden="true"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M3 16.5V19a2 2 0 002 2h14a2 2 0 002-2v-2.5M16.5 12.5L12 17m0 0l-4.5-4.5M12 17V3"
+                                      />
+                                    </svg>
+                                    <p className="mt-2 text-sm text-gray-500">
+                                      Optimize banner size 1200 x 628 px
+                                    </p>
+                                    <Button
+                                      type="button"
+                                      className="mt-3"
+                                      variant="default"
+                                      size="sm"
+                                    >
+                                      Upload Image
+                                    </Button>
+                                    <Input
+                                      id="cover-image-upload"
+                                      type="file"
+                                      accept="image/*"
+                                      className="hidden"
+                                      onChange={async (e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) {
+                                          const url =
+                                            await uploadImageToSupabase(
+                                              file,
+                                              "coverimage",
+                                              id
+                                            );
+                                          if (url) {
+                                            field.onChange(url);
+                                            toast.success(
+                                              "Cover image uploaded!"
+                                            );
+                                          } else {
+                                            toast.error(
+                                              "Failed to upload cover image"
+                                            );
+                                          }
+                                        }
+                                      }}
+                                    />
+                                  </>
+                                ) : (
+                                  <div className="w-full flex flex-col items-center gap-2">
+                                    <Image
+                                      src={field.value}
+                                      alt="Cover Preview"
+                                      width={320}
+                                      height={80}
+                                      className="rounded-md border object-cover"
+                                    />
+                                    <Button
+                                      type="button"
+                                      className="mt-2"
+                                      variant="secondary"
+                                      size="sm"
+                                      onClick={() => field.onChange("")}
+                                    >
+                                      Remove Image
+                                    </Button>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
                           </FormControl>
                           <FormMessage />
                         </FormItem>

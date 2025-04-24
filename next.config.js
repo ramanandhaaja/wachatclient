@@ -60,12 +60,17 @@ const nextConfig = {
   
   // Configure image domains for next/image
   images: {
-    domains: ['images.unsplash.com'],
+    domains: ['images.unsplash.com', 'sbftdzhrujfuyjvhsckp.supabase.co'],
     remotePatterns: [
       {
         protocol: 'https',
         hostname: 'images.unsplash.com',
         pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'sbftdzhrujfuyjvhsckp.supabase.co',
+        pathname: '/storage/v1/object/public/**',
       },
     ],
   },
