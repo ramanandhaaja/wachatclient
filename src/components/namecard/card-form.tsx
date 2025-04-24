@@ -25,6 +25,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { CardPreview } from "./card-preview";
 import { useNameCard } from "@/hooks/use-namecard";
 import { uploadImageToSupabase } from "@/lib/upload-image";
+import { resizeImageFile } from "@/lib/image-resize";
 import Image from "next/image";
 
 interface CardFormProps {
@@ -394,9 +395,7 @@ export function CardForm({ initialData, id }: CardFormProps) {
                       name="profileImage"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>
-                            Profile Image
-                          </FormLabel>
+                          <FormLabel>Profile Image</FormLabel>
                           <FormControl>
                             <div className="bg-white rounded-lg shadow p-4 flex flex-col items-center border border-gray-100">
                               <div
@@ -416,76 +415,78 @@ export function CardForm({ initialData, id }: CardFormProps) {
                                 role="button"
                                 aria-label="Upload profile image"
                               >
-                                {typeof field.value === "string" && field.value.length > 0 ? (
-  <div className="w-full flex flex-col items-center gap-2">
-    <Image
-      src={field.value}
-      alt="Profile Preview"
-      width={80}
-      height={80}
-      className="rounded-md border object-cover"
-    />
-    <Button
-      type="button"
-      className="mt-2"
-      variant="secondary"
-      size="sm"
-      onClick={() => field.onChange(null)}
-    >
-      Remove Image
-    </Button>
-  </div>
-) : (
-  <>
-    <svg
-      className="mx-auto h-12 w-12 text-gray-400"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M3 16.5V19a2 2 0 002 2h14a2 2 0 002-2v-2.5M16.5 12.5L12 17m0 0l-4.5-4.5M12 17V3"
-      />
-    </svg>
-    <p className="mt-2 text-sm text-gray-500">
-      Optimize profile size 80 x 80 px
-    </p>
-    <Button
-      type="button"
-      className="mt-3"
-      variant="default"
-      size="sm"
-    >
-      Upload Image
-    </Button>
-    <Input
-      id="profile-image-upload"
-      type="file"
-      accept="image/*"
-      className="hidden"
-      onChange={async (e) => {
-        const file = e.target.files?.[0];
-        if (file) {
-          const url = await uploadImageToSupabase(
-            file,
-            "coverimage",
-            id
-          );
-          if (url) {
-            field.onChange(url);
-            toast.success("Image uploaded!");
-          } else {
-            toast.error("Failed to upload image");
-          }
-        }
-      }}
-    />
-  </>
-)}
+                                {typeof field.value === "string" &&
+                                field.value.length > 0 ? (
+                                  <div className="w-full flex flex-col items-center gap-2">
+                                    <Image
+                                      src={field.value}
+                                      alt="Profile Preview"
+                                      width={80}
+                                      height={80}
+                                      className="rounded-md border object-cover"
+                                    />
+                                    <Button
+                                      type="button"
+                                      className="mt-2"
+                                      variant="secondary"
+                                      size="sm"
+                                      onClick={() => field.onChange(null)}
+                                    >
+                                      Remove Image
+                                    </Button>
+                                  </div>
+                                ) : (
+                                  <>
+                                    <svg
+                                      className="mx-auto h-12 w-12 text-gray-400"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      strokeWidth="1.5"
+                                      viewBox="0 0 24 24"
+                                      aria-hidden="true"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M3 16.5V19a2 2 0 002 2h14a2 2 0 002-2v-2.5M16.5 12.5L12 17m0 0l-4.5-4.5M12 17V3"
+                                      />
+                                    </svg>
+                                    <p className="mt-2 text-sm text-gray-500">
+                                      Optimize profile size 80 x 80 px
+                                    </p>
+                                    <Button
+                                      type="button"
+                                      className="mt-3"
+                                      variant="default"
+                                      size="sm"
+                                    >
+                                      Upload Image
+                                    </Button>
+                                    <Input
+                                      id="profile-image-upload"
+                                      type="file"
+                                      accept="image/*"
+                                      className="hidden"
+                                      onChange={async (e) => {
+  const file = e.target.files?.[0];
+  if (file) {
+    try {
+      const resizedFile = await resizeImageFile(file, 320, 320, 1);
+      const url = await uploadImageToSupabase(resizedFile, "profileimage", id);
+      if (url) {
+        field.onChange(url);
+        toast.success("Image uploaded!");
+      } else {
+        toast.error("Failed to upload image");
+      }
+    } catch (err) {
+      toast.error("Image too large or could not be processed");
+    }
+  }
+}}
+                                    />
+                                  </>
+                                )}
                               </div>
                             </div>
                           </FormControl>
@@ -498,9 +499,7 @@ export function CardForm({ initialData, id }: CardFormProps) {
                       name="coverImage"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>
-                            Cover Image 
-                          </FormLabel>
+                          <FormLabel>Cover Image</FormLabel>
                           <FormControl>
                             <div className="bg-white rounded-lg shadow p-4 flex flex-col items-center border border-gray-100">
                               <div
@@ -553,26 +552,22 @@ export function CardForm({ initialData, id }: CardFormProps) {
                                       accept="image/*"
                                       className="hidden"
                                       onChange={async (e) => {
-                                        const file = e.target.files?.[0];
-                                        if (file) {
-                                          const url =
-                                            await uploadImageToSupabase(
-                                              file,
-                                              "coverimage",
-                                              id
-                                            );
-                                          if (url) {
-                                            field.onChange(url);
-                                            toast.success(
-                                              "Cover image uploaded!"
-                                            );
-                                          } else {
-                                            toast.error(
-                                              "Failed to upload cover image"
-                                            );
-                                          }
-                                        }
-                                      }}
+  const file = e.target.files?.[0];
+  if (file) {
+    try {
+      const resizedFile = await resizeImageFile(file, 1200, 628, 1);
+      const url = await uploadImageToSupabase(resizedFile, "coverimage", id);
+      if (url) {
+        field.onChange(url);
+        toast.success("Cover image uploaded!");
+      } else {
+        toast.error("Failed to upload cover image");
+      }
+    } catch (err) {
+      toast.error("Image too large or could not be processed");
+    }
+  }
+}}
                                     />
                                   </>
                                 ) : (
