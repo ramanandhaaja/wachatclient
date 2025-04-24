@@ -42,7 +42,10 @@ type BusinessCardProps = {
   email: string;
   phone: string;
   website?: string;
-  location?: string;
+  address1?: string;
+  address2?: string;
+  city?: string;
+  postcode?: string;
   linkedin?: string;
   twitter?: string;
   instagram?: string;

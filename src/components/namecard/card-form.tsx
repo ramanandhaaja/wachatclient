@@ -17,7 +17,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { nameCardSchema, type NameCardFormValues } from "@/lib/schemas/namecard";
+import {
+  nameCardSchema,
+  type NameCardFormValues,
+} from "@/lib/schemas/namecard";
 import { Card, CardContent } from "@/components/ui/card";
 import { CardPreview } from "./card-preview";
 import { useNameCard } from "@/hooks/use-namecard";
@@ -97,7 +100,10 @@ export function CardForm({ initialData, id }: CardFormProps) {
       router.push("/dashboard/namecard");
       router.refresh();
     } catch (error) {
-      console.error(`Error ${isEditing ? "updating" : "creating"} card:`, error);
+      console.error(
+        `Error ${isEditing ? "updating" : "creating"} card:`,
+        error
+      );
       toast.error(`Failed to ${isEditing ? "update" : "create"} name card`);
     }
   };
@@ -120,7 +126,10 @@ export function CardForm({ initialData, id }: CardFormProps) {
             </TabsList>
 
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 mt-6">
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-6 mt-6"
+              >
                 <TabsContent value="details" className="space-y-4">
                   {/* Basic Info Section */}
                   <div className="space-y-4">
@@ -205,59 +214,62 @@ export function CardForm({ initialData, id }: CardFormProps) {
                       )}
                     />
                     <div className="grid grid-cols-1 gap-4">
-  <FormField
-    control={form.control}
-    name="address1"
-    render={({ field }) => (
-      <FormItem>
-        <FormLabel>Address Line 1</FormLabel>
-        <FormControl>
-          <Input placeholder="123 Main St" {...field} />
-        </FormControl>
-        <FormMessage />
-      </FormItem>
-    )}
-  />
-  <FormField
-    control={form.control}
-    name="address2"
-    render={({ field }) => (
-      <FormItem>
-        <FormLabel>Address Line 2</FormLabel>
-        <FormControl>
-          <Input placeholder="Apartment, suite, etc. (optional)" {...field} />
-        </FormControl>
-        <FormMessage />
-      </FormItem>
-    )}
-  />
-  <FormField
-    control={form.control}
-    name="city"
-    render={({ field }) => (
-      <FormItem>
-        <FormLabel>City</FormLabel>
-        <FormControl>
-          <Input placeholder="City" {...field} />
-        </FormControl>
-        <FormMessage />
-      </FormItem>
-    )}
-  />
-  <FormField
-    control={form.control}
-    name="postcode"
-    render={({ field }) => (
-      <FormItem>
-        <FormLabel>Postcode</FormLabel>
-        <FormControl>
-          <Input placeholder="Postcode" {...field} />
-        </FormControl>
-        <FormMessage />
-      </FormItem>
-    )}
-  />
-</div>
+                      <FormField
+                        control={form.control}
+                        name="address1"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Address Line 1</FormLabel>
+                            <FormControl>
+                              <Input placeholder="123 Main St" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="address2"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Address Line 2</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="Apartment, suite, etc. (optional)"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="city"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>City</FormLabel>
+                            <FormControl>
+                              <Input placeholder="City" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="postcode"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Postcode</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Postcode" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
                   </div>
 
                   {/* Social Links Section */}
@@ -270,7 +282,10 @@ export function CardForm({ initialData, id }: CardFormProps) {
                         <FormItem>
                           <FormLabel>Website</FormLabel>
                           <FormControl>
-                            <Input placeholder="https://example.com" {...field} />
+                            <Input
+                              placeholder="https://example.com"
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -283,7 +298,10 @@ export function CardForm({ initialData, id }: CardFormProps) {
                         <FormItem>
                           <FormLabel>LinkedIn</FormLabel>
                           <FormControl>
-                            <Input placeholder="https://linkedin.com/in/username" {...field} />
+                            <Input
+                              placeholder="https://linkedin.com/in/username"
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -296,7 +314,10 @@ export function CardForm({ initialData, id }: CardFormProps) {
                         <FormItem>
                           <FormLabel>Twitter</FormLabel>
                           <FormControl>
-                            <Input placeholder="https://twitter.com/username" {...field} />
+                            <Input
+                              placeholder="https://twitter.com/username"
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -309,7 +330,10 @@ export function CardForm({ initialData, id }: CardFormProps) {
                         <FormItem>
                           <FormLabel>Instagram</FormLabel>
                           <FormControl>
-                            <Input placeholder="https://instagram.com/username" {...field} />
+                            <Input
+                              placeholder="https://instagram.com/username"
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -330,10 +354,12 @@ export function CardForm({ initialData, id }: CardFormProps) {
                               type="checkbox"
                               className="accent-primary border rounded"
                               checked={!!field.value}
-                              onChange={e => field.onChange(e.target.checked)}
+                              onChange={(e) => field.onChange(e.target.checked)}
                             />
                           </FormControl>
-                          <FormLabel className="font-medium">Chat Agent</FormLabel>
+                          <FormLabel className="font-medium">
+                            Chat Agent
+                          </FormLabel>
                         </FormItem>
                       )}
                     />
@@ -347,10 +373,12 @@ export function CardForm({ initialData, id }: CardFormProps) {
                               type="checkbox"
                               className="accent-primary border rounded"
                               checked={!!field.value}
-                              onChange={e => field.onChange(e.target.checked)}
+                              onChange={(e) => field.onChange(e.target.checked)}
                             />
                           </FormControl>
-                          <FormLabel className="font-medium">Voice Call Agent</FormLabel>
+                          <FormLabel className="font-medium">
+                            Voice Call Agent
+                          </FormLabel>
                         </FormItem>
                       )}
                     />
@@ -366,7 +394,10 @@ export function CardForm({ initialData, id }: CardFormProps) {
                         <FormItem>
                           <FormLabel>Profile Image URL</FormLabel>
                           <FormControl>
-                            <Input placeholder="https://example.com/profile.jpg" {...field} />
+                            <Input
+                              placeholder="https://example.com/profile.jpg"
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -379,7 +410,10 @@ export function CardForm({ initialData, id }: CardFormProps) {
                         <FormItem>
                           <FormLabel>Cover Image URL</FormLabel>
                           <FormControl>
-                            <Input placeholder="https://example.com/cover.jpg" {...field} />
+                            <Input
+                              placeholder="https://example.com/cover.jpg"
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
