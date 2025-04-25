@@ -12,6 +12,14 @@ interface CardViewAnalyticsProps {
 export function CardViewAnalytics({ cardId, userId }: CardViewAnalyticsProps) {
   const recordView = useMutation({
     mutationFn: async () => {
+      // Get browser/device info
+      const userAgent = typeof navigator !== "undefined" ? navigator.userAgent : undefined;
+      let deviceType = "unknown";
+      if (userAgent) {
+        if (/mobile/i.test(userAgent)) deviceType = "mobile";
+        else if (/tablet/i.test(userAgent)) deviceType = "tablet";
+        else deviceType = "desktop";
+      }
       await fetch("/api/analytics", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -19,6 +27,10 @@ export function CardViewAnalytics({ cardId, userId }: CardViewAnalyticsProps) {
           eventType: "card_view",
           cardId,
           userId,
+          eventData: {
+            userAgent,
+            deviceType,
+          },
         }),
       });
     },
