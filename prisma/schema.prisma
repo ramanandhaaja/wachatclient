@@ -173,3 +173,12 @@ model NameCard {
 
   @@index([userId])
 }
+
+model AnalyticsEvent {
+  id         String   @id @default(uuid())
+  userId     String?  // Optional: If you want to track which user triggered the event
+  cardId     String?  // Optional: Reference to the card (if applicable)
+  eventType  String   // e.g., "card_view", "link_click"
+  eventData  Json?    // Optional: Store additional data (e.g., which link, referrer, etc.)
+  createdAt  DateTime @default(now())
+}

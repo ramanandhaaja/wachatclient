@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { CardPreview } from "@/components/namecard/card-preview";
+import { CardViewAnalytics } from "@/components/analytics/CardViewAnalytics";
 import { CardLayout } from "@/components/namecard/card-layout";
 import { prisma } from "@/lib/prisma";
 
@@ -54,6 +55,7 @@ export default async function CardPage({
 
   return (
     <CardLayout>
+      <CardViewAnalytics cardId={card.id} userId={card.userId} />
       <CardPreview
         formValues={{
           firstName: card.firstName || "",

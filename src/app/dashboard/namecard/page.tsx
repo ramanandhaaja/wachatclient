@@ -31,6 +31,8 @@ import {
   Activity,
   Loader2,
 } from "lucide-react";
+import { useCardViews } from "@/hooks/use-analytics";
+import { useSession } from "next-auth/react";
 import { ShareCard } from "../../../components/namecard/share-card";
 import { useNameCard } from "@/hooks/use-namecard";
 
@@ -65,6 +67,10 @@ export default function NameCardDashboard() {
   const { useQuery, useDelete } = useNameCard();
   const { data: cards = [], isLoading } = useQuery();
   const { mutate: deleteCard } = useDelete();
+
+  const { data: session } = useSession();
+  const userId = session?.user?.id;
+  const { data: cardViews = 0, isLoading: isViewsLoading } = useCardViews(userId);
 
   return (
     <div className="container py-8">
@@ -105,7 +111,9 @@ export default function NameCardDashboard() {
           <CardContent>
             <div className="flex items-center">
               <ExternalLink className="h-5 w-5 text-primary mr-2" />
-              <div className="text-2xl font-bold">{demoAnalytics.views}</div>
+              <div className="text-2xl font-bold">
+  {isViewsLoading ? <Loader2 className="animate-spin" /> : cardViews}
+</div>
             </div>
           </CardContent>
         </Card>

@@ -3,16 +3,22 @@ import { supabase } from '@/lib/supabase';
 /**
  * Uploads a file to the given Supabase storage bucket and returns the public URL
  * @param file File to upload
- * @param bucketName Bucket name (e.g. 'profile-images')
+ * @param folder Folder name (e.g. 'profileimage' or 'coverimage')
  * @param userId Optional user id for folder structure
+ * @param fileName Optional file name (if not provided, generates one)
  */
-export async function uploadImageToSupabase(file: File, folder = 'coverimage', userId?: string): Promise<string | null> {
+export async function uploadImageToSupabase(
+  file: File,
+  folder = 'coverimage',
+  userId?: string,
+  fileName?: string
+): Promise<string | null> {
   // Always upload to bucket 'cardfiy', configurable folder
   const bucketName = 'cardify';
   if (!file) return null;
   const fileExt = file.name.split('.').pop();
-  const fileName = `${userId || 'anon'}-${Date.now()}.${fileExt}`;
-  const filePath = `${folder}/${fileName}`;
+  const finalFileName = fileName || `${userId || 'anon'}-${Date.now()}.${fileExt}`;
+  const filePath = `${folder}/${finalFileName}`;
 
   // Upload image
   const { error } = await supabase.storage.from(bucketName).upload(filePath, file, {

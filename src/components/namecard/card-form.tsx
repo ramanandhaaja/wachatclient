@@ -25,6 +25,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { CardPreview } from "./card-preview";
 import { useNameCard } from "@/hooks/use-namecard";
 import { uploadImageToSupabase } from "@/lib/upload-image";
+import { useSession } from "next-auth/react";
 import { resizeImageFile } from "@/lib/image-resize";
 import Image from "next/image";
 
@@ -34,7 +35,8 @@ interface CardFormProps {
 }
 
 export function CardForm({ initialData, id }: CardFormProps) {
-  const form = useForm<NameCardFormValues>({
+  const { data: session } = useSession();
+const form = useForm<NameCardFormValues>({
     resolver: zodResolver(nameCardSchema),
     defaultValues: {
       ...initialData,
@@ -469,10 +471,20 @@ export function CardForm({ initialData, id }: CardFormProps) {
                                       className="hidden"
                                       onChange={async (e) => {
   const file = e.target.files?.[0];
+  if (!session?.user?.id) {
+    toast.error("You must be logged in to upload images.");
+    return;
+  }
   if (file) {
     try {
       const resizedFile = await resizeImageFile(file, 320, 320, 1);
-      const url = await uploadImageToSupabase(resizedFile, "profileimage", id);
+      const profileFileName = `${session.user.id}_${id}_profile.jpg`;
+      const url = await uploadImageToSupabase(
+        resizedFile,
+        "profileimage",
+        session.user.id,
+        profileFileName
+      );
       if (url) {
         field.onChange(url);
         toast.success("Image uploaded!");
@@ -553,10 +565,20 @@ export function CardForm({ initialData, id }: CardFormProps) {
                                       className="hidden"
                                       onChange={async (e) => {
   const file = e.target.files?.[0];
+  if (!session?.user?.id) {
+    toast.error("You must be logged in to upload images.");
+    return;
+  }
   if (file) {
     try {
       const resizedFile = await resizeImageFile(file, 1200, 628, 1);
-      const url = await uploadImageToSupabase(resizedFile, "coverimage", id);
+      const coverFileName = `${session.user.id}_${id}_cover.jpg`;
+      const url = await uploadImageToSupabase(
+        resizedFile,
+        "coverimage",
+        session.user.id,
+        coverFileName
+      );
       if (url) {
         field.onChange(url);
         toast.success("Cover image uploaded!");

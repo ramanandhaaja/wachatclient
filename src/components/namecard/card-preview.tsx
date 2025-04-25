@@ -85,7 +85,7 @@ export function CardPreview({
         <ShareCard card={{ ...formValues, id }} />
       </div>
       {coverImage ? (
-        <div className="relative h-40">
+        <div className="relative h-40 -mt-6">
           <Image
             src={coverImage}
             alt="Cover"
