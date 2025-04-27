@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useSession } from "next-auth/react";
+//untuk web admin reply message belum di appilkasikan
 import { useWhatsAppOfficial } from "@/hooks/use-whatsapp-official";
 import {
   useConversation,
@@ -46,13 +48,15 @@ export default function ChatPage() {
   const { sendMessage, isSending } = useWhatsAppOfficial();
 
   // Load conversations using react-query hook
+  const { data: session, status } = useSession();
+const userId = session?.user?.id ?? "";
+
   const {
     conversations,
     isLoading: loadingConversations,
     error: conversationsError,
-  } = useConversations("web");
+  } = useConversations(userId, "web");
 
-  // Load active conversation and messages
   const {
     messages: conversationMessages,
     isLoading: messagesLoading,
@@ -68,12 +72,15 @@ export default function ChatPage() {
     }
   }, []);
 
-  // Scroll to bottom when messages load or change
   useEffect(() => {
     if (!messagesLoading && conversationMessages?.length) {
       scrollToBottom();
     }
   }, [messagesLoading, conversationMessages, scrollToBottom]);
+
+  if (!userId) {
+    return <div>Loading...</div>;
+  }
 
   const handleSelectConversation = (conversation: Conversation) => {
     setActiveConversation(conversation);

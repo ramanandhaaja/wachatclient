@@ -178,6 +178,7 @@ export default function NameCardDashboard() {
                         <CardPreview
                           size="sm"
                           id={card.id}
+                          userId={userId ?? ""}
                           formValues={{
                             firstName: card.firstName || "",
                             lastName: card.lastName || "",

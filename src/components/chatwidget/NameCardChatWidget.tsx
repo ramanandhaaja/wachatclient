@@ -31,7 +31,13 @@ interface ChatMessage {
   timestamp: string;
 }
 
-export default function NameCardChatWidget() {
+interface NameCardChatWidgetProps {
+  userId: string;
+}
+
+export default function NameCardChatWidget({ userId }: NameCardChatWidgetProps) {
+  // For debug, log userId
+  console.log('NameCardChatWidget userId:', userId);
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
@@ -96,7 +102,7 @@ export default function NameCardChatWidget() {
     const res = await fetch("/api/webhook/web-chatbot/registration", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userPhone: newUserPhone, userName: newUserName }),
+      body: JSON.stringify({ userPhone: newUserPhone, userName: newUserName, userId }),
     });
     const data = await res.json();
     if (!res.ok) {
@@ -223,7 +229,7 @@ export default function NameCardChatWidget() {
       {/* Chat Widget */}
       {isOpen && (
         <div className="fixed inset-0 flex items-center justify-center z-[9999] animate-fade-in">
-          <div className="relative w-full max-w-[420px] h-[95vh] bg-white rounded-2xl shadow-xl overflow-hidden m-4 md:m-8 flex flex-col">
+          <div className="relative w-full max-w-[420px] h-[90vh] bg-white rounded-2xl shadow-xl overflow-hidden m-4 md:m-8 flex flex-col">
             {/* Close Button */}
             <button
               type="button"

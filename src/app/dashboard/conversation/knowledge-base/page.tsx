@@ -11,35 +11,33 @@ async function getBusinessInfo(userId: string): Promise<BusinessInfoData | null>
   return {
     id: info.id,
     userId: info.userId,
-    services: info.services as Record<string, string>,
-    hours: info.hours as Record<string, string>,
-    location: info.location as Record<string, string>,
-    promos: info.promos as Record<string, string>,
+    data: info.data as Record<string, string>,
     systemPrompt: info.systemPrompt || '',
   };
 }
 
 // Server action to save business info for the current user
 async function saveBusinessInfo(data: BusinessInfoData): Promise<void> {
-  if (data.id) {
+  // Find existing business info for this user
+  const existing = await prisma.businessInfo.findFirst({
+    where: { userId: data.userId },
+  });
+
+  if (existing) {
+    // Update the existing business info
     await prisma.businessInfo.update({
-      where: { id: data.id },
+      where: { id: existing.id },
       data: {
-        services: data.services,
-        hours: data.hours,
-        location: data.location,
-        promos: data.promos,
+        data: data.data,
         systemPrompt: data.systemPrompt,
       },
     });
   } else {
+    // Create a new business info
     await prisma.businessInfo.create({
       data: {
         userId: data.userId,
-        services: data.services,
-        hours: data.hours,
-        location: data.location,
-        promos: data.promos,
+        data: data.data,
         systemPrompt: data.systemPrompt,
       },
     });
@@ -64,7 +62,7 @@ export default async function KnowledgeBasePage() {
     <div className="h-[calc(100vh-2rem)] overflow-y-auto bg-white rounded-lg shadow-sm">
       <div className="w-full pt-12 pb-12">
         <BusinessInfoForm
-          initialData={initialData || { userId, services: {}, hours: {}, location: {}, promos: {}, systemPrompt: '' }}
+          initialData={initialData || { userId, data: {}, systemPrompt: '' }}
           onSubmit={handleSubmit}
           userId={userId}
         />

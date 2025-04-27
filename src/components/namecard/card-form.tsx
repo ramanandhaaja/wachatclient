@@ -36,7 +36,7 @@ interface CardFormProps {
 
 export function CardForm({ initialData, id }: CardFormProps) {
   const { data: session } = useSession();
-const form = useForm<NameCardFormValues>({
+  const form = useForm<NameCardFormValues>({
     resolver: zodResolver(nameCardSchema),
     defaultValues: {
       ...initialData,
@@ -470,32 +470,45 @@ const form = useForm<NameCardFormValues>({
                                       accept="image/*"
                                       className="hidden"
                                       onChange={async (e) => {
-  const file = e.target.files?.[0];
-  if (!session?.user?.id) {
-    toast.error("You must be logged in to upload images.");
-    return;
-  }
-  if (file) {
-    try {
-      const resizedFile = await resizeImageFile(file, 320, 320, 1);
-      const profileFileName = `${session.user.id}_${id}_profile.jpg`;
-      const url = await uploadImageToSupabase(
-        resizedFile,
-        "profileimage",
-        session.user.id,
-        profileFileName
-      );
-      if (url) {
-        field.onChange(url);
-        toast.success("Image uploaded!");
-      } else {
-        toast.error("Failed to upload image");
-      }
-    } catch (err) {
-      toast.error("Image too large or could not be processed");
-    }
-  }
-}}
+                                        const file = e.target.files?.[0];
+                                        if (!session?.user?.id) {
+                                          toast.error(
+                                            "You must be logged in to upload images."
+                                          );
+                                          return;
+                                        }
+                                        if (file) {
+                                          try {
+                                            const resizedFile =
+                                              await resizeImageFile(
+                                                file,
+                                                320,
+                                                320,
+                                                1
+                                              );
+                                            const profileFileName = `${session.user.id}_${id}_profile.jpg`;
+                                            const url =
+                                              await uploadImageToSupabase(
+                                                resizedFile,
+                                                "profileimage",
+                                                session.user.id,
+                                                profileFileName
+                                              );
+                                            if (url) {
+                                              field.onChange(url);
+                                              toast.success("Image uploaded!");
+                                            } else {
+                                              toast.error(
+                                                "Failed to upload image"
+                                              );
+                                            }
+                                          } catch (err) {
+                                            toast.error(
+                                              "Image too large or could not be processed"
+                                            );
+                                          }
+                                        }
+                                      }}
                                     />
                                   </>
                                 )}
@@ -564,32 +577,47 @@ const form = useForm<NameCardFormValues>({
                                       accept="image/*"
                                       className="hidden"
                                       onChange={async (e) => {
-  const file = e.target.files?.[0];
-  if (!session?.user?.id) {
-    toast.error("You must be logged in to upload images.");
-    return;
-  }
-  if (file) {
-    try {
-      const resizedFile = await resizeImageFile(file, 1200, 628, 1);
-      const coverFileName = `${session.user.id}_${id}_cover.jpg`;
-      const url = await uploadImageToSupabase(
-        resizedFile,
-        "coverimage",
-        session.user.id,
-        coverFileName
-      );
-      if (url) {
-        field.onChange(url);
-        toast.success("Cover image uploaded!");
-      } else {
-        toast.error("Failed to upload cover image");
-      }
-    } catch (err) {
-      toast.error("Image too large or could not be processed");
-    }
-  }
-}}
+                                        const file = e.target.files?.[0];
+                                        if (!session?.user?.id) {
+                                          toast.error(
+                                            "You must be logged in to upload images."
+                                          );
+                                          return;
+                                        }
+                                        if (file) {
+                                          try {
+                                            const resizedFile =
+                                              await resizeImageFile(
+                                                file,
+                                                1200,
+                                                628,
+                                                1
+                                              );
+                                            const coverFileName = `${session.user.id}_${id}_cover.jpg`;
+                                            const url =
+                                              await uploadImageToSupabase(
+                                                resizedFile,
+                                                "coverimage",
+                                                session.user.id,
+                                                coverFileName
+                                              );
+                                            if (url) {
+                                              field.onChange(url);
+                                              toast.success(
+                                                "Cover image uploaded!"
+                                              );
+                                            } else {
+                                              toast.error(
+                                                "Failed to upload cover image"
+                                              );
+                                            }
+                                          } catch (err) {
+                                            toast.error(
+                                              "Image too large or could not be processed"
+                                            );
+                                          }
+                                        }
+                                      }}
                                     />
                                   </>
                                 ) : (

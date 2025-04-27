@@ -22,6 +22,7 @@ import type { NameCardFormValues } from "@/lib/schemas/namecard";
 interface CardPreviewProps {
   formValues: NameCardFormValues;
   id: string;
+  userId: string;
   size?: "sm" | "default";
 }
 
@@ -33,6 +34,7 @@ import QRCode from "react-qr-code";
 export function CardPreview({
   formValues,
   id,
+  userId,
   size = "default",
 }: CardPreviewProps) {
   const {
@@ -288,7 +290,7 @@ export function CardPreview({
           {/* Chat Agent Button */}
           {aiChatAgent && isClient &&(
             <div className="z-[9999]">
-              <NameCardChatWidget />
+              <NameCardChatWidget userId={userId} />
             </div>
           )}
           {/* Elevenlabs */}

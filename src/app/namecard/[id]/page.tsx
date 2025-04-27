@@ -47,6 +47,9 @@ export default async function CardPage({
     where: {
       id,
     },
+    include: {
+      user: true,
+    },
   });
 
   if (!card) {
@@ -78,6 +81,7 @@ export default async function CardPage({
           coverImage: card.coverImage || undefined,
         }}
         id={card.id}
+        userId={card.userId}
       />
     </CardLayout>
   );

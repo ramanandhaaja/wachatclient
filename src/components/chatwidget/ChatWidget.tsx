@@ -10,7 +10,13 @@ import { FormBeforeChat } from "./FormBeforeChat";
 import { useConversation } from "@/hooks/use-conversation";
 import { format } from "date-fns";
 
-export default function ChatWidget() {
+interface NameCardChatWidgetProps {
+  userId: string;
+}
+
+export default function ChatWidget({ userId }: NameCardChatWidgetProps) {
+  // For debug, log userId
+  console.log('Chat Widget userId:', userId);
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
@@ -80,7 +86,7 @@ export default function ChatWidget() {
     const res = await fetch("/api/webhook/web-chatbot/registration", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userPhone: newUserPhone, userName: newUserName }),
+      body: JSON.stringify({ userPhone: newUserPhone, userName: newUserName, userId }),
     });
     const data = await res.json();
     if (!res.ok) {

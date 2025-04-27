@@ -10,7 +10,7 @@ const supabase = createClient(
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { userPhone, userName } = body;
+    const { userPhone, userName, userId } = body;
 
     if (!userPhone) {
       return NextResponse.json({ error: "Missing phone" }, { status: 400 });
@@ -27,13 +27,14 @@ export async function POST(req: Request) {
 
     if (existing) {
       return NextResponse.json({ conversationId: existing.id, isNew: false });
-    }
+    } 
 
     // 2. Create new conversation
     const { data: created, error: createError } = await supabase
       .from("conversations")
       .insert([
         {
+          user_id: userId,
           user_phone: userPhone,
           user_name: userName,
           source: "web",

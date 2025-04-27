@@ -130,10 +130,7 @@ model VerificationToken {
 model BusinessInfo {
   id           String   @id @default(cuid())
   userId       String
-  services     Json
-  hours        Json
-  location     Json
-  promos       Json
+  data         Json?    // Stores all business info dynamically (optional for migration)
   systemPrompt String?  @db.Text
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt

@@ -37,10 +37,11 @@ export interface Conversation {
 }
 
 // Fetch conversations from Supabase
-async function fetchConversations(source?: 'web' | 'whatsapp') {
+async function fetchConversations(userId: string, source?: 'web' | 'whatsapp') {
   let query = supabase
     .from('conversations')
     .select('*')
+    .eq('user_id', userId)
     .order('last_message_time', { ascending: false });
 
   if (source) {
@@ -65,12 +66,12 @@ async function fetchMessages(conversationId: string) {
 }
 
 // Hook to manage conversations
-export function useConversations(source?: 'web' | 'whatsapp') {
+export function useConversations(userId: string, source?: 'web' | 'whatsapp') {
   const queryClient = useQueryClient();
 
   const { data: conversations, isLoading, error } = useQuery<Conversation[]>({
     queryKey: ['conversations', source],
-    queryFn: () => fetchConversations(source),
+    queryFn: () => fetchConversations(userId, source),
   });
 
   // Set up real-time subscription

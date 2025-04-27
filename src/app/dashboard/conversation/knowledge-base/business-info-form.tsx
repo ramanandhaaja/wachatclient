@@ -9,10 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 export interface BusinessInfoData {
   id?: string;
   userId: string;
-  services: Record<string, string>;
-  hours: Record<string, string>;
-  location: Record<string, string>;
-  promos: Record<string, string>;
+  data: Record<string, string>;
   systemPrompt: string;
 }
 
@@ -79,220 +76,108 @@ function toObject(arr: { key: string; value: string }[]) {
   });
   return obj;
 }
-
 type FieldItem = { id: string; key: string; value: string };
 
+import { useEffect } from "react";
+
 export default function BusinessInfoForm({ initialData, onSubmit, userId }: BusinessInfoFormProps) {
-  const [services, setServices] = useState<{ id: string; key: string; value: string }[]>(toArray(initialData?.services));
-  const [hours, setHours] = useState<{ id: string; key: string; value: string }[]>(toArray(initialData?.hours));
-  const [location, setLocation] = useState<{ id: string; key: string; value: string }[]>(toArray(initialData?.location));
-  const [promos, setPromos] = useState<{ id: string; key: string; value: string }[]>(toArray(initialData?.promos));
+  // Helper to convert object to FieldItem array
+  const toArray = (dataObj: Record<string, any> | undefined) =>
+    dataObj ? Object.entries(dataObj).map(([key, value]) => ({ id: crypto.randomUUID(), key, value: String(value) })) : [];
+
+  const [fields, setFields] = useState<FieldItem[]>(toArray(initialData?.data));
   const [systemPrompt, setSystemPrompt] = useState<string>(initialData?.systemPrompt || '');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
-  const handleArrayChange = (setter: any, id: string, field: 'key' | 'value', value: string) => {
-    setter((prev: any[]) => prev.map(item => item.id === id ? { ...item, [field]: value } : item));
+  useEffect(() => {
+    setFields(toArray(initialData?.data));
+    setSystemPrompt(initialData?.systemPrompt || "");
+  }, [initialData]);
+
+  const handleFieldChange = (id: string, field: 'key' | 'value', value: string) => {
+    setFields(prev => prev.map(item => item.id === id ? { ...item, [field]: value } : item));
   };
-  const handleArrayDelete = (setter: any, id: string) => {
-    setter((prev: any[]) => prev.filter(item => item.id !== id));
+  const handleFieldDelete = (id: string) => {
+    setFields(prev => prev.filter(item => item.id !== id));
   };
-  const handleArrayAdd = (setter: any) => {
-    setter((prev: any[]) => [...prev, { id: crypto.randomUUID(), key: '', value: '' }]);
+  const handleFieldAdd = () => {
+    setFields(prev => [...prev, { id: crypto.randomUUID(), key: '', value: '' }]);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
+      // Convert fields array to object for 'data'
+      const data = fields.reduce((acc, { key, value }) => {
+        if (key) acc[key] = value;
+        return acc;
+      }, {} as Record<string, string>);
       await onSubmit({
-        id: initialData?.id,
         userId,
-        services: toObject(services),
-        hours: toObject(hours),
-        location: toObject(location),
-        promos: toObject(promos),
+        data,
         systemPrompt,
       });
-      setMessage("Business info saved successfully!");
+      setMessage('Business info saved!');
     } catch (err: any) {
-      setMessage(err.message || "Failed to save business info.");
+      setMessage('Failed to save business info');
     } finally {
       setLoading(false);
     }
   };
 
-
   return (
-    <form onSubmit={handleSubmit} className="flex gap-8">
-    <Card className="w-full max-w-xl ml-8">
-      <div className="bg-transparent p-0 w-full">
-        <CardHeader className="flex flex-row justify-between items-center pb-2">
-          <h2 className="text-xl font-bold">Business Info</h2>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              setServices(toArray(BUSINESS_INFO.services));
-              setHours(toArray(BUSINESS_INFO.hours));
-              setLocation(toArray(BUSINESS_INFO.location));
-              setPromos(toArray(BUSINESS_INFO.promos));
-            }}
-          >
-            Autofill Reference Data
-          </Button>
-        </CardHeader>
-        <CardContent className="space-y-8">
-          {/* Services */}
-          <div>
-            <Label className="font-semibold mb-2 block">Services</Label>
-            {services.map((item: FieldItem) => (
-              <div key={item.id} className="flex gap-2 mb-2 items-start">
-                <Input
-                  value={item.key}
-                  onChange={e => handleArrayChange(setServices, item.id, 'key', e.target.value)}
-                  placeholder="Service key (e.g. potong)"
-                  required
-                />
-                <Textarea
-                  value={item.value}
-                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleArrayChange(setServices, item.id, 'value', e.target.value)}
-                  placeholder="Description"
-                  required
-                  className="h-10 px-3 py-2 border border-input bg-background rounded-md text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
-                />
-                <Button type="button" variant="ghost" size="sm" className="text-red-600 px-2 py-1" onClick={() => handleArrayDelete(setServices, item.id)}>
-                  Delete
-                </Button>
-              </div>
-            ))}
-            <Button type="button" variant="link" className="text-blue-600 mt-1 px-0" onClick={() => handleArrayAdd(setServices)}>
-              + Add Service
-            </Button>
-          </div>
-
-          {/* Hours */}
-          <div>
-            <Label className="font-semibold mb-2 block">Hours</Label>
-            {hours.map((item: FieldItem) => (
-              <div key={item.id} className="flex gap-2 mb-2 items-start">
-                <Input
-                  value={item.key}
-                  onChange={e => handleArrayChange(setHours, item.id, 'key', e.target.value)}
-                  placeholder="Day (e.g. weekday)"
-                  required
-                />
-                <Input
-                  value={item.value}
-                  onChange={e => handleArrayChange(setHours, item.id, 'value', e.target.value)}
-                  placeholder="Time (e.g. 09.00 - 21.00 WIB)"
-                  required
-                />
-                <Button type="button" variant="ghost" size="sm" className="text-red-600 px-2 py-1" onClick={() => handleArrayDelete(setHours, item.id)}>
-                  Delete
-                </Button>
-              </div>
-            ))}
-            <Button type="button" variant="link" className="text-blue-600 mt-1 px-0" onClick={() => handleArrayAdd(setHours)}>
-              + Add Hour
-            </Button>
-          </div>
-
-          {/* Location */}
-          <div>
-            <Label className="font-semibold mb-2 block">Location</Label>
-            {location.map((item: FieldItem) => (
-              <div key={item.id} className="flex gap-2 mb-2 items-start">
-                <Input
-                  value={item.key}
-                  onChange={e => handleArrayChange(setLocation, item.id, 'key', e.target.value)}
-                  placeholder="Location key (e.g. address)"
-                  required
-                />
-                <Textarea
-                  value={item.value}
-                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleArrayChange(setLocation, item.id, 'value', e.target.value)}
-                  placeholder="Value"
-                  required
-                  className="h-10 px-3 py-2 border border-input bg-background rounded-md text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
-                />
-                <Button type="button" variant="ghost" size="sm" className="text-red-600 px-2 py-1" onClick={() => handleArrayDelete(setLocation, item.id)}>
-                  Delete
-                </Button>
-              </div>
-            ))}
-            <Button type="button" variant="link" className="text-blue-600 mt-1 px-0" onClick={() => handleArrayAdd(setLocation)}>
-              + Add Location Field
-            </Button>
-          </div>
-
-          {/* Promos */}
-          <div>
-            <Label className="font-semibold mb-2 block">Promos</Label>
-            {promos.map((item: FieldItem) => (
-              <div key={item.id} className="flex gap-2 mb-2 items-start">
-                <Input
-                  value={item.key}
-                  onChange={e => handleArrayChange(setPromos, item.id, 'key', e.target.value)}
-                  placeholder="Promo key (e.g. weekday)"
-                  required
-                />
-                <Textarea
-                  value={item.value}
-                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleArrayChange(setPromos, item.id, 'value', e.target.value)}
-                  placeholder="Promo description"
-                  required
-                  className="h-10 px-3 py-2 border border-input bg-background rounded-md text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
-                />
-                <Button type="button" variant="ghost" size="sm" className="text-red-600 px-2 py-1" onClick={() => handleArrayDelete(setPromos, item.id)}>
-                  Delete
-                </Button>
-              </div>
-            ))}
-            <Button type="button" variant="link" className="text-blue-600 mt-1 px-0" onClick={() => handleArrayAdd(setPromos)}>
-              + Add Promo
-            </Button>
-          </div>
-        </CardContent>
-        <CardFooter className="flex flex-col items-center gap-2 pt-6">
-          <Button type="submit" className="w-full max-w-xs" disabled={loading}>
-            {loading ? "Saving..." : "Save Business Info"}
-          </Button>
-          {message && <div className="mt-2 text-center text-green-600 font-medium">{message}</div>}
-        </CardFooter>
-      </div>
-    </Card>
-      <Card className="w-full max-w-xl h-fit mr-8">
-        <CardHeader className="flex flex-row justify-between items-center pb-2">
-          <h2 className="text-xl font-bold">System Prompt</h2>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setSystemPrompt(SYSTEM_PROMPT_REFERENCE)}
-          >
-            Autofill System Prompt
-          </Button>
-        </CardHeader>
-        <CardContent>
-          <Textarea
-            value={systemPrompt}
-            onChange={(e) => setSystemPrompt(e.target.value)}
-            placeholder="Enter your system prompt here..."
-            className="min-h-[300px]"
-          />
-        </CardContent>
-        <CardFooter>
-        <div className="flex flex-col items-center gap-2">
-        <Button type="submit" className="w-full max-w-xs" disabled={loading}>
-          {loading ? "Saving..." : "Save All Changes"}
+    <form onSubmit={handleSubmit} className="mx-8 space-y-6">
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-8 w-full">
+    {/* Left column: Business Info Fields */}
+        <div className="md:mx-4">
+      <label className="block font-semibold mb-2">Business Info Fields</label>
+      <div className="space-y-2">
+        {fields.map((item) => (
+          <div key={item.id} className="flex flex-col gap-2 items-stretch">
+  <Input
+    className="input input-bordered w-1/2"
+    placeholder="Key (e.g. services, menu, howto)"
+    value={item.key}
+    onChange={e => handleFieldChange(item.id, 'key', e.target.value)}
+    required
+  />
+  <Input
+    className="input input-bordered"
+    placeholder="Value"
+    value={item.value}
+    onChange={e => handleFieldChange(item.id, 'value', e.target.value)}
+    required
+  />
+  <Button type="button" className="btn btn-error btn-sm self-start mb-4" onClick={() => handleFieldDelete(item.id)}>
+    Delete
+  </Button>
+</div>
+        ))}
+        <Button type="button" className="btn btn-outline btn-sm mt-2" onClick={handleFieldAdd}>
+          + Add Field
         </Button>
-        {message && <div className="text-center text-green-600 font-medium">{message}</div>}
       </div>
-        </CardFooter>
-      </Card>
-      
+    </div>
+    {/* Right column: System Prompt */}
+        <div className="md:mx-4">
+      <label className="block font-semibold mb-2">System Prompt (optional)</label>
+      <Textarea
+        className="textarea textarea-bordered w-full min-h-[120px]"
+        value={systemPrompt}
+        onChange={e => setSystemPrompt(e.target.value)}
+        placeholder="Enter your system prompt here..."
+      />
+    </div>
+  </div>
+      {/* Submit button and message below both columns */}
+      <div className="flex flex-col items-center gap-2">
+        <Button type="submit" className="btn btn-primary w-full max-w-xs" disabled={loading}>
+          {loading ? 'Saving...' : 'Save'}
+        </Button>
+        {message && <div className="mt-2 text-center text-green-600 font-medium">{message}</div>}
+      </div>
     </form>
   );
 }
