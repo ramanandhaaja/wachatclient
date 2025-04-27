@@ -15,8 +15,8 @@ export const nameCardSchema = z.object({
   linkedin: z.string().url("Invalid LinkedIn URL").optional().or(z.literal("")),
   twitter: z.string().url("Invalid Twitter URL").optional().or(z.literal("")),
   instagram: z.string().url("Invalid Instagram URL").optional().or(z.literal("")),
-  profileImage: z.string().optional(),
-  coverImage: z.string().optional(),
+  profileImage: z.string().nullable().optional().default(""),
+  coverImage: z.string().nullable().optional().default(""),
   aiChatAgent: z.boolean().optional().default(false),
   aiVoiceCallAgent: z.boolean().optional().default(false),
 });

@@ -62,6 +62,6 @@ export default async function EditNameCardPage({
   };
 
   return (
-    <CardForm initialData={formData} id={id} />
+    <CardForm initialData={formData} id={id} userId={session.user.id} />
   );
 }

@@ -32,9 +32,10 @@ import Image from "next/image";
 interface CardFormProps {
   initialData?: NameCardFormValues;
   id?: string;
+  userId?: string;
 }
 
-export function CardForm({ initialData, id }: CardFormProps) {
+export function CardForm({ initialData, id, userId }: CardFormProps) {
   const { data: session } = useSession();
   const form = useForm<NameCardFormValues>({
     resolver: zodResolver(nameCardSchema),
@@ -54,8 +55,8 @@ export function CardForm({ initialData, id }: CardFormProps) {
       linkedin: initialData?.linkedin || "",
       twitter: initialData?.twitter || "",
       instagram: initialData?.instagram || "",
-      profileImage: initialData?.profileImage || "",
-      coverImage: initialData?.coverImage || "",
+      profileImage: initialData?.profileImage ?? "",
+      coverImage: initialData?.coverImage ?? "",
       aiChatAgent: initialData?.aiChatAgent ?? false,
       aiVoiceCallAgent: initialData?.aiVoiceCallAgent ?? false,
     },
@@ -78,8 +79,8 @@ export function CardForm({ initialData, id }: CardFormProps) {
         linkedin: initialData.linkedin || "",
         twitter: initialData.twitter || "",
         instagram: initialData.instagram || "",
-        profileImage: initialData.profileImage || "",
-        coverImage: initialData.coverImage || "",
+        profileImage: initialData.profileImage ?? "",
+        coverImage: initialData.coverImage ?? "",
         aiChatAgent: initialData.aiChatAgent ?? false,
         aiVoiceCallAgent: initialData.aiVoiceCallAgent ?? false,
       });
@@ -495,7 +496,7 @@ export function CardForm({ initialData, id }: CardFormProps) {
                                                 profileFileName
                                               );
                                             if (url) {
-                                              field.onChange(url);
+                                              field.onChange(url + "?t=" + Date.now());
                                               toast.success("Image uploaded!");
                                             } else {
                                               toast.error(
@@ -602,7 +603,7 @@ export function CardForm({ initialData, id }: CardFormProps) {
                                                 coverFileName
                                               );
                                             if (url) {
-                                              field.onChange(url);
+                                              field.onChange(url + "?t=" + Date.now());
                                               toast.success(
                                                 "Cover image uploaded!"
                                               );
@@ -663,7 +664,7 @@ export function CardForm({ initialData, id }: CardFormProps) {
         <div className="hidden lg:block">
           <div className="sticky top-8">
             <h3 className="text-lg font-medium mb-4">Live Preview</h3>
-            <CardPreview formValues={formValues} id={id} />
+            <CardPreview formValues={formValues} id={id ?? ""} userId={userId ?? ""} />
           </div>
         </div>
       </div>

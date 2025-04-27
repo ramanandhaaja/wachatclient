@@ -89,7 +89,7 @@ export function CardPreview({
       {coverImage ? (
         <div className="relative h-40 -mt-6">
           <Image
-            src={coverImage}
+          src={coverImage}
             alt="Cover"
             fill
             className="object-cover"
@@ -107,7 +107,7 @@ export function CardPreview({
               size === "sm" ? "w-20 h-20" : "w-24 h-24"
             )}
           >
-            <AvatarImage src={profileImage} alt={fullName || "Your Name"} />
+            <AvatarImage src={profileImage || undefined} alt={fullName || "Your Name"} />
             <AvatarFallback className="text-xl font-medium">
               {initials}
             </AvatarFallback>

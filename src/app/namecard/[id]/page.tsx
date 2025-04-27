@@ -77,8 +77,8 @@ export default async function CardPage({
           instagram: card.instagram || undefined,
           aiChatAgent: card.aiChatAgent || false,
           aiVoiceCallAgent: card.aiVoiceCallAgent || false,
-          profileImage: card.profileImage || undefined,
-          coverImage: card.coverImage || undefined,
+          profileImage: card.profileImage || null,
+          coverImage: card.coverImage || null,
         }}
         id={card.id}
         userId={card.userId}
