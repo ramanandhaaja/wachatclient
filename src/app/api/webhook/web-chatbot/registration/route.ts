@@ -21,6 +21,7 @@ export async function POST(req: Request) {
       .from("conversations")
       .select("id")
       .eq("user_phone", userPhone)
+      .eq("user_id", userId)
       .eq("source", "web")
       .limit(1)
       .single();

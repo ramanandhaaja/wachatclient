@@ -106,17 +106,14 @@ export async function setupChatAgent(tools: DynamicStructuredTool[], useServerKe
        {booking_state}
 
        PENTING: JANGAN PERNAH membuat jawaban sendiri atau menggunakan informasi yang tidak dari tools!
-       - SELALU gunakan get_service_info untuk informasi layanan dan harga
-       - SELALU gunakan get_location untuk informasi lokasi dan petunjuk arah
+       - SELALU gunakan get_business_info untuk informasi umum bisnis
        - SELALU gunakan get_hours untuk informasi jam operasional
        - SELALU gunakan check_availability untuk cek slot kosong
        - SELALU gunakan check_client_exists untuk cek data pelanggan
 
        PANDUAN PENGGUNAAN TOOLS:
-       - Untuk informasi layanan/harga: WAJIB gunakan get_service_info, JANGAN membuat daftar sendiri
-       - Untuk lokasi/petunjuk arah: WAJIB gunakan get_location, JANGAN membuat petunjuk sendiri
+       - Untuk informasi umum pertanyaan: WAJIB gunakan get_business_info, JANGAN membuat daftar sendiri
        - Untuk jam operasional: WAJIB gunakan get_hours, JANGAN menyebutkan jam sendiri
-       - Untuk promo: WAJIB gunakan get_service_info dengan parameter "promo"
        - Untuk cek slot: WAJIB gunakan check_availability, JANGAN menebak ketersediaan
       
        Gunakan bahasa yang ramah dan informatif serta casual. Selalu tawarkan booking jika pelanggan menanyakan ketersediaan.`

@@ -26,11 +26,11 @@ export async function getTools(sessionId: string) {
   // Get a single store instance to use across all tools
   const store = useBookingStore.getState();
 
-  const getServiceInfo = new DynamicStructuredTool({
-    name: "get_service_info",
-    description: "Informasi layanan servis dan harga",
+  const getBusinessInfo = new DynamicStructuredTool({
+    name: "get_business_info",
+    description: "Informasi mengenai informasi umum perusahaan",
     schema: z.object({
-      service: z.string().describe("Nama layanan yang ingin dicek"),
+      service: z.string().describe("Informasi perusahaan yang ingin dicek"),
     }),
     func: async ({ service }) => {
       const businessInfo = await prisma.businessInfo.findFirst({
@@ -38,109 +38,36 @@ export async function getTools(sessionId: string) {
           userId: process.env.BUSINESS_OWNER_ID
         },
         select: {
-          services: true,
-          promos: true
+          data: true
         }
       });
 
       if (!businessInfo) {
-        return 'Maaf, informasi layanan belum tersedia.';
+        return 'Maaf, informasi perusahaan belum tersedia.';
       }
 
-      const services = businessInfo.services as Record<string, string | Record<string, string>>;
-      const promos = businessInfo.promos as Record<string, string | Record<string, string>>;
-
-      // Handle promo request
-      if (service.toLowerCase() === 'promo') {
-        if (!promos || Object.keys(promos).length === 0) {
-          return 'Maaf, tidak ada promo saat ini.';
-        }
-
-        const promoValues = Object.entries(promos)
-          .map(([key, value]) => {
-            if (typeof value === 'string') {
-              return value;
-            } else if (typeof value === 'object' && value !== null) {
-              return Object.values(value).join(', ');
+      // Format all business info fields as a human-readable string
+      function formatReadable(obj: any, indent = 0): string {
+        if (typeof obj !== 'object' || obj === null) return String(obj);
+        const pad = '  '.repeat(indent);
+        return Object.entries(obj)
+          .map(([k, v]) => {
+            if (typeof v === 'object' && v !== null) {
+              return `${pad}${k}:
+${formatReadable(v, indent + 1)}`;
+            } else {
+              return `${pad}${k}: ${v}`;
             }
-            return null;
           })
-          .filter(Boolean);
-
-        return promoValues.length > 0
-          ? `Promo saat ini:\n- ${promoValues.join('\n- ')}`
-          : 'Maaf, tidak ada promo saat ini.';
+          .join('\n');
       }
+      const output = formatReadable(businessInfo.data);
+      console.log(output);
+      return output || 'Belum ada informasi bisnis yang tersedia.';
 
-      // Handle service request
-      const requestedService = service.toLowerCase();
-      if (requestedService in services) {
-        const value = services[requestedService];
-        if (typeof value === 'string') {
-          return value;
-        } else if (typeof value === 'object' && value !== null) {
-          return Object.values(value).join(', ');
-        }
-      }
-
-      // If service not found, list all available services
-      const allServices = Object.entries(services)
-        .map(([key, value]) => {
-          const serviceInfo = typeof value === 'string' ? value : Object.values(value).join(', ');
-          return `${key}: ${serviceInfo}`;
-        });
-
-      return allServices.length > 0
-        ? `Berikut daftar layanan kami:\n- ${allServices.join('\n- ')}`
-        : 'Maaf, belum ada daftar layanan tersedia.';
     },
   });
 
-  const getLocation = new DynamicStructuredTool({
-    name: "get_location",
-    description: "Informasi lokasi dan petunjuk arah",
-    schema: z.object({
-      type: z.string().describe("Jenis informasi (alamat, petunjuk, parkir)"),
-    }),
-    func: async ({ type }) => {
-      const businessInfo = await prisma.businessInfo.findFirst({
-        where: {
-          userId: process.env.BUSINESS_OWNER_ID
-        },
-        select: {
-          location: true
-        }
-      });
-
-      if (!businessInfo) {
-        return 'Maaf, informasi lokasi belum tersedia.';
-      }
-
-      const location = businessInfo.location as Record<string, string | Record<string, string>>;
-      
-      // If the requested type exists directly in location object, return it
-      const requestedType = type.toLowerCase();
-      if (requestedType in location) {
-        const value = location[requestedType];
-        if (typeof value === 'string') {
-          return value;
-        } else if (typeof value === 'object' && value !== null) {
-          // If it's an object, concatenate all values
-          return Object.values(value).join(', ');
-        }
-      }
-      
-      // If type not found, return all location info concatenated
-      const allValues = Object.entries(location)
-        .filter(([_, value]) => typeof value === 'string')
-        .map(([_, value]) => value as string);
-      
-      return allValues.length > 0 
-        ? allValues.join(', ')
-        : 'Maaf, informasi lokasi yang diminta tidak tersedia.';
-    },
-  });
-  
 
   const checkAvailability = new DynamicStructuredTool({
     name: "check_availability",
@@ -394,5 +321,5 @@ export async function getTools(sessionId: string) {
     },
   });
 
-  return [checkAvailability, getServiceInfo, getLocation, checkClientExists, updateBookingState, bookAppointment];
+  return [checkAvailability, getBusinessInfo, checkClientExists, updateBookingState, bookAppointment];
 }
