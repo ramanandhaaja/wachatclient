@@ -22,7 +22,7 @@ export type BookingState = {
 /**
  * Get tools for the LangChain chat agent
  */
-export async function getTools(sessionId: string) {
+export async function getTools(sessionId: string, userId: string) {
   // Get a single store instance to use across all tools
   const store = useBookingStore.getState();
 
@@ -35,7 +35,7 @@ export async function getTools(sessionId: string) {
     func: async ({ service }) => {
       const businessInfo = await prisma.businessInfo.findFirst({
         where: {
-          userId: process.env.BUSINESS_OWNER_ID
+          userId: userId
         },
         select: {
           data: true

@@ -17,6 +17,7 @@ interface NameCardChatWidgetProps {
 export default function ChatWidget({ userId }: NameCardChatWidgetProps) {
   // For debug, log userId
   console.log('Chat Widget userId:', userId);
+  
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
@@ -78,15 +79,17 @@ export default function ChatWidget({ userId }: NameCardChatWidgetProps) {
     setIsOpen(!isOpen);
   };
 
+  
   const handleUserRegistered = async (
     newUserName: string,
     newUserPhone: string
   ) => {
+    
     // Call API to find or create conversation
     const res = await fetch("/api/webhook/web-chatbot/registration", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userPhone: newUserPhone, userName: newUserName, userId }),
+      body: JSON.stringify({ userPhone: newUserPhone, userName: newUserName, userId: userId }),
     });
     const data = await res.json();
     if (!res.ok) {
@@ -151,6 +154,7 @@ export default function ChatWidget({ userId }: NameCardChatWidgetProps) {
             sessionId,
             userName: isFirstMessage ? userName : undefined,
             userPhone: isFirstMessage ? userPhone : undefined,
+            userId: userId,
           }),
         }
       );

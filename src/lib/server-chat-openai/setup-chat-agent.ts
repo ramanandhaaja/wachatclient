@@ -19,10 +19,10 @@ const jakartaDate = new Intl.DateTimeFormat('id-ID', {
 
 
 // Helper function to get system prompt
-async function getSystemPrompt() {
+async function getSystemPrompt(userId: string) {
   const businessInfo = await prisma.businessInfo.findFirst({
     where: {
-      userId: process.env.BUSINESS_OWNER_ID
+      userId: userId
     },
     select: {
       systemPrompt: true
@@ -38,9 +38,11 @@ async function getSystemPrompt() {
 
 
 // Setup chat agent with LangChain
-export async function setupChatAgent(tools: DynamicStructuredTool[], useServerKey: boolean = false) {
+export async function setupChatAgent(tools: DynamicStructuredTool[], useServerKey: boolean = false, userId: string) {
   // Get system prompt
-  const systemPrompt = await getSystemPrompt();
+  const systemPrompt = await getSystemPrompt(userId);
+
+  //console.log("userId nandha", systemPrompt);
 
   // Initialize the model
   // Determine which API key to use
@@ -134,7 +136,7 @@ export async function setupChatAgent(tools: DynamicStructuredTool[], useServerKe
   const executor = new AgentExecutor({
     agent,
     tools,
-    verbose: true
+    verbose: false
   });
   
   return executor;

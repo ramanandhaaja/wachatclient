@@ -15,7 +15,7 @@ export async function POST(req: Request) {
     if (!userPhone) {
       return NextResponse.json({ error: "Missing phone" }, { status: 400 });
     }
-
+    
     // 1. Try to find existing conversation
     const { data: existing, error } = await supabase
       .from("conversations")

@@ -18,10 +18,12 @@ const MAX_MESSAGES = 10;
  */
 export async function processMessage(
   sessionId: string,
-  message: string
+  message: string,
+  userId: string
 ): Promise<string> {
   try {
     console.log("Processing message:", { sessionId, message });
+    
 
     // Initialize memory for this session if it doesn't exist
     if (!sessionMemory[sessionId]) {
@@ -62,11 +64,11 @@ export async function processMessage(
     };
 
     // Get tools based on session ID
-    const tools = await getTools(sessionId);
+    const tools = await getTools(sessionId, userId);
 
     // Setup the chat agent
     console.log("Setting up chat agent");
-    const executor = await setupChatAgent(tools as DynamicStructuredTool[]);
+    const executor = await setupChatAgent(tools as DynamicStructuredTool[], true, userId);
 
     // Invoke the executor with the context
     // console.log("Invoking executor with:", contextWithState);
@@ -80,8 +82,8 @@ export async function processMessage(
         console.log("Rate limit hit, trying with server API key");
         
         // Create a new executor with the server API key
-        const serverTools = await getTools(sessionId);
-        const serverExecutor = await setupChatAgent(serverTools as DynamicStructuredTool[], true);
+        const serverTools = await getTools(sessionId, userId);
+        const serverExecutor = await setupChatAgent(serverTools as DynamicStructuredTool[], true, userId);
         
         // Try again with the server executor
         result = await serverExecutor.invoke(contextWithState);

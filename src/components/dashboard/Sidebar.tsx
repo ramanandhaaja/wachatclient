@@ -86,11 +86,12 @@ export function Sidebar() {
       href: "/dashboard/namecard",
       icon: <BookOpen className="h-5 w-5" />,
     },
+    /*
     {
       title: "Calendar",
       href: "/dashboard/calendar",
       icon: <Calendar className="h-5 w-5" />,
-    },
+    },*/
     {
       title: "Conversation",
       href: "/dashboard/conversation",

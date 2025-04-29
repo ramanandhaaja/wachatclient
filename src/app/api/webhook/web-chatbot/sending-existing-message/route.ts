@@ -12,6 +12,7 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const { message, sessionId } = body;
+    const userId = body.userId;
 
     if (!message) {
       return NextResponse.json(
@@ -55,7 +56,7 @@ export async function POST(req: Request) {
       .eq("id", sessionId);
 
     // 3. Generate AI/admin response (uncomment and use your own function)
-    const aiResponse = await processMessage(sessionId, message);
+    const aiResponse = await processMessage(sessionId, message, userId);
 
     // 4. Store AI/admin response
     const { error: aiMessageError } = await supabase.from("messages").insert({

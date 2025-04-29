@@ -41,7 +41,7 @@ export function useOpenAI() {
 
       // Setup the agent with empty tools array for client-side chat
       // Client-side chat doesn't need the booking tools
-      const executor = await setupChatAgent([] as DynamicStructuredTool[]);
+      const executor = await setupChatAgent([] as DynamicStructuredTool[], true, userId);
 
       // Get chat history from memory
       const history = await clientSessionMemories[sessionId].loadMemoryVariables({});

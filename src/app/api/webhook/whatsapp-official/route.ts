@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { processMessage } from "@/lib/server-chat-openai/process-message";
+import { prisma } from "@/lib/prisma";
 import { v4 as uuidv4 } from "uuid";
 
 // Initialize Supabase client
@@ -15,12 +16,15 @@ const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN || "your_verify_token";
 async function sendtoChatBot(
   to: string,
   message: string,
-  conversationId: string
+  conversationId: string,
+  userId: string
 ) {
   try {
     // Process the message using the AI
     const sessionId = to; // Using phone number as session ID
-    const response = await processMessage(sessionId, message);
+    
+    //TODO belum bener untuk get user id, karena no wa belum kita set berdasarkan userid
+    const response = await processMessage(sessionId, message, userId);
 
     if (response) {
       // Send the AI response back via WhatsApp
@@ -195,11 +199,30 @@ export async function POST(request: Request) {
 
               console.log("Processing message from:", contact.wa_id);
 
+              // First, find the userId associated with this phone number using Prisma
+              const userPhone = await prisma.userPhone.findFirst({
+                where: {
+                  phoneNumber: value.metadata.display_phone_number, // Use business WhatsApp number for lookup
+                  isActive: true,
+                },
+                select: {
+                  userId: true,
+                },
+              });
+
+              if (!userPhone) {
+                console.error("No userId found for phone number:", value.metadata.display_phone_number);
+                return;
+              }
+              const userId = userPhone.userId;
+
               // Store contact information
               const { data: existingContact, error: findError } = await supabase
                 .from("conversations")
                 .select("id")
                 .eq("user_phone", contact.wa_id)
+                .eq("user_id", userId)
+                .eq("source", "whatsapp")
                 .single();
 
               if (findError) {
@@ -216,7 +239,8 @@ export async function POST(request: Request) {
                   await supabase
                     .from("conversations")
                     .insert({
-                      user_id: contact.wa_id,
+                      user_id: userId,
+                      whatsapp_number: value.metadata.display_phone_number,
                       user_phone: contact.wa_id,
                       user_name: contact.profile.name,
                       status: "active",
@@ -293,10 +317,12 @@ export async function POST(request: Request) {
 
               // Send a simple "thanks" reply
               //await sendSimpleReply(contact.wa_id);
+              //TODO wa belum bener jg
               await sendtoChatBot(
                 contact.wa_id,
                 message.text.body,
-                conversationId
+                conversationId,
+                userId
               );
             }
           }
