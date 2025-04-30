@@ -23,7 +23,6 @@ async function sendtoChatBot(
     // Process the message using the AI
     const sessionId = to; // Using phone number as session ID
     
-    //TODO belum bener untuk get user id, karena no wa belum kita set berdasarkan userid
     const response = await processMessage(sessionId, message, userId);
 
     if (response) {
@@ -317,7 +316,6 @@ export async function POST(request: Request) {
 
               // Send a simple "thanks" reply
               //await sendSimpleReply(contact.wa_id);
-              //TODO wa belum bener jg
               await sendtoChatBot(
                 contact.wa_id,
                 message.text.body,

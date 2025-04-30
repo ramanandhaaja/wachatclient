@@ -27,7 +27,7 @@ export default function Home() {
               height={40}
               className="h-10 w-10"
             />
-            <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">Cardify</span>
+            <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">kardis.ai</span>
           </div>
           <nav className="hidden md:flex gap-8">
             <Link
@@ -118,7 +118,7 @@ export default function Home() {
                   <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600 block">with AI Digital Name Cards</span>
                 </h1>
                 <p className="max-w-[600px] text-lg text-gray-600 md:text-xl">
-                  Share your contact, brand, and story instantly with Cardify. Network smarter, make memorable introductions, and grow your business with AI-powered digital cards.
+                  Share your contact, brand, and story instantly with kardis.ai. Network smarter, make memorable introductions, and grow your business with AI-powered digital cards.
                 </p>
               </div>
               
@@ -147,7 +147,7 @@ export default function Home() {
                   ))}
                 </div>
                 <p className="text-sm text-gray-500">
-                  <span className="font-semibold text-gray-900">500+</span> businesses trust Cardify
+                  <span className="font-semibold text-gray-900">500+</span> businesses trust kardis.ai
                 </p>
               </div>
             </div>
@@ -211,13 +211,13 @@ export default function Home() {
         <div className="container mx-auto px-4 md:px-6">
           <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
             <div className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5 mb-4">
-              <span className="text-xs font-medium text-blue-700">Why Cardify?</span>
+              <span className="text-xs font-medium text-blue-700">Why kardis.ai?</span>
             </div>
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
               Everything You Need for Smart Networking
             </h2>
             <p className="max-w-[800px] text-lg text-gray-600 md:text-xl">
-              Cardify uses AI to help you share, connect, and follow up—no paper, no hassle, just smarter networking.
+              kardis.ai uses AI to help you share, connect, and follow up—no paper, no hassle, just smarter networking.
             </p>
           </div>
           
@@ -234,7 +234,7 @@ export default function Home() {
               },
               {
                 title: "AI-Powered Introductions",
-                description: "Let Cardify craft smart, personalized introductions and follow-ups for every new connection.",
+                description: "Let kardis.ai craft smart, personalized introductions and follow-ups for every new connection.",
                 icon: (
                   <svg className="h-7 w-7 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
@@ -243,7 +243,7 @@ export default function Home() {
               },
               {
                 title: "Smart Contact Management",
-                description: "Organize, tag, and search all your contacts. Cardify keeps your network at your fingertips.",
+                description: "Organize, tag, and search all your contacts. kardis.ai keeps your network at your fingertips.",
                 icon: (
                   <svg className="h-7 w-7 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -270,7 +270,7 @@ export default function Home() {
               },
               {
                 title: "Multilingual Cards",
-                description: "Share your card in any language—Cardify auto-translates so you connect globally.",
+                description: "Share your card in any language—kardis.ai auto-translates so you connect globally.",
                 icon: (
                   <svg className="h-7 w-7 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
@@ -301,10 +301,10 @@ export default function Home() {
         <div className="container mx-auto px-4 md:px-6">
           <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
             <div className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5 mb-4">
-              <span className="text-xs font-medium text-blue-700">How Cardify Works</span>
+              <span className="text-xs font-medium text-blue-700">How kardis.ai Works</span>
             </div>
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
-              How Cardify <span className="text-blue-600">Works</span>
+              How kardis.ai <span className="text-blue-600">Works</span>
             </h2>
             <p className="max-w-[800px] text-lg text-gray-600 md:text-xl">
               Get started in minutes and transform how you connect, share, and grow your network
@@ -328,7 +328,7 @@ export default function Home() {
               {
                 step: "3",
                 title: "Grow Your Network",
-                description: "Let Cardify's AI help you follow up, remember details, and turn contacts into real relationships.",
+                description: "Let kardis.ai's AI help you follow up, remember details, and turn contacts into real relationships.",
                 image: "https://images.unsplash.com/photo-1563986768494-4dee2763ff3f?q=80&w=2940&auto=format&fit=crop"
               },
             ].map((step, index) => (
@@ -368,31 +368,31 @@ export default function Home() {
               <span className="text-xs font-medium text-blue-700">User Stories</span>
             </div>
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
-              Why Businesses <span className="text-blue-600">Love Cardify</span>
+              Why Businesses <span className="text-blue-600">Love kardis.ai</span>
             </h2>
             <p className="max-w-[800px] text-lg text-gray-600 md:text-xl">
-              See how professionals and teams are building real connections with Cardify
+              See how professionals and teams are building real connections with kardis.ai
             </p>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-8">
             {[
               {
-                quote: "Cardify made it so easy to share my contact and portfolio at events. People remember me, and I never run out of cards!",
+                quote: "kardis.ai made it so easy to share my contact and portfolio at events. People remember me, and I never run out of cards!",
                 author: "Sarah Johnson",
                 role: "Product Designer",
                 company: "Freelance",
                 image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=2787&auto=format&fit=crop"
               },
               {
-                quote: "Our team uses Cardify for all our networking events. The AI follow-ups are a game-changer for building real business relationships.",
+                quote: "Our team uses kardis.ai for all our networking events. The AI follow-ups are a game-changer for building real business relationships.",
                 author: "Michael Chen",
                 role: "Sales Director",
                 company: "GrowthCo",
                 image: "https://images.unsplash.com/photo-1563986768494-4dee2763ff3f?q=80&w=2787&auto=format&fit=crop"
               },
               {
-                quote: "I landed two new clients last month just by sharing my Cardify card. The analytics let me know who viewed my card and when.",
+                quote: "I landed two new clients last month just by sharing my kardis.ai card. The analytics let me know who viewed my card and when.",
                 author: "Emily Rodriguez",
                 role: "Consultant",
                 company: "GlobalServe",
@@ -547,7 +547,7 @@ export default function Home() {
               Ready to Make Every Connection Count?
             </h2>
             <p className="text-lg md:text-xl text-blue-100 max-w-xl">
-              Join thousands of professionals and teams who network smarter, never lose a contact, and grow their business with Cardify.
+              Join thousands of professionals and teams who network smarter, never lose a contact, and grow their business with kardis.ai.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <Button
@@ -562,7 +562,7 @@ export default function Home() {
                 variant="outline"
                 className="bg-transparent text-white border-white hover:bg-white/10 transition-all duration-200 font-medium px-8"
               >
-                See Cardify in Action
+                See kardis.ai in Action
               </Button>
             </div>
             <div className="pt-4 text-sm text-blue-100">
@@ -585,10 +585,10 @@ export default function Home() {
                   height={32}
                   className="h-8 w-8"
                 />
-                <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">Cardify</span>
+                <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">kardis.ai</span>
               </div>
               <p className="text-gray-600 mb-4 max-w-md">
-                Cardify helps you connect, share, and grow your network with AI-powered digital name cards.
+                kardis.ai helps you connect, share, and grow your network with AI-powered digital name cards.
               </p>
               <div className="flex space-x-4">
                 {['twitter', 'facebook', 'instagram', 'linkedin'].map(social => (
@@ -641,7 +641,7 @@ export default function Home() {
           <ChatWidget userId={"cm9wggdu90000l804fcfjxrlo"} />
           <div className="border-t border-gray-100 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
             <p className="text-sm text-gray-500 mb-4 md:mb-0">
-              2025 Cardify. All rights reserved.
+              2025 kardis.ai. All rights reserved.
             </p>
             <div className="flex space-x-6">
               {['Terms', 'Privacy', 'Cookies', 'GDPR'].map(item => (
