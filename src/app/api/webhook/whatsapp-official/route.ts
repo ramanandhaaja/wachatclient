@@ -281,12 +281,15 @@ export async function POST(request: Request) {
               // Send a simple "thanks" reply
               //await sendSimpleReply(contact.wa_id);
               // Offload AI reply to background (fire-and-forget)
+              await sendtoChatBot(contact.wa_id, message.text.body, conversationId, userId);
+              console.log("Offloading AI reply to background");
+              /*
               processAndReply({
                 to: contact.wa_id,
                 message: message.text.body,
                 conversationId,
                 userId
-              }).catch(console.error);
+              }).catch(console.error);*/
             }
           }
         }
