@@ -154,7 +154,9 @@ export async function setupChatAgent(tools: DynamicStructuredTool[], useServerKe
     },
   });
 
-  const allTools = [...tools, knowledgeBaseTool];
+  //kita hide dulu
+  //const allTools = [...tools, knowledgeBaseTool];
+  const allTools = [...tools];
   console.log('[setupChatAgent] All tools prepared:', allTools.length);
 
   // Create the agent using the newer tools API
