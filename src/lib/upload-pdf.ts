@@ -38,6 +38,7 @@ export async function extractTextFromPdf(file: File): Promise<string> {
   const formData = new FormData();
   formData.append("file", file);
 
+  /*
   const res = await fetch("/api/knowledge/extract-pdf", {
     method: "POST",
     body: formData,
@@ -50,8 +51,8 @@ export async function extractTextFromPdf(file: File): Promise<string> {
 
   const { text } = await res.json();
   return text;
-
-  //return "sukses";
+*/
+  return "sukses";
 }
 
 
@@ -63,10 +64,11 @@ export async function extractTextFromPdf(file: File): Promise<string> {
  * @param bucket Storage bucket name (default: 'pdfs')
  * @returns { url, text }
  */
+
 export async function uploadPdfAndExtractText(
   file: File,
   userId: string,
-  bucket = 'pdfs'
+  bucket = 'knowledge'
 ): Promise<{ url: string | null; text: string }> {
   const [url, text] = await Promise.all([
     uploadFileToSupabase(file, bucket, userId, file.name),
@@ -74,3 +76,5 @@ export async function uploadPdfAndExtractText(
   ]);
   return { url, text };
 }
+
+

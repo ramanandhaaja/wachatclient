@@ -17,7 +17,7 @@ const supabase = createClient(
 // Verify token for webhook verification
 const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN || "your_verify_token";
 
-async function sendtoChatBot(
+export async function sendtoChatBot(
   to: string,
   message: string,
   conversationId: string,

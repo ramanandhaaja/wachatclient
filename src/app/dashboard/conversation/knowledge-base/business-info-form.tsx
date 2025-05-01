@@ -225,19 +225,32 @@ export default function BusinessInfoForm({
                       const file = e.target.files?.[0];
                       if (!file) return;
                       // Import dynamically to avoid SSR issues
-                      const { uploadPdfAndExtractText } = await import("@/lib/upload-pdf");
+                      const { uploadPdfAndExtractText } = await import(
+                        "@/lib/upload-pdf"
+                      );
                       try {
                         handleFieldChange(item.id, "value", "Extracting...");
-                        const { url, text } = await uploadPdfAndExtractText(file, userId || "", "knowledge");
+                        const { url, text } = await uploadPdfAndExtractText(
+                          file,
+                          userId || "",
+                          "knowledge"
+                        );
                         const fileInfo = {
                           title: item.key,
                           name: file.name,
                           url,
-                          text
+                          text,
                         };
-                        handleFieldChange(item.id, "value", JSON.stringify(fileInfo, null, 2));
+                        //const fileInfoString = `${fileInfo.title}, ${fileInfo.name}, ${fileInfo.url}, ${fileInfo.text}`;
+                        const fileInfoString = `di upload di: ${fileInfo.url}`;
+                        
+                        handleFieldChange(item.id, "value", fileInfoString);
                       } catch (err) {
-                        handleFieldChange(item.id, "value", "Failed to extract text from PDF");
+                        handleFieldChange(
+                          item.id,
+                          "value",
+                          "Failed to extract text from PDF"
+                        );
                         console.error(err);
                       }
                     }}
@@ -246,7 +259,9 @@ export default function BusinessInfoForm({
                     type="button"
                     variant="secondary"
                     size="sm"
-                    onClick={() => document.getElementById(`file-upload-${item.id}`)?.click()}
+                    onClick={() =>
+                      document.getElementById(`file-upload-${item.id}`)?.click()
+                    }
                   >
                     Upload File
                   </Button>
@@ -282,7 +297,9 @@ export default function BusinessInfoForm({
         {/* Right column: System Prompt */}
         <div className="md:mx-4">
           <div className="flex items-center gap-2 mb-2">
-            <label className="block font-semibold">System Prompt (optional)</label>
+            <label className="block font-semibold">
+              System Prompt (optional)
+            </label>
             <Button
               type="button"
               variant="outline"
