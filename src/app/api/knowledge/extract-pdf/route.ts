@@ -9,39 +9,31 @@ import { OpenAIEmbeddings } from "@langchain/openai";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 
 async function extractTextFromPdfToPinecone(buffer: Buffer, filename: string, userId: string): Promise<string> {
-  // 1. Extract text from PDF buffer using LangChain's PDFLoader
-  const loader = new PDFLoader(new Blob([buffer]), { splitPages: false });
-  const docs: Document[] = await loader.load();
-  const fullText = docs.map(doc => doc.pageContent).join("\n");
+  // 1. Extract text from PDF buffer using LangChain's PDFLoader, chunking per page
+  const loader = new PDFLoader(new Blob([buffer]), { splitPages: true });
+  const docs: Document[] = await loader.load(); // each doc = one page
 
-  // 2. Chunk the text
-  const splitter = new RecursiveCharacterTextSplitter({
-    chunkSize: 1000,
-    chunkOverlap: 200,
-  });
-  const chunks = await splitter.createDocuments([fullText]);
-
-  // 3. Embed the chunks
+  // 2. Embed each page as a chunk
   const embeddings = new OpenAIEmbeddings({
     openAIApiKey: process.env.OPENAI_API_KEY_SERVER,
   });
-  const vectors = await embeddings.embedDocuments(chunks.map(chunk => chunk.pageContent));
+  const vectors = await embeddings.embedDocuments(docs.map(doc => doc.pageContent));
 
-  // 4. Upsert to Pinecone
+  // 3. Upsert to Pinecone
   const index = pinecone.Index(process.env.PINECONE_INDEX!);
   const upserts = vectors.map((values, i) => ({
-    id: `${userId}-${filename}-${i}`,
+    id: `${userId}-${filename}-page${i + 1}`,
     values,
     metadata: {
       filename,
-      chunk: i,
-      text: chunks[i].pageContent,
+      page: i + 1,
+      text: docs[i].pageContent,
       userId,
     },
   }));
   await index.namespace(userId).upsert(upserts);
 
-  return `Inserted ${upserts.length} chunks for file ${filename}`;
+  return `Inserted ${upserts.length} page chunks for file ${filename}`;
 }
 
 
