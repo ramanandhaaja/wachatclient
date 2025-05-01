@@ -22,12 +22,10 @@ export async function processMessage(
   userId: string
 ): Promise<string> {
   try {
-    console.log("Processing message:", { sessionId, message });
-    
-
+    console.log('[processMessage] START', { sessionId, message, userId });
     // Initialize memory for this session if it doesn't exist
     if (!sessionMemory[sessionId]) {
-      console.log("Initializing new memory");
+      console.log('[processMessage] Initializing new memory for session');
       const chatHistory = new ChatMessageHistory();
       const memory = new BufferMemory({
         memoryKey: "chat_history",
@@ -36,7 +34,6 @@ export async function processMessage(
         outputKey: "output",
         chatHistory,
       });
-
       sessionMemory[sessionId] = memory;
     }
 
@@ -44,17 +41,16 @@ export async function processMessage(
     const bookingStore = useBookingStore.getState();
     let currentBookingState = bookingStore.getBookingState(sessionId);
     if (!currentBookingState) {
+      console.log('[processMessage] Initializing booking state for session');
       bookingStore.initializeSession(sessionId);
       currentBookingState = bookingStore.getBookingState(sessionId);
     }
-
-    console.log("Current booking state:", currentBookingState);
-    //console.log("Booking State value :", bookingStore.getBookingStateValue(sessionId));
+    console.log('[processMessage] Current booking state:', currentBookingState);
 
     // Get chat history from memory
     const history = await sessionMemory[sessionId].loadMemoryVariables({});
     const messages = history.chat_history as BaseMessage[];
-    //console.log("Loaded chat history:", messages);
+    console.log('[processMessage] Loaded chat history:', messages?.length);
 
     // Add booking state to context
     const contextWithState = {
@@ -62,65 +58,58 @@ export async function processMessage(
       chat_history: messages || [],
       booking_state: JSON.stringify(currentBookingState, null, 2),
     };
+    console.log('[processMessage] Context for executor:', contextWithState);
 
     // Get tools based on session ID
+    console.log('[processMessage] Fetching tools');
     const tools = await getTools(sessionId, userId);
+    console.log('[processMessage] Tools fetched:', Array.isArray(tools) ? tools.length : typeof tools);
 
     // Setup the chat agent
-    console.log("Setting up chat agent");
+    console.log('[processMessage] Setting up chat agent');
     const executor = await setupChatAgent(tools as DynamicStructuredTool[], true, userId);
+    console.log('[processMessage] Chat agent setup complete');
 
     // Invoke the executor with the context
-    // console.log("Invoking executor with:", contextWithState);
-    
+    console.log('[processMessage] Invoking executor');
     let result;
     try {
       result = await executor.invoke(contextWithState);
+      console.log('[processMessage] Executor result:', result);
     } catch (error: any) {
+      console.error('[processMessage] Executor error:', error);
       // Check if it's a rate limit error
       if (error.message && error.message.includes('429') && process.env.OPENAI_API_KEY_SERVER) {
-        console.log("Rate limit hit, trying with server API key");
-        
+        console.log('[processMessage] Rate limit hit, trying with server API key');
         // Create a new executor with the server API key
         const serverTools = await getTools(sessionId, userId);
         const serverExecutor = await setupChatAgent(serverTools as DynamicStructuredTool[], true, userId);
-        
         // Try again with the server executor
         result = await serverExecutor.invoke(contextWithState);
+        console.log('[processMessage] Server executor result:', result);
       } else {
         // If it's not a rate limit error or we don't have a server key, rethrow
         throw error;
       }
     }
 
-    //console.log("Executor result:", result);
-
     // Save the conversation to memory with proper message formatting
-    if (result.output) {
-      //console.log("Saving to memory:", {
-      //  input: message,
-      //  output: result.output,
-      //});
-
+    if (result && result.output) {
+      console.log('[processMessage] Saving messages to memory');
       // Create message objects
       const humanMessage = new HumanMessage(message);
       const aiMessage = new AIMessage(result.output);
-
       // Add messages to chat history
       await sessionMemory[sessionId].chatHistory.addMessage(humanMessage);
       await sessionMemory[sessionId].chatHistory.addMessage(aiMessage);
-
-      //console.log(
-      //  "Updated chat history:",
-      //  await sessionMemory[sessionId].chatHistory.getMessages()
-      //);
-
+      console.log('[processMessage] Updated chat history');
       return result.output as string;
     } else {
+      console.warn("[processMessage] No valid output from executor");
       return "I apologize, but I couldn't process your message properly.";
     }
   } catch (error) {
-    console.error("Error processing message:", error);
+    console.error("[processMessage] Error processing message:", error);
     return "I apologize, but an error occurred while processing your message.";
   }
 }
