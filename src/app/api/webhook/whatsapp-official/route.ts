@@ -281,13 +281,12 @@ export async function POST(request: Request) {
               // Send a simple "thanks" reply
               //await sendSimpleReply(contact.wa_id);
               // Offload AI reply to background (fire-and-forget)
-              // Offload AI reply to background (fire-and-forget)
-              sendtoChatBot(contact.wa_id, message.text.body, conversationId, userId)
+              await sendtoChatBot(contact.wa_id, message.text.body, conversationId, userId)
                 .catch(console.error);
-                
+
               console.log("Offloading AI reply to background");
               // Immediately return a 200 OK response to WhatsApp
-              return new NextResponse("OK", { status: 200 });
+             // return new NextResponse("OK", { status: 200 });
             }
           }
         }
