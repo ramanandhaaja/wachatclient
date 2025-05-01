@@ -4,6 +4,11 @@ import { AgentExecutor, createOpenAIToolsAgent } from 'langchain/agents';
 import { ChatPromptTemplate, MessagesPlaceholder } from '@langchain/core/prompts';
 import { BookingState } from './tools';
 import { prisma } from '@/lib/prisma';
+import { PineconeStore } from "@langchain/community/vectorstores/pinecone";
+import { pinecone } from "@/lib/pinecone";
+import { OpenAIEmbeddings } from "@langchain/openai";
+import { ConversationalRetrievalQAChain } from "langchain/chains";
+import { z } from "zod";
 
 // Memory key for chat history
 const MEMORY_KEY = "chat_history";
@@ -125,17 +130,46 @@ export async function setupChatAgent(tools: DynamicStructuredTool[], useServerKe
     new MessagesPlaceholder("agent_scratchpad"),
   ]);
 
+  // --- Pinecone Retriever + Tools Agent Pattern ---
+  // (Imports moved to top of file)
+
+  // Assume userId is available in this scope or passed in as an argument
+  const index = pinecone.Index(process.env.PINECONE_INDEX!);
+  const vectorStore = await PineconeStore.fromExistingIndex(
+    new OpenAIEmbeddings({ openAIApiKey: process.env.OPENAI_API_KEY_SERVER }),
+    {
+      pineconeIndex: index,
+      namespace: userId,
+    }
+  );
+  const retriever = vectorStore.asRetriever({ k: 5 });
+
+  // Add Pinecone knowledge base search as a tool
+  const knowledgeBaseTool = new DynamicStructuredTool({
+    name: "knowledge_base_search",
+    description: "informasi mengenai detail menu dan daftar rekanan gedung",
+    schema: z.object({
+      query: z.string().describe("informasi mengenai detail menu dan daftar rekanan gedung."),
+    }),
+    func: async ({ query }) => {
+      const docs = await retriever.getRelevantDocuments(query);
+      return docs.map(doc => doc.pageContent).join("\n\n");
+    },
+  });
+
+  const allTools = [...tools, knowledgeBaseTool];
+
   // Create the agent using the newer tools API
   const agent = await createOpenAIToolsAgent({
     llm: model,
     prompt,
-    tools,  
+    tools: allTools,
   });
 
   // Create the executor and explicitly return it
   const executor = new AgentExecutor({
     agent,
-    tools,
+    tools: allTools,
     verbose: false
   });
   
