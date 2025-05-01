@@ -23,11 +23,20 @@ async function sendtoChatBot(
   conversationId: string,
   userId: string
 ) {
+  console.log('[sendtoChatBot] Called with:', { to, message, conversationId, userId });
   try {
-    // Process the message using the AI
+    // Process the message using the AI, with a 30s timeout
     const sessionId = to; // Using phone number as session ID
-    
-    const response = await processMessage(sessionId, message, userId);
+    let response;
+    try {
+      response = await Promise.race([
+        processMessage(sessionId, message, userId),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('AI timeout')), 30000)),
+      ]);
+    } catch (e) {
+      console.error('[sendtoChatBot] Error or timeout during processMessage:', e);
+      return;
+    }
     console.log('[sendtoChatBot] AI response:', response);
 
     if (response) {
@@ -296,6 +305,7 @@ export async function POST(request: Request) {
 
 // Background processor for AI reply
 async function processAndReply({ to, message, conversationId, userId }: { to: string, message: string, conversationId: string, userId: string }) {
+  console.log('[processAndReply] Called with:', { to, message, conversationId, userId });
   await sendtoChatBot(to, message, conversationId, userId);
 }
 
