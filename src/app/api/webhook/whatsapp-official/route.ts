@@ -281,16 +281,20 @@ export async function POST(request: Request) {
               // Send a simple "thanks" reply
               //await sendSimpleReply(contact.wa_id);
               // Offload AI reply to background (fire-and-forget)
-              await sendtoChatBot(contact.wa_id, message.text.body, conversationId, userId);
-              console.log("Offloading AI reply to background");
-              /*
+              // 1. Respond to WhatsApp immediately (to avoid timeouts)
+              const immediateResponse = NextResponse.json({ status: "ok" }, { status: 200 });
+
+              // 2. Offload AI reply to background (fire-and-forget)
               processAndReply({
                 to: contact.wa_id,
                 message: message.text.body,
                 conversationId,
                 userId
-              }).catch(console.error);*/
-            }
+              }).catch(console.error);
+
+              // 3. Return the immediate response
+              return immediateResponse;
+            
           }
         }
       }
