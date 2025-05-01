@@ -44,20 +44,18 @@ async function getSystemPrompt(userId: string) {
 
 // Setup chat agent with LangChain
 export async function setupChatAgent(tools: DynamicStructuredTool[], useServerKey: boolean = false, userId: string) {
+  console.log('[setupChatAgent] START', { toolsCount: tools.length, useServerKey, userId });
+
   // Get system prompt
   const systemPrompt = await getSystemPrompt(userId);
-
-  //console.log("userId nandha", systemPrompt);
+  console.log('[setupChatAgent] Got system prompt');
 
   // Initialize the model
-  // Determine which API key to use
   const apiKey = useServerKey 
     ? process.env.OPENAI_API_KEY_SERVER 
     : process.env.OPENAI_API_KEY;
-  
-  //console.log("Using API key:", useServerKey ? "SERVER" : "PRIMARY", apiKey ? "(key is set)" : "(key is not set)");
-  
-  // Create the model with the selected API key
+  console.log('[setupChatAgent] Preparing ChatOpenAI model', { apiKeyUsed: useServerKey ? 'SERVER' : 'PRIMARY', hasKey: !!apiKey });
+
   const model = new ChatOpenAI({
     temperature: 0,
     modelName: process.env.NEXT_PUBLIC_OPENAI_MODEL,
@@ -65,8 +63,7 @@ export async function setupChatAgent(tools: DynamicStructuredTool[], useServerKe
     streaming: false,
   });
 
-  //gpt-4o-mini
-  // OpenRouter integration
+  // OpenRouter integration (secondary model)
   const model2 = new ChatOpenAI({
     modelName: 'openrouter/optimus-alpha',
     temperature: 0.8,
@@ -75,21 +72,21 @@ export async function setupChatAgent(tools: DynamicStructuredTool[], useServerKe
     configuration: {
       baseURL: 'https://openrouter.ai/api/v1',
       defaultHeaders: {
-        'HTTP-Referer': 'http://localhost:3000', // Site URL for rankings on openrouter.ai
-        'X-Title': 'Barbershop', // Site title for rankings on openrouter.ai
+        'HTTP-Referer': 'http://localhost:3000',
+        'X-Title': 'Barbershop',
       }
     }
   });
-  
+  console.log('[setupChatAgent] Model(s) created');
+
   // Add a fallback mechanism to handle rate limit errors
   const originalInvoke = model.invoke.bind(model);
   model.invoke = async (...args) => {
     try {
       return await originalInvoke(...args);
     } catch (error: any) {
-      // If we hit a rate limit error and have a server API key, try again with that
       if (error.message && error.message.includes('429') && process.env.OPENAI_API_KEY_SERVER) {
-        //console.log("Rate limit hit, using server API key as fallback");
+        console.log('[setupChatAgent] Rate limit hit, using server API key as fallback');
         const fallbackModel = new ChatOpenAI({
           temperature: 0,
           modelName: process.env.NEXT_PUBLIC_OPENAI_MODEL,
@@ -129,11 +126,10 @@ export async function setupChatAgent(tools: DynamicStructuredTool[], useServerKe
     ["human", "{input}"],
     new MessagesPlaceholder("agent_scratchpad"),
   ]);
+  console.log('[setupChatAgent] Prompt created');
 
   // --- Pinecone Retriever + Tools Agent Pattern ---
-  // (Imports moved to top of file)
-
-  // Assume userId is available in this scope or passed in as an argument
+  console.log('[setupChatAgent] Creating Pinecone vector store');
   const index = pinecone.Index(process.env.PINECONE_INDEX!);
   const vectorStore = await PineconeStore.fromExistingIndex(
     new OpenAIEmbeddings({ openAIApiKey: process.env.OPENAI_API_KEY_SERVER }),
@@ -142,6 +138,7 @@ export async function setupChatAgent(tools: DynamicStructuredTool[], useServerKe
       namespace: userId,
     }
   );
+  console.log('[setupChatAgent] Pinecone vector store ready');
   const retriever = vectorStore.asRetriever({ k: 5 });
 
   // Add Pinecone knowledge base search as a tool
@@ -158,13 +155,16 @@ export async function setupChatAgent(tools: DynamicStructuredTool[], useServerKe
   });
 
   const allTools = [...tools, knowledgeBaseTool];
+  console.log('[setupChatAgent] All tools prepared:', allTools.length);
 
   // Create the agent using the newer tools API
+  console.log('[setupChatAgent] Creating OpenAI tools agent');
   const agent = await createOpenAIToolsAgent({
     llm: model,
     prompt,
     tools: allTools,
   });
+  console.log('[setupChatAgent] Agent created');
 
   // Create the executor and explicitly return it
   const executor = new AgentExecutor({
@@ -172,6 +172,7 @@ export async function setupChatAgent(tools: DynamicStructuredTool[], useServerKe
     tools: allTools,
     verbose: false
   });
-  
+  console.log('[setupChatAgent] Executor created, returning');
   return executor;
 }
+
