@@ -294,7 +294,7 @@ export async function POST(request: Request) {
 
               // 3. Return the immediate response
               return immediateResponse;
-            
+            }
           }
         }
       }
