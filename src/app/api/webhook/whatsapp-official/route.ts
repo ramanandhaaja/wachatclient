@@ -28,6 +28,7 @@ async function sendtoChatBot(
     const sessionId = to; // Using phone number as session ID
     
     const response = await processMessage(sessionId, message, userId);
+    console.log('[sendtoChatBot] AI response:', response);
 
     if (response) {
       // Send the AI response back via WhatsApp
@@ -37,27 +38,40 @@ async function sendtoChatBot(
       const WHATSAPP_ACCESS_TOKEN =
         process.env.NEXT_PUBLIC_WHATSAPP_ACCESS_TOKEN || "";
 
+      const whatsappUrl = `https://graph.facebook.com/${WHATSAPP_API_VERSION}/${WHATSAPP_PHONE_NUMBER_ID}/messages`;
+      const whatsappPayload = {
+        messaging_product: "whatsapp",
+        recipient_type: "individual",
+        to: to,
+        type: "text",
+        text: {
+          body: response,
+        },
+      };
+      console.log('[sendtoChatBot] Sending WhatsApp message:', {
+        url: whatsappUrl,
+        payload: whatsappPayload,
+      });
+
       const whatsappResponse = await fetch(
-        `https://graph.facebook.com/${WHATSAPP_API_VERSION}/${WHATSAPP_PHONE_NUMBER_ID}/messages`,
+        whatsappUrl,
         {
           method: "POST",
           headers: {
             Authorization: `Bearer ${WHATSAPP_ACCESS_TOKEN}`,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            messaging_product: "whatsapp",
-            recipient_type: "individual",
-            to: to,
-            type: "text",
-            text: {
-              body: response,
-            },
-          }),
+          body: JSON.stringify(whatsappPayload),
         }
       );
 
-      const whatsappData = await whatsappResponse.json();
+      let whatsappData;
+      try {
+        whatsappData = await whatsappResponse.json();
+      } catch (e) {
+        whatsappData = { error: 'Failed to parse WhatsApp response as JSON' };
+      }
+      console.log('[sendtoChatBot] WhatsApp API response:', whatsappResponse.status, whatsappData);
 
       // Store the bot's response message
       const { data: botMessage, error: botMessageError } = await supabase
@@ -81,11 +95,14 @@ async function sendtoChatBot(
       } else {
         console.log("Bot message stored successfully:", botMessage);
       }
+    } else {
+      console.warn('[sendtoChatBot] No AI response generated.');
     }
   } catch (error) {
     console.error("Error in sendtoChatBot:", error);
   }
 }
+
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
