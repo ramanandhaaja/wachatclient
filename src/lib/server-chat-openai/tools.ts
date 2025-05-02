@@ -1,9 +1,8 @@
-import { DynamicStructuredTool } from '@langchain/core/tools';
-import { z } from 'zod';
-import { prisma } from '@/lib/prisma';
-import { toUTC } from '@/lib/utils';
-import { useBookingStore } from '@/stores/bookingStore';
-
+import { DynamicStructuredTool } from "@langchain/core/tools";
+import { z } from "zod";
+import { prisma } from "@/lib/prisma";
+import { toUTC } from "@/lib/utils";
+import { useBookingStore } from "@/stores/bookingStore";
 
 // Define BookingState type to match the one in process-message.ts
 export type BookingState = {
@@ -15,9 +14,8 @@ export type BookingState = {
   barberId?: string;
   clientExists?: boolean;
   missingFields?: string[];
-  status: 'initial' | 'pending_confirmation' | 'confirmed' | 'completed';
+  status: "initial" | "pending_confirmation" | "confirmed" | "completed";
 };
-
 
 /**
  * Get tools for the LangChain chat agent
@@ -35,50 +33,50 @@ export async function getTools(sessionId: string, userId: string) {
     func: async ({ service }) => {
       const businessInfo = await prisma.businessInfo.findFirst({
         where: {
-          userId: userId
+          userId: userId,
         },
         select: {
-          data: true
-        }
+          data: true,
+        },
       });
 
       if (!businessInfo) {
-        return 'Maaf, informasi perusahaan belum tersedia.';
+        return "Maaf, informasi perusahaan belum tersedia.";
       }
 
       // Format all business info fields as a human-readable string
       function formatReadable(obj: any, indent = 0): string {
-        if (typeof obj !== 'object' || obj === null) return String(obj);
-        const pad = '  '.repeat(indent);
+        if (typeof obj !== "object" || obj === null) return String(obj);
+        const pad = "  ".repeat(indent);
         return Object.entries(obj)
           .map(([k, v]) => {
-            if (typeof v === 'object' && v !== null) {
+            if (typeof v === "object" && v !== null) {
               return `${pad}${k}:
 ${formatReadable(v, indent + 1)}`;
             } else {
               return `${pad}${k}: ${v}`;
             }
           })
-          .join('\n');
+          .join("\n");
       }
       const output = formatReadable(businessInfo.data);
       console.log(output);
-      return output || 'Belum ada informasi bisnis yang tersedia.';
-
+      return output || "Belum ada informasi bisnis yang tersedia.";
     },
   });
-
 
   const checkAvailability = new DynamicStructuredTool({
     name: "check_availability",
     description: "Cek slot kosong untuk booking",
     schema: z.object({
-      date: z.string().describe("Tanggal untuk cek ketersediaan (format: YYYY-MM-DD)"),
+      date: z
+        .string()
+        .describe("Tanggal untuk cek ketersediaan (format: YYYY-MM-DD)"),
       service: z.string().describe("Layanan yang ingin di-booking"),
     }),
     func: async ({ date, service }) => {
       // Placeholder: In a real implementation, this would check a database
-      
+
       return `Slot tersedia untuk ${service} pada ${date}:
       - 10:00 WIB
       - 10.30 WIB
@@ -92,7 +90,8 @@ ${formatReadable(v, indent + 1)}`;
 
   const checkClientExists = new DynamicStructuredTool({
     name: "check_client_exists",
-    description: "Cek apakah klien dengan nomor telepon tertentu sudah ada di database",
+    description:
+      "Cek apakah klien dengan nomor telepon tertentu sudah ada di database",
     schema: z.object({
       phone: z.string().describe("Nomor telepon/WhatsApp pelanggan"),
     }),
@@ -111,9 +110,9 @@ ${formatReadable(v, indent + 1)}`;
           bookingStore.updateBookingState(sessionId, {
             phone: phone,
             name: client.name,
-            clientExists: true
+            clientExists: true,
           });
-          
+
           return `Klien ditemukan:
           Nama: ${client.name}
           Telepon: ${client.phone}`;
@@ -122,9 +121,9 @@ ${formatReadable(v, indent + 1)}`;
           const bookingStore = useBookingStore.getState();
           bookingStore.updateBookingState(sessionId, {
             phone: phone,
-            clientExists: false
+            clientExists: false,
           });
-          
+
           return "Klien dengan nomor telepon tersebut belum terdaftar. Silakan tanyakan nama pelanggan.";
         }
       } catch (error) {
@@ -141,10 +140,16 @@ ${formatReadable(v, indent + 1)}`;
       name: z.string().optional().describe("Nama pelanggan"),
       phone: z.string().optional().describe("Nomor telepon pelanggan"),
       service: z.string().optional().describe("Layanan yang dipilih"),
-      date: z.string().optional().describe("Tanggal booking (format: YYYY-MM-DD)"),
+      date: z
+        .string()
+        .optional()
+        .describe("Tanggal booking (format: YYYY-MM-DD)"),
       time: z.string().optional().describe("Waktu booking (format: HH:MM)"),
       barberId: z.string().optional().describe("ID barber yang dipilih"),
-      status: z.enum(['initial', 'pending_confirmation', 'confirmed', 'completed']).optional().describe("Status booking"),
+      status: z
+        .enum(["initial", "pending_confirmation", "confirmed", "completed"])
+        .optional()
+        .describe("Status booking"),
     }),
     func: async ({ name, phone, service, date, time, barberId, status }) => {
       const currentState = store.getBookingState(sessionId);
@@ -160,16 +165,21 @@ ${formatReadable(v, indent + 1)}`;
       if (status) updateObj.status = status;
 
       // Check for missing required fields if status is pending_confirmation
-      if (status === 'pending_confirmation') {
-        const requiredFields = ['name', 'phone', 'service', 'date', 'time'];
-        const missingFields = requiredFields.filter(field => {
+      if (status === "pending_confirmation") {
+        const requiredFields = ["name", "phone", "service", "date", "time"];
+        const missingFields = requiredFields.filter((field) => {
           // Check if field is missing in both current state and update
-          return !currentState?.[field as keyof BookingState] && !updateObj[field as keyof BookingState];
+          return (
+            !currentState?.[field as keyof BookingState] &&
+            !updateObj[field as keyof BookingState]
+          );
         });
 
         if (missingFields.length > 0) {
           updateObj.missingFields = missingFields;
-          return `Masih ada data yang belum lengkap: ${missingFields.join(', ')}. Silakan lengkapi data tersebut sebelum konfirmasi.`;
+          return `Masih ada data yang belum lengkap: ${missingFields.join(
+            ", "
+          )}. Silakan lengkapi data tersebut sebelum konfirmasi.`;
         } else {
           updateObj.missingFields = [];
         }
@@ -183,11 +193,15 @@ ${formatReadable(v, indent + 1)}`;
 
       // Format current booking state for display
       let response = "Status booking telah diupdate.\n\n";
-      
-      if (status === 'confirmed' && currentState?.status === 'pending_confirmation') {
+
+      if (
+        status === "confirmed" &&
+        currentState?.status === "pending_confirmation"
+      ) {
         // Only update to confirmed if current state is pending_confirmation
-        response = "Terima kasih atas konfirmasi Anda! Saya akan segera memproses booking Anda.";
-      } else if (updatedState?.status === 'pending_confirmation') {
+        response =
+          "Terima kasih atas konfirmasi Anda! Saya akan segera memproses booking Anda.";
+      } else if (updatedState?.status === "pending_confirmation") {
         response += `Detail booking:
         • Nama: ${updatedState.name}
         • Telepon: ${updatedState.phone}
@@ -213,7 +227,10 @@ ${formatReadable(v, indent + 1)}`;
       service: z.string().describe("Layanan yang dipilih"),
       name: z.string().describe("Nama pelanggan"),
       phone: z.string().describe("Nomor WhatsApp"),
-      barberId: z.string().optional().describe("ID barber yang diinginkan (opsional)"),
+      barberId: z
+        .string()
+        .optional()
+        .describe("ID barber yang diinginkan (opsional)"),
     }),
     func: async ({ date, time, service, name, phone, barberId }) => {
       try {
@@ -221,7 +238,7 @@ ${formatReadable(v, indent + 1)}`;
         const currentState = store.getBookingState(sessionId);
 
         // Check if status is confirmed
-        if (!currentState || currentState.status !== 'confirmed') {
+        if (!currentState || currentState.status !== "confirmed") {
           return "Booking belum dikonfirmasi oleh pelanggan. Silakan minta konfirmasi terlebih dahulu.";
         }
 
@@ -229,11 +246,11 @@ ${formatReadable(v, indent + 1)}`;
         // JavaScript's Date constructor will interpret this as 9 AM in the local timezone
         // which is already correct for WIB input
         const localDate = new Date(`${date}T${time}:00`);
-        
+
         // For database storage, we need to convert to UTC
         // No need to use toUTC here as JavaScript's toISOString() already converts to UTC
         const utcISOString = localDate.toISOString();
-        
+
         // Prepare the data according to the EventSchema
         const eventData: any = {
           startTime: utcISOString,
@@ -245,12 +262,12 @@ ${formatReadable(v, indent + 1)}`;
           serviceType: service,
           // Only include optional fields if they exist
         };
-        
+
         // If barberId is provided, add it to the request
         if (barberId) {
           eventData.providerId = barberId;
         }
-        
+
         // First, check if client with this phone number already exists
         let client = await prisma.client.findFirst({
           where: {
@@ -270,15 +287,15 @@ ${formatReadable(v, indent + 1)}`;
 
         // Get the user (assuming we have a default user for the chatbot)
         const user = await prisma.user.findFirst();
-        
+
         if (!user) {
           return "Maaf, terjadi kesalahan sistem. Silakan coba lagi nanti.";
         }
-        
+
         // Calculate end time based on event duration
         const endTime = new Date(utcISOString);
         endTime.setMinutes(endTime.getMinutes() + (user.eventDuration || 60)); // Default to 60 minutes if not set
-        
+
         // Create the event directly using prisma
         const event = await prisma.event.create({
           data: {
@@ -291,23 +308,26 @@ ${formatReadable(v, indent + 1)}`;
             clientId: client.id,
           },
           include: {
-            client: true
+            client: true,
           },
         });
-        
+
         // Update booking state to completed
         store.updateBookingState(sessionId, {
-          status: 'completed'
+          status: "completed",
         });
-        
+
         // Format the response message - convert UTC times back to WIB for display
         const localStartTime = new Date(event.startTime);
-        
+
         return `Booking berhasil!
 
       •⁠  ⁠*Layanan*: ${service}
-      •⁠  ⁠*Tanggal*: ${localStartTime.toLocaleDateString('id-ID')}
-      •⁠  ⁠*Jam*: ${localStartTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+      •⁠  ⁠*Tanggal*: ${localStartTime.toLocaleDateString("id-ID")}
+      •⁠  ⁠*Jam*: ${localStartTime.toLocaleTimeString("id-ID", {
+        hour: "2-digit",
+        minute: "2-digit",
+      })}
       •⁠  ⁠*Nama*: ${event.client.name}
       •⁠  ⁠*WhatsApp*: ${event.client.phone}
       •⁠  ⁠*Barber*: ${event.providerName || "barber yang available"}
@@ -321,5 +341,11 @@ ${formatReadable(v, indent + 1)}`;
     },
   });
 
-  return [checkAvailability, getBusinessInfo, checkClientExists, updateBookingState, bookAppointment];
+  return [
+    checkAvailability,
+    getBusinessInfo,
+    checkClientExists,
+    updateBookingState,
+    bookAppointment,
+  ];
 }

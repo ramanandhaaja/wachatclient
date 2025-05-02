@@ -20,7 +20,7 @@ export function CardLayout({ children }: CardLayoutProps) {
                 href={process.env.NEXT_PUBLIC_APP_URL}
                 className="font-medium underline underline-offset-4 hover:text-primary"
               >
-                Cardify
+                Kardis.id
               </a>
             </p>
           </div>

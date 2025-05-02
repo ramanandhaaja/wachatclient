@@ -123,7 +123,7 @@ export function Sidebar() {
         <div className="flex items-center justify-center w-6 h-6 bg-indigo-500 rounded-md">
           <Mail className="h-4 w-4 text-white" />
         </div>
-        {!collapsed && <span className="text-xl font-bold">Cardify</span>}
+        {!collapsed && <span className="text-xl font-bold">Kardis.ai</span>}
         <div className="ml-auto">
           <button 
             onClick={toggleSidebar}

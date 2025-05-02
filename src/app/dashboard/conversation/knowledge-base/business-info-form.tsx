@@ -98,16 +98,30 @@ export default function BusinessInfoForm({
   userId,
 }: BusinessInfoFormProps) {
   // Helper to convert object to FieldItem array
-  const toArray = (dataObj: Record<string, any> | undefined) =>
-    dataObj
-      ? Object.entries(dataObj).map(([key, value]) => ({
-          id: crypto.randomUUID(),
+  // Avoid hydration errors: generate random IDs only on the client
+  const [fields, setFields] = useState<FieldItem[]>(() => {
+    // Use a stable key for SSR (e.g. the 'key' itself)
+    return initialData?.data
+      ? Object.entries(initialData.data).map(([key, value]) => ({
+          id: key, // use the field key as a stable id for SSR
           key,
           value: String(value),
         }))
       : [];
+  });
 
-  const [fields, setFields] = useState<FieldItem[]>(toArray(initialData?.data));
+  // After mount, replace with random IDs for client-side use (if needed)
+  useEffect(() => {
+    if (initialData?.data) {
+      setFields(
+        Object.entries(initialData.data).map(([key, value]) => ({
+          id: crypto.randomUUID(),
+          key,
+          value: String(value),
+        }))
+      );
+    }
+  }, [initialData]);
 
   // Handler to fill fields with example BUSINESS_INFO (top-level keys only, pretty-printed value)
   const handleExampleData = () => {
@@ -200,6 +214,58 @@ export default function BusinessInfoForm({
                   }
                   required
                 />
+                {/* Upload button for PDF/text, placed between Input and Textarea */}
+                <div className="flex items-center gap-2">
+                  <input
+                    id={`file-upload-${item.id}`}
+                    type="file"
+                    accept=".pdf,.txt"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      // Import dynamically to avoid SSR issues
+                      const { uploadPdfAndExtractText } = await import(
+                        "@/lib/upload-pdf"
+                      );
+                      try {
+                        handleFieldChange(item.id, "value", "Extracting...");
+                        const { url, text } = await uploadPdfAndExtractText(
+                          file,
+                          userId || "",
+                          "knowledge"
+                        );
+                        const fileInfo = {
+                          title: item.key,
+                          name: file.name,
+                          url,
+                          text,
+                        };
+                        //const fileInfoString = `${fileInfo.title}, ${fileInfo.name}, ${fileInfo.url}, ${fileInfo.text}`;
+                        const fileInfoString = `di upload di: ${fileInfo.url}`;
+                        
+                        handleFieldChange(item.id, "value", fileInfoString);
+                      } catch (err) {
+                        handleFieldChange(
+                          item.id,
+                          "value",
+                          "Failed to extract text from PDF"
+                        );
+                        console.error(err);
+                      }
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() =>
+                      document.getElementById(`file-upload-${item.id}`)?.click()
+                    }
+                  >
+                    Upload File
+                  </Button>
+                </div>
                 <Textarea
                   className="textarea textarea-bordered min-h-[4rem]"
                   placeholder="Value"
@@ -231,7 +297,9 @@ export default function BusinessInfoForm({
         {/* Right column: System Prompt */}
         <div className="md:mx-4">
           <div className="flex items-center gap-2 mb-2">
-            <label className="block font-semibold">System Prompt (optional)</label>
+            <label className="block font-semibold">
+              System Prompt (optional)
+            </label>
             <Button
               type="button"
               variant="outline"

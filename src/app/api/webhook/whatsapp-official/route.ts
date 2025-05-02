@@ -1,3 +1,7 @@
+export const config = {
+  maxDuration: 300, // 5 minutes
+};
+
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { processMessage } from "@/lib/server-chat-openai/process-message";
@@ -13,18 +17,27 @@ const supabase = createClient(
 // Verify token for webhook verification
 const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN || "your_verify_token";
 
-async function sendtoChatBot(
+export async function sendtoChatBot(
   to: string,
   message: string,
   conversationId: string,
   userId: string
 ) {
+  console.log('[sendtoChatBot] Called with:', { to, message, conversationId, userId });
   try {
-    // Process the message using the AI
+    // Process the message using the AI, with a 30s timeout
     const sessionId = to; // Using phone number as session ID
-    
-    //TODO belum bener untuk get user id, karena no wa belum kita set berdasarkan userid
-    const response = await processMessage(sessionId, message, userId);
+    let response;
+    try {
+      response = await Promise.race([
+        processMessage(sessionId, message, userId),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('AI timeout')), 30000)),
+      ]);
+    } catch (e) {
+      console.error('[sendtoChatBot] Error or timeout during processMessage:', e);
+      return;
+    }
+    console.log('[sendtoChatBot] AI response:', response);
 
     if (response) {
       // Send the AI response back via WhatsApp
@@ -34,27 +47,40 @@ async function sendtoChatBot(
       const WHATSAPP_ACCESS_TOKEN =
         process.env.NEXT_PUBLIC_WHATSAPP_ACCESS_TOKEN || "";
 
+      const whatsappUrl = `https://graph.facebook.com/${WHATSAPP_API_VERSION}/${WHATSAPP_PHONE_NUMBER_ID}/messages`;
+      const whatsappPayload = {
+        messaging_product: "whatsapp",
+        recipient_type: "individual",
+        to: to,
+        type: "text",
+        text: {
+          body: response,
+        },
+      };
+      console.log('[sendtoChatBot] Sending WhatsApp message:', {
+        url: whatsappUrl,
+        payload: whatsappPayload,
+      });
+
       const whatsappResponse = await fetch(
-        `https://graph.facebook.com/${WHATSAPP_API_VERSION}/${WHATSAPP_PHONE_NUMBER_ID}/messages`,
+        whatsappUrl,
         {
           method: "POST",
           headers: {
             Authorization: `Bearer ${WHATSAPP_ACCESS_TOKEN}`,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            messaging_product: "whatsapp",
-            recipient_type: "individual",
-            to: to,
-            type: "text",
-            text: {
-              body: response,
-            },
-          }),
+          body: JSON.stringify(whatsappPayload),
         }
       );
 
-      const whatsappData = await whatsappResponse.json();
+      let whatsappData;
+      try {
+        whatsappData = await whatsappResponse.json();
+      } catch (e) {
+        whatsappData = { error: 'Failed to parse WhatsApp response as JSON' };
+      }
+      console.log('[sendtoChatBot] WhatsApp API response:', whatsappResponse.status, whatsappData);
 
       // Store the bot's response message
       const { data: botMessage, error: botMessageError } = await supabase
@@ -78,77 +104,14 @@ async function sendtoChatBot(
       } else {
         console.log("Bot message stored successfully:", botMessage);
       }
+    } else {
+      console.warn('[sendtoChatBot] No AI response generated.');
     }
   } catch (error) {
     console.error("Error in sendtoChatBot:", error);
   }
 }
 
-// Send a simple "thanks" reply
-async function sendSimpleReply(to: string) {
-  try {
-    // Send the reply using the WhatsApp Cloud API
-    const WHATSAPP_API_VERSION = "v17.0";
-    const WHATSAPP_PHONE_NUMBER_ID =
-      process.env.NEXT_PUBLIC_WHATSAPP_PHONE_NUMBER_ID || "";
-    const WHATSAPP_ACCESS_TOKEN =
-      process.env.NEXT_PUBLIC_WHATSAPP_ACCESS_TOKEN || "";
-
-    const response = await fetch(
-      `https://graph.facebook.com/${WHATSAPP_API_VERSION}/${WHATSAPP_PHONE_NUMBER_ID}/messages`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${WHATSAPP_ACCESS_TOKEN}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          messaging_product: "whatsapp",
-          recipient_type: "individual",
-          to: to,
-          type: "text",
-          text: {
-            preview_url: false,
-            body: "Thanks for your message! Our AI assistant will respond shortly.",
-          },
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`WhatsApp API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    console.log("Simple reply sent:", data);
-
-    // Store the outbound message
-    const { data: replyMessage, error: replyError } = await supabase
-      .from("messages")
-      .insert({
-        conversation_id: to, // Using wa_id as conversation_id temporarily
-        content:
-          "Thanks for your message! Our AI assistant will respond shortly.",
-        sender_type: "bot",
-        timestamp: new Date().toISOString(),
-        metadata: {
-          message_type: "text",
-          wa_message_id: data.messages?.[0]?.id,
-          delivery_status: "sent",
-        },
-      })
-      .select()
-      .single();
-
-    if (replyError) {
-      console.error("Error storing reply message:", replyError);
-    } else {
-      console.log("Reply message stored successfully:", replyMessage);
-    }
-  } catch (error) {
-    console.error("Error sending reply:", error);
-  }
-}
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -317,22 +280,97 @@ export async function POST(request: Request) {
 
               // Send a simple "thanks" reply
               //await sendSimpleReply(contact.wa_id);
-              //TODO wa belum bener jg
-              await sendtoChatBot(
-                contact.wa_id,
-                message.text.body,
-                conversationId,
-                userId
-              );
+              // Offload AI reply to background (fire-and-forget)
+              await sendtoChatBot(contact.wa_id, message.text.body, conversationId, userId)
+                .catch(console.error);
+
+              console.log("Offloading AI reply to background");
+              // Immediately return a 200 OK response to WhatsApp
+             // return new NextResponse("OK", { status: 200 });
             }
           }
         }
       }
     }
 
+    // Respond immediately to WhatsApp to prevent retries/timeouts
     return new NextResponse("OK", { status: 200 });
   } catch (error) {
     console.error("Error processing webhook:", error);
     return new NextResponse("Internal Server Error", { status: 500 });
+  }
+}
+
+
+
+// Background processor for AI reply
+async function processAndReply({ to, message, conversationId, userId }: { to: string, message: string, conversationId: string, userId: string }) {
+  console.log('[processAndReply] Called with:', { to, message, conversationId, userId });
+  await sendtoChatBot(to, message, conversationId, userId);
+}
+
+// Send a simple "thanks" reply
+async function sendSimpleReply(to: string) {
+  try {
+    // Send the reply using the WhatsApp Cloud API
+    const WHATSAPP_API_VERSION = "v17.0";
+    const WHATSAPP_PHONE_NUMBER_ID =
+      process.env.NEXT_PUBLIC_WHATSAPP_PHONE_NUMBER_ID || "";
+    const WHATSAPP_ACCESS_TOKEN =
+      process.env.NEXT_PUBLIC_WHATSAPP_ACCESS_TOKEN || "";
+
+    const response = await fetch(
+      `https://graph.facebook.com/${WHATSAPP_API_VERSION}/${WHATSAPP_PHONE_NUMBER_ID}/messages`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${WHATSAPP_ACCESS_TOKEN}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          messaging_product: "whatsapp",
+          recipient_type: "individual",
+          to: to,
+          type: "text",
+          text: {
+            preview_url: false,
+            body: "Thanks for your message! Our AI assistant will respond shortly.",
+          },
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`WhatsApp API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log("Simple reply sent:", data);
+
+    // Store the outbound message
+    const { data: replyMessage, error: replyError } = await supabase
+      .from("messages")
+      .insert({
+        conversation_id: to, // Using wa_id as conversation_id temporarily
+        content:
+          "Thanks for your message! Our AI assistant will respond shortly.",
+        sender_type: "bot",
+        timestamp: new Date().toISOString(),
+        metadata: {
+          message_type: "text",
+          wa_message_id: data.messages?.[0]?.id,
+          delivery_status: "sent",
+        },
+      })
+      .select()
+      .single();
+
+    if (replyError) {
+      console.error("Error storing reply message:", replyError);
+    } else {
+      console.log("Reply message stored successfully:", replyMessage);
+    }
+  } catch (error) {
+    console.error("Error sending reply:", error);
   }
 }
