@@ -229,7 +229,7 @@ export default function NameCardChatWidget({ userId }: NameCardChatWidgetProps) 
       {/* Chat Widget */}
       {isOpen && (
         <div className="fixed inset-0 flex items-center justify-center z-[9999] animate-fade-in">
-          <div className="relative w-full max-w-[420px] h-[90vh] bg-white rounded-2xl shadow-xl overflow-hidden m-4 md:m-8 flex flex-col">
+          <div className="relative w-full max-w h-full bg-white rounded-2xl shadow-xl overflow-hidden m-0 md:m-0 flex flex-col">
             {/* Close Button */}
             <button
               type="button"
