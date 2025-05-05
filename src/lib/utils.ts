@@ -43,13 +43,25 @@ export function formatWIB(date: Date, formatStr: string): string {
   return formatDate(wibDate, formatStr);
 }
 
-// Utility: make list if "•" bullets and markdown "-"
-export function preprocessBullets(text: string): string {
+/**
+ * Combined utility for preprocessing text:
+ * 1. Transforms bullets into markdown format
+ * 2. Preserves markdown links for react-markdown to process
+ */
+export function preprocessText(text: string): string {
+  // Only process the bullets, leave markdown links as is
+  // since react-markdown will handle them
+  return preprocessBullets(text);
+}
+
+/**
+ * Transform bullets into markdown format
+ */
+function preprocessBullets(text: string): string {
   // 1. Normalize all literal \n to real line breaks
   let result = text.replace(/\\n/g, "\n");
 
   // 2. Convert inline bullets to newlines and markdown bullets
-
   result = result.replace(/(?:^|[ \t])•[ \t]+/g, (match, offset, string) => {
     // If at the start of the string or after a newline, just use "- "
     if (offset === 0 || string[offset - 1] === "\n") return "- ";

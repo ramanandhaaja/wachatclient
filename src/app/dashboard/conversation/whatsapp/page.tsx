@@ -3,7 +3,12 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useWhatsAppOfficial } from "@/hooks/use-whatsapp-official";
-import { useConversation, useConversations, type Conversation, type Message } from "@/hooks/use-conversation";
+import {
+  useConversation,
+  useConversations,
+  type Conversation,
+  type Message,
+} from "@/hooks/use-conversation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -15,10 +20,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { format } from "date-fns";
-import { 
-  MoreHorizontal, 
-  Phone, 
-  Calendar, 
+import {
+  MoreHorizontal,
+  Phone,
+  Calendar,
   ChevronDown,
   Search,
   Paperclip,
@@ -30,41 +35,42 @@ import {
   Check,
   CheckCheck,
   Clock,
-  AlertCircle
+  AlertCircle,
 } from "lucide-react";
-
-
+import ReactMarkdown from "react-markdown";
+import { preprocessText } from "@/lib/utils";
 
 export default function ChatPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [messageText, setMessageText] = useState("");
   const [showDetails, setShowDetails] = useState(true);
-  const [activeConversation, setActiveConversation] = useState<Conversation | null>(null);
+  const [activeConversation, setActiveConversation] =
+    useState<Conversation | null>(null);
   const { sendMessage, isSending } = useWhatsAppOfficial();
-  
+
   // Load conversations using react-query hook
   const { data: session, status } = useSession();
   const userId = session?.user?.id ?? "";
-  
+
   // Load conversations using react-query hook
-  const { 
-    conversations, 
-    isLoading: loadingConversations, 
-    error: conversationsError 
+  const {
+    conversations,
+    isLoading: loadingConversations,
+    error: conversationsError,
   } = useConversations(userId, "whatsapp");
 
   // Load active conversation and messages
   const {
     messages: conversationMessages,
     isLoading: messagesLoading,
-    error: messagesError
+    error: messagesError,
   } = useConversation(activeConversation?.id ?? null);
 
   const scrollToBottom = useCallback(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollTo({
         top: messagesEndRef.current.scrollHeight,
-        behavior: 'smooth'
+        behavior: "smooth",
       });
     }
   }, []);
@@ -83,43 +89,46 @@ export default function ChatPage() {
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!messageText.trim() || !activeConversation) return;
-    
+
     // Clear the input field
     setMessageText("");
-    
+
     try {
       // Send the message via the official WhatsApp Cloud API
-      sendMessage({
-        phoneNumber: activeConversation.user_phone,
-        message: messageText,
-        previewUrl: false,
-        conversationId: activeConversation.id
-      }, {
-        onSuccess: (data) => {
-          console.log('Message sent successfully:', data);
+      sendMessage(
+        {
+          phoneNumber: activeConversation.user_phone,
+          message: messageText,
+          previewUrl: false,
+          conversationId: activeConversation.id,
         },
-        onError: (error) => {
-          console.error('Failed to send message:', error);
+        {
+          onSuccess: (data) => {
+            console.log("Message sent successfully:", data);
+          },
+          onError: (error) => {
+            console.error("Failed to send message:", error);
+          },
         }
-      });
+      );
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error("Error sending message:", error);
       // Show error notification to user
     }
   };
 
   const formatMessageTime = (timestamp: string) => {
     try {
-      return format(new Date(timestamp), 'h:mm a');
+      return format(new Date(timestamp), "h:mm a");
     } catch (e) {
       return timestamp;
     }
   };
-  
+
   const formatLastActive = (timestamp?: string) => {
-    if (!timestamp) return 'Unknown';
+    if (!timestamp) return "Unknown";
     try {
-      return format(new Date(timestamp), 'MMM d, yyyy h:mm a');
+      return format(new Date(timestamp), "MMM d, yyyy h:mm a");
     } catch (e) {
       return timestamp;
     }
@@ -140,7 +149,7 @@ export default function ChatPage() {
             </Button>
           </div>
         </div>
-        
+
         <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium">
@@ -152,10 +161,10 @@ export default function ChatPage() {
             <ChevronDown className="h-4 w-4 text-gray-500" />
           </div>
         </div>
-        
+
         <div className="overflow-y-auto flex-1">
           {conversations?.map((conversation) => (
-            <div 
+            <div
               key={conversation.id}
               className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 ${
                 activeConversation?.id === conversation.id ? "bg-gray-50" : ""
@@ -164,19 +173,31 @@ export default function ChatPage() {
             >
               <div className="flex items-start gap-3">
                 <Avatar className="h-10 w-10">
-                  <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${conversation.user_name || conversation.user_phone}`} />
-                  <AvatarFallback>{(conversation.user_name || conversation.user_phone).charAt(0)}</AvatarFallback>
+                  <AvatarImage
+                    src={`https://api.dicebear.com/7.x/initials/svg?seed=${
+                      conversation.user_name || conversation.user_phone
+                    }`}
+                  />
+                  <AvatarFallback>
+                    {(conversation.user_name || conversation.user_phone).charAt(
+                      0
+                    )}
+                  </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
-                    <h3 className={`font-medium text-sm ${
-                      activeConversation?.id === conversation.id ? "text-blue-600" : ""
-                    }`}>
+                    <h3
+                      className={`font-medium text-sm ${
+                        activeConversation?.id === conversation.id
+                          ? "text-blue-600"
+                          : ""
+                      }`}
+                    >
                       {conversation.user_name || conversation.user_phone}
                     </h3>
                     <span className="text-xs text-gray-500">
-                      {conversation.last_message_time 
-                        ? formatMessageTime(conversation.last_message_time) 
+                      {conversation.last_message_time
+                        ? formatMessageTime(conversation.last_message_time)
                         : formatMessageTime(conversation.updated_at)}
                     </span>
                   </div>
@@ -187,11 +208,11 @@ export default function ChatPage() {
                       <User className="h-3 w-3 text-green-500 mr-1" />
                     )}
                     <p className="text-sm text-gray-500 truncate">
-                      {conversation.last_message || 'No messages yet'}
+                      {conversation.last_message || "No messages yet"}
                     </p>
                   </div>
                 </div>
-                {conversation.status === 'pending' && (
+                {conversation.status === "pending" && (
                   <div className="flex-shrink-0 w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center text-white text-xs">
                     !
                   </div>
@@ -209,15 +230,36 @@ export default function ChatPage() {
             <div className="p-4 border-b border-gray-200 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Avatar className="h-10 w-10">
-                  <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${activeConversation.user_name || activeConversation.user_phone}`} />
-                  <AvatarFallback>{(activeConversation.user_name || activeConversation.user_phone).charAt(0)}</AvatarFallback>
+                  <AvatarImage
+                    src={`https://api.dicebear.com/7.x/initials/svg?seed=${
+                      activeConversation.user_name ||
+                      activeConversation.user_phone
+                    }`}
+                  />
+                  <AvatarFallback>
+                    {(
+                      activeConversation.user_name ||
+                      activeConversation.user_phone
+                    ).charAt(0)}
+                  </AvatarFallback>
                 </Avatar>
                 <div>
-                  <h2 className="font-semibold">{activeConversation.user_name || activeConversation.user_phone}</h2>
+                  <h2 className="font-semibold">
+                    {activeConversation.user_name ||
+                      activeConversation.user_phone}
+                  </h2>
                   <div className="flex items-center gap-2">
-                    <span className={`w-2 h-2 rounded-full ${activeConversation.status === 'active' ? 'bg-green-500' : 'bg-gray-300'}`}></span>
+                    <span
+                      className={`w-2 h-2 rounded-full ${
+                        activeConversation.status === "active"
+                          ? "bg-green-500"
+                          : "bg-gray-300"
+                      }`}
+                    ></span>
                     <span className="text-xs text-gray-500">
-                      {activeConversation.status === 'active' ? 'Active' : 'Inactive'}
+                      {activeConversation.status === "active"
+                        ? "Active"
+                        : "Inactive"}
                     </span>
                   </div>
                 </div>
@@ -226,9 +268,9 @@ export default function ChatPage() {
                 <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                   <Phone className="h-4 w-4" />
                 </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+                <Button
+                  variant="ghost"
+                  size="sm"
                   className="h-8 w-8 p-0"
                   onClick={() => setShowDetails(!showDetails)}
                 >
@@ -237,84 +279,120 @@ export default function ChatPage() {
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 space-y-4" ref={messagesEndRef}>
+            <div
+              className="flex-1 overflow-y-auto p-4 space-y-4"
+              ref={messagesEndRef}
+            >
               {messagesLoading ? (
                 <div className="flex items-center justify-center h-full">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
                 </div>
               ) : messagesError ? (
                 <div className="flex items-center justify-center h-full text-red-500">
-                  Error loading messages: {messagesError instanceof Error ? messagesError.message : 'Unknown error'}
+                  Error loading messages:{" "}
+                  {messagesError instanceof Error
+                    ? messagesError.message
+                    : "Unknown error"}
                 </div>
-              ) : conversationMessages && conversationMessages.map((message: Message) => (
-                <div 
-                  key={message.id}
-                  className={`flex ${message.sender_type === 'user' ? 'justify-start' : 'justify-end'}`}
-                >
-                  <div 
-                    className={`max-w-[70%] rounded-lg p-3 ${
-                      message.sender_type === 'user' 
-                        ? 'bg-gray-100 text-gray-800' 
-                        : message.sender_type === 'admin'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-blue-100 text-blue-800'
+              ) : (
+                conversationMessages &&
+                conversationMessages.map((message: Message) => (
+                  <div
+                    key={message.id}
+                    className={`flex ${
+                      message.sender_type === "user"
+                        ? "justify-start"
+                        : "justify-end"
                     }`}
                   >
-                    {message.sender_type !== 'user' && (
-                      <div className="text-xs opacity-70 mb-1">
-                        {message.sender_type === 'admin' ? 'Admin' : 'Bot'}
-                      </div>
-                    )}
-                    <p>{message.content}</p>
-                    <div className="flex items-center justify-end gap-1 text-xs mt-1 opacity-70">
-                      {(message.sender_type === 'admin' || message.sender_type === 'bot') && (
-                        <span className="inline-block">
-                          {message.metadata?.delivery_status === 'pending' && (
-                            <Clock className="h-3 w-3 text-gray-400" />
-                          )}
-                          {message.metadata?.delivery_status === 'sent' && (
-                            <CheckCheck className="h-3 w-3 text-green-500" />
-                          )}
-                          {message.metadata?.delivery_status === 'failed' && (
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger>
-                                  <AlertCircle className="h-3 w-3 text-red-500" />
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>{message.metadata?.error || 'Failed to send message'}</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          )}
-                        </span>
+                    <div
+                      className={`max-w-[70%] rounded-lg p-3 ${
+                        message.sender_type === "user"
+                          ? "bg-gray-100 text-gray-800"
+                          : message.sender_type === "admin"
+                          ? "bg-green-100 text-green-800"
+                          : "bg-blue-100 text-blue-800"
+                      }`}
+                    >
+                      {message.sender_type !== "user" && (
+                        <div className="text-xs opacity-70 mb-1">
+                          {message.sender_type === "admin" ? "Admin" : "Bot"}
+                        </div>
                       )}
-                      <span>{formatMessageTime(message.timestamp)}</span>
+                      <ReactMarkdown
+                        components={{
+                          a: ({ node, children, ...props }) => (
+                            <a
+                              {...props}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 underline"
+                            >
+                              {children}
+                            </a>
+                          ),
+                        }}
+                      >
+                        {preprocessText(message.content)}
+                      </ReactMarkdown>
+                      <div className="flex items-center justify-end gap-1 text-xs mt-1 opacity-70">
+                        {(message.sender_type === "admin" ||
+                          message.sender_type === "bot") && (
+                          <span className="inline-block">
+                            {message.metadata?.delivery_status ===
+                              "pending" && (
+                              <Clock className="h-3 w-3 text-gray-400" />
+                            )}
+                            {message.metadata?.delivery_status === "sent" && (
+                              <CheckCheck className="h-3 w-3 text-green-500" />
+                            )}
+                            {message.metadata?.delivery_status === "failed" && (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger>
+                                    <AlertCircle className="h-3 w-3 text-red-500" />
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>
+                                      {message.metadata?.error ||
+                                        "Failed to send message"}
+                                    </p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
+                          </span>
+                        )}
+                        <span>{formatMessageTime(message.timestamp)}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
 
-            <form onSubmit={handleSendMessage} className="border-t border-gray-200 p-4 flex items-center gap-2">
+            <form
+              onSubmit={handleSendMessage}
+              className="border-t border-gray-200 p-4 flex items-center gap-2"
+            >
               <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                 <Paperclip className="h-4 w-4" />
               </Button>
-              <Input 
-                placeholder="Type a message..." 
+              <Input
+                placeholder="Type a message..."
                 className="flex-1"
                 value={messageText}
                 onChange={(e) => setMessageText(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
+                  if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
                     handleSendMessage(e);
                   }
                 }}
               />
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 className="h-8 w-8 p-0"
                 disabled={!messageText.trim() || isSending}
                 onClick={handleSendMessage}
@@ -330,7 +408,9 @@ export default function ChatPage() {
         ) : (
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
-              <h3 className="text-lg font-medium text-gray-900">Select a conversation</h3>
+              <h3 className="text-lg font-medium text-gray-900">
+                Select a conversation
+              </h3>
               <p className="mt-1 text-sm text-gray-500">
                 Choose a conversation from the sidebar to start chatting
               </p>
@@ -344,69 +424,95 @@ export default function ChatPage() {
         <div className="w-64 border-l border-gray-200 overflow-y-auto">
           <div className="p-4 border-b border-gray-200 flex items-center justify-between">
             <h3 className="font-semibold">Contact Details</h3>
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               className="h-8 w-8 p-0"
               onClick={() => setShowDetails(false)}
             >
               <X className="h-4 w-4" />
             </Button>
           </div>
-          
+
           <div className="p-4">
             <div className="flex flex-col items-center">
               <Avatar className="h-20 w-20">
-                <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${activeConversation.user_name || activeConversation.user_phone}`} />
-                <AvatarFallback>{(activeConversation.user_name || activeConversation.user_phone).charAt(0)}</AvatarFallback>
+                <AvatarImage
+                  src={`https://api.dicebear.com/7.x/initials/svg?seed=${
+                    activeConversation.user_name ||
+                    activeConversation.user_phone
+                  }`}
+                />
+                <AvatarFallback>
+                  {(
+                    activeConversation.user_name ||
+                    activeConversation.user_phone
+                  ).charAt(0)}
+                </AvatarFallback>
               </Avatar>
-              <h3 className="font-semibold mt-2">{activeConversation.user_name || 'Unknown'}</h3>
-              <p className="text-sm text-gray-500">{activeConversation.user_phone}</p>
+              <h3 className="font-semibold mt-2">
+                {activeConversation.user_name || "Unknown"}
+              </h3>
+              <p className="text-sm text-gray-500">
+                {activeConversation.user_phone}
+              </p>
             </div>
-            
+
             <Separator className="my-4" />
-            
+
             <div className="space-y-3">
               <div>
                 <h4 className="text-xs font-medium text-gray-500">Status</h4>
                 <p className="text-sm">{activeConversation.status}</p>
               </div>
-              
+
               <div>
-                <h4 className="text-xs font-medium text-gray-500">First Contact</h4>
-                <p className="text-sm">{formatLastActive(activeConversation.created_at)}</p>
-              </div>
-              
-              <div>
-                <h4 className="text-xs font-medium text-gray-500">Last Active</h4>
-                <p className="text-sm">{formatLastActive(activeConversation.updated_at)}</p>
-              </div>
-              
-              <div>
-                <h4 className="text-xs font-medium text-gray-500">Assigned To</h4>
+                <h4 className="text-xs font-medium text-gray-500">
+                  First Contact
+                </h4>
                 <p className="text-sm">
-                  {activeConversation.assigned_admin_id 
-                    ? 'Admin' 
-                    : activeConversation.is_bot_active 
-                      ? 'AI Bot' 
-                      : 'Unassigned'}
+                  {formatLastActive(activeConversation.created_at)}
                 </p>
               </div>
-              
+
               <div>
-                <h4 className="text-xs font-medium text-gray-500">Total Messages</h4>
+                <h4 className="text-xs font-medium text-gray-500">
+                  Last Active
+                </h4>
+                <p className="text-sm">
+                  {formatLastActive(activeConversation.updated_at)}
+                </p>
+              </div>
+
+              <div>
+                <h4 className="text-xs font-medium text-gray-500">
+                  Assigned To
+                </h4>
+                <p className="text-sm">
+                  {activeConversation.assigned_admin_id
+                    ? "Admin"
+                    : activeConversation.is_bot_active
+                    ? "AI Bot"
+                    : "Unassigned"}
+                </p>
+              </div>
+
+              <div>
+                <h4 className="text-xs font-medium text-gray-500">
+                  Total Messages
+                </h4>
                 <p className="text-sm">{conversationMessages?.length || 0}</p>
               </div>
             </div>
-            
+
             <Separator className="my-4" />
-            
+
             <div className="space-y-2">
               <Button variant="outline" size="sm" className="w-full">
                 <Download className="h-4 w-4 mr-2" />
                 Export Chat
               </Button>
-              
+
               <Button variant="outline" size="sm" className="w-full">
                 <Calendar className="h-4 w-4 mr-2" />
                 Schedule Follow-up
