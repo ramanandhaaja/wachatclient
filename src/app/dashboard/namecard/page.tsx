@@ -70,7 +70,8 @@ export default function NameCardDashboard() {
 
   const { data: session } = useSession();
   const userId = session?.user?.id;
-  const { data: cardViews = 0, isLoading: isViewsLoading } = useCardViews(userId);
+  const { data: cardViews = 0, isLoading: isViewsLoading } =
+    useCardViews(userId);
 
   return (
     <div className="container py-8">
@@ -112,8 +113,12 @@ export default function NameCardDashboard() {
             <div className="flex items-center">
               <ExternalLink className="h-5 w-5 text-primary mr-2" />
               <div className="text-2xl font-bold">
-  {isViewsLoading ? <Loader2 className="animate-spin" /> : cardViews}
-</div>
+                {isViewsLoading ? (
+                  <Loader2 className="animate-spin" />
+                ) : (
+                  cardViews
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -155,7 +160,11 @@ export default function NameCardDashboard() {
           </TabsList>
 
           <TabsContent value="my-cards" className="mt-6">
-            {cards.length === 0 ? (
+            {isLoading ? (
+              <div className="text-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
+              </div>
+            ) : cards.length === 0 ? (
               <div className="text-center py-12">
                 <h3 className="text-lg font-medium mb-2">No cards yet</h3>
                 <p className="text-gray-600 mb-4">
@@ -166,91 +175,83 @@ export default function NameCardDashboard() {
                 </Link>
               </div>
             ) : (
-              <div>
-                {isLoading ? (
-                  <div className="flex items-center justify-center py-12">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {cards.map((card) => (
-                      <div key={card.id} className="relative group">
-                        <CardPreview
-                          size="sm"
-                          id={card.id}
-                          userId={userId ?? ""}
-                          formValues={{
-                            firstName: card.firstName || "",
-                            lastName: card.lastName || "",
-                            title: card.title,
-                            company: card.company || "",
-                            email: card.email || "",
-                            phone: card.phone || "",
-                            website: card.website || "",
-                            address1: card.address1 || "",
-                            address2: card.address2 || "",
-                            city: card.city || "",
-                            postcode: card.postcode || "",
-                            linkedin: card.linkedin || "",
-                            twitter: card.twitter || "",
-                            instagram: card.instagram || "",
-                            profileImage: card.profileImage || "",
-                            coverImage: card.coverImage || "",
-                            aiChatAgent: card.aiChatAgent ?? false,
-                            aiVoiceCallAgent: card.aiVoiceCallAgent ?? false,
-                          }}
-                        />
-                        <div className="absolute top-4 left-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <div className="flex items-center gap-2">
-                            <Link
-                              href={`/dashboard/namecard/${card.id}/edit`}
-                              className="flex"
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {cards.map((card) => (
+                  <div key={card.id} className="relative group">
+                    <CardPreview
+                      size="sm"
+                      id={card.id}
+                      userId={userId ?? ""}
+                      formValues={{
+                        firstName: card.firstName || "",
+                        lastName: card.lastName || "",
+                        title: card.title,
+                        company: card.company || "",
+                        email: card.email || "",
+                        phone: card.phone || "",
+                        website: card.website || "",
+                        address1: card.address1 || "",
+                        address2: card.address2 || "",
+                        city: card.city || "",
+                        postcode: card.postcode || "",
+                        linkedin: card.linkedin || "",
+                        twitter: card.twitter || "",
+                        instagram: card.instagram || "",
+                        profileImage: card.profileImage || "",
+                        coverImage: card.coverImage || "",
+                        aiChatAgent: card.aiChatAgent ?? false,
+                        aiVoiceCallAgent: card.aiVoiceCallAgent ?? false,
+                      }}
+                    />
+                    <div className="absolute top-4 left-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center gap-2">
+                        <Link
+                          href={`/dashboard/namecard/${card.id}/edit`}
+                          className="flex"
+                        >
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            className="min-w-[64px]"
+                          >
+                            Edit
+                          </Button>
+                        </Link>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              className="aspect-square w-8 p-0 flex items-center justify-center"
                             >
-                              <Button
-                                variant="secondary"
-                                size="sm"
-                                className="min-w-[64px]"
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>
+                                Delete Name Card
+                              </AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete this name card?
+                                This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => deleteCard(card.id)}
+                                className="bg-destructive text-white hover:bg-destructive/90"
                               >
-                                Edit
-                              </Button>
-                            </Link>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button
-                                  variant="destructive"
-                                  size="sm"
-                                  className="aspect-square w-8 p-0 flex items-center justify-center"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>
-                                    Delete Name Card
-                                  </AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Are you sure you want to delete this name
-                                    card? This action cannot be undone.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction
-                                    onClick={() => deleteCard(card.id)}
-                                    className="bg-destructive text-white hover:bg-destructive/90"
-                                  >
-                                    Delete
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </div>
-                        </div>
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
-                    ))}
+                    </div>
                   </div>
-                )}
+                ))}
               </div>
             )}
           </TabsContent>

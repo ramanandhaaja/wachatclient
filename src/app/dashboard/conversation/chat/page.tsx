@@ -43,7 +43,7 @@ import {
   useMarkMessagesAsRead,
 } from "@/hooks/use-unread-conversation";
 import ReactMarkdown from "react-markdown";
-import { preprocessBullets } from "@/lib/utils";
+import { preprocessText } from "@/lib/utils";
 
 export default function ChatPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -362,7 +362,7 @@ export default function ChatPage() {
                         </div>
                       )}
                       <ReactMarkdown>
-                        {preprocessBullets(message.content)}
+                        {preprocessText(message.content)}
                       </ReactMarkdown>
                       <div className="flex items-center justify-end gap-1 text-xs mt-1 opacity-70">
                         {(message.sender_type === "admin" ||

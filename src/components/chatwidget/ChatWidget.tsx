@@ -9,6 +9,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { FormBeforeChat } from "./FormBeforeChat";
 import { useConversation } from "@/hooks/use-conversation";
 import { format } from "date-fns";
+import ReactMarkdown from "react-markdown";
+import { preprocessText } from "@/lib/utils";
 
 interface NameCardChatWidgetProps {
   userId: string;
@@ -16,8 +18,8 @@ interface NameCardChatWidgetProps {
 
 export default function ChatWidget({ userId }: NameCardChatWidgetProps) {
   // For debug, log userId
-  console.log('Chat Widget userId:', userId);
-  
+  console.log("Chat Widget userId:", userId);
+
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
@@ -79,17 +81,19 @@ export default function ChatWidget({ userId }: NameCardChatWidgetProps) {
     setIsOpen(!isOpen);
   };
 
-  
   const handleUserRegistered = async (
     newUserName: string,
     newUserPhone: string
   ) => {
-    
     // Call API to find or create conversation
     const res = await fetch("/api/webhook/web-chatbot/registration", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userPhone: newUserPhone, userName: newUserName, userId: userId }),
+      body: JSON.stringify({
+        userPhone: newUserPhone,
+        userName: newUserName,
+        userId: userId,
+      }),
     });
     const data = await res.json();
     if (!res.ok) {
@@ -325,7 +329,9 @@ export default function ChatWidget({ userId }: NameCardChatWidgetProps) {
                                     : "Bot"}
                                 </div>
                               )}
-                              <p>{item.message.content}</p>
+                              <ReactMarkdown>
+                                {preprocessText(item.message.content)}
+                              </ReactMarkdown>
                               <div className="text-xs text-gray-500 text-right mt-1">
                                 {formatTime(item.message.timestamp)}
                               </div>
