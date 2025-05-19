@@ -329,7 +329,20 @@ export default function ChatWidget({ userId }: NameCardChatWidgetProps) {
                                     : "Bot"}
                                 </div>
                               )}
-                              <ReactMarkdown>
+                              <ReactMarkdown
+                                components={{
+                                  a: ({ node, children, ...props }) => (
+                                    <a
+                                      {...props}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-blue-600 underline"
+                                    >
+                                      {children}
+                                    </a>
+                                  ),
+                                }}
+                              >
                                 {preprocessText(item.message.content)}
                               </ReactMarkdown>
                               <div className="text-xs text-gray-500 text-right mt-1">
