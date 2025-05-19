@@ -59,5 +59,11 @@ export async function GET(request: Request) {
     };
   });
 
-  return NextResponse.json(enriched);
+  const sortedConversations = enriched.sort((a, b) => {
+    const dateA = new Date(a.updated_at);
+    const dateB = new Date(b.updated_at);
+    return dateB.getTime() - dateA.getTime();
+  });
+
+  return NextResponse.json(sortedConversations);
 }
