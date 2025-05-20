@@ -17,9 +17,6 @@ interface NameCardChatWidgetProps {
 }
 
 export default function ChatWidget({ userId }: NameCardChatWidgetProps) {
-  // For debug, log userId
-  console.log("Chat Widget userId:", userId);
-
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
