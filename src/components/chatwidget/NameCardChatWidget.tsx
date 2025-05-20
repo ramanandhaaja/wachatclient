@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { FormBeforeChat } from "./FormBeforeChat";
+import ReactMarkdown from "react-markdown";
+import { preprocessText } from "@/lib/utils";
 
 // Match your DB schema
 interface DbMessage {
@@ -300,7 +302,22 @@ export default function NameCardChatWidget({
                                     : "Bot"}
                                 </div>
                               )}
-                              <p>{message.content}</p>
+                              <ReactMarkdown
+                                components={{
+                                  a: ({ node, children, ...props }) => (
+                                    <a
+                                      {...props}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-blue-600 underline"
+                                    >
+                                      {children}
+                                    </a>
+                                  ),
+                                }}
+                              >
+                                {preprocessText(message.content)}
+                              </ReactMarkdown>
                               <div className="text-xs text-gray-500 text-right mt-1">
                                 {formatTime(message.timestamp)}
                               </div>

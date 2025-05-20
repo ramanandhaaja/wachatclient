@@ -3,17 +3,26 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
+import Loading from "@/components/ui/loading";
 
 // Server action to fetch business info for the current user
-async function getBusinessInfo(userId: string): Promise<BusinessInfoData | null> {
-  const info = await prisma.businessInfo.findFirst({ where: { userId } });
-  if (!info) return null;
-  return {
-    id: info.id,
-    userId: info.userId,
-    data: info.data as Record<string, string>,
-    systemPrompt: info.systemPrompt || '',
-  };
+async function getBusinessInfo(
+  userId: string
+): Promise<BusinessInfoData | null> {
+  try {
+    const info = await prisma.businessInfo.findFirst({ where: { userId } });
+    if (!info) return null;
+    return {
+      id: info.id,
+      userId: info.userId,
+      data: info.data as Record<string, string>,
+      systemPrompt: info.systemPrompt || "",
+    };
+  } catch (error) {
+    console.error("Failed to fetch business info:", error);
+    return null;
+  }
 }
 
 // Server action to save business info for the current user
@@ -59,14 +68,16 @@ export default async function KnowledgeBasePage() {
   }
 
   return (
-    <div className="h-[calc(100vh-2rem)] overflow-y-auto bg-white rounded-lg shadow-sm">
-      <div className="w-full pt-12 pb-12">
-        <BusinessInfoForm
-          initialData={initialData || { userId, data: {}, systemPrompt: '' }}
-          onSubmit={handleSubmit}
-          userId={userId}
-        />
+    <Suspense fallback={<Loading />}>
+      <div className="h-[calc(100vh-2rem)] overflow-y-auto bg-white rounded-lg shadow-sm">
+        <div className="w-full pt-12 pb-12">
+          <BusinessInfoForm
+            initialData={initialData || { userId, data: {}, systemPrompt: "" }}
+            onSubmit={handleSubmit}
+            userId={userId}
+          />
+        </div>
       </div>
-    </div>
+    </Suspense>
   );
 }
