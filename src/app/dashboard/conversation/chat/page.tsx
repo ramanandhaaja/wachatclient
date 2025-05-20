@@ -202,7 +202,10 @@ export default function ChatPage() {
             </div>
           ) : (
             conversations?.map((conversation: any) => {
-              const shouldBold = conversation.last_message_is_read === false;
+              const shouldBold =
+                conversation.last_message_is_read === false &&
+                activeConversation?.id !== conversation.id;
+
               return (
                 <div
                   key={conversation.id}
