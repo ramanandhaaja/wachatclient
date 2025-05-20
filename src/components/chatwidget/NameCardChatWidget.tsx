@@ -35,9 +35,9 @@ interface NameCardChatWidgetProps {
   userId: string;
 }
 
-export default function NameCardChatWidget({ userId }: NameCardChatWidgetProps) {
-  // For debug, log userId
-  console.log('NameCardChatWidget userId:', userId);
+export default function NameCardChatWidget({
+  userId,
+}: NameCardChatWidgetProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
@@ -102,7 +102,11 @@ export default function NameCardChatWidget({ userId }: NameCardChatWidgetProps) 
     const res = await fetch("/api/webhook/web-chatbot/registration", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userPhone: newUserPhone, userName: newUserName, userId }),
+      body: JSON.stringify({
+        userPhone: newUserPhone,
+        userName: newUserName,
+        userId,
+      }),
     });
     const data = await res.json();
     if (!res.ok) {
@@ -160,6 +164,7 @@ export default function NameCardChatWidget({ userId }: NameCardChatWidgetProps) 
             sessionId,
             userName: isFirstMessage ? userName : undefined,
             userPhone: isFirstMessage ? userPhone : undefined,
+            userId,
           }),
         }
       );
@@ -328,7 +333,10 @@ export default function NameCardChatWidget({ userId }: NameCardChatWidgetProps) 
                       <div className="flex justify-start">
                         <div className="max-w-[70%] rounded-lg p-3 bg-red-100 text-red-800">
                           <div className="text-xs opacity-70 mb-1">Error</div>
-                          <p>Maaf sedang terjadi kesalahan, coba beberapa saat lagi</p>
+                          <p>
+                            Maaf sedang terjadi kesalahan, coba beberapa saat
+                            lagi
+                          </p>
                         </div>
                       </div>
                     )}
