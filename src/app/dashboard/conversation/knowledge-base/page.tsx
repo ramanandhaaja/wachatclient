@@ -10,19 +10,14 @@ import Loading from "@/components/ui/loading";
 async function getBusinessInfo(
   userId: string
 ): Promise<BusinessInfoData | null> {
-  try {
-    const info = await prisma.businessInfo.findFirst({ where: { userId } });
-    if (!info) return null;
-    return {
-      id: info.id,
-      userId: info.userId,
-      data: info.data as Record<string, string>,
-      systemPrompt: info.systemPrompt || "",
-    };
-  } catch (error) {
-    console.error("Failed to fetch business info:", error);
-    return null;
-  }
+  const info = await prisma.businessInfo.findFirst({ where: { userId } });
+  if (!info) return null;
+  return {
+    id: info.id,
+    userId: info.userId,
+    data: info.data as Record<string, string>,
+    systemPrompt: info.systemPrompt || "",
+  };
 }
 
 // Server action to save business info for the current user
