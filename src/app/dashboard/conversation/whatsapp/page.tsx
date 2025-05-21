@@ -163,63 +163,70 @@ export default function ChatPage() {
         </div>
 
         <div className="overflow-y-auto flex-1">
-          {conversations?.map((conversation) => (
-            <div
-              key={conversation.id}
-              className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 ${
-                activeConversation?.id === conversation.id ? "bg-gray-50" : ""
-              }`}
-              onClick={() => handleSelectConversation(conversation)}
-            >
-              <div className="flex items-start gap-3">
-                <Avatar className="h-10 w-10">
-                  <AvatarImage
-                    src={`https://api.dicebear.com/7.x/initials/svg?seed=${
-                      conversation.user_name || conversation.user_phone
-                    }`}
-                  />
-                  <AvatarFallback>
-                    {(conversation.user_name || conversation.user_phone).charAt(
-                      0
-                    )}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <h3
-                      className={`font-medium text-sm ${
-                        activeConversation?.id === conversation.id
-                          ? "text-blue-600"
-                          : ""
-                      }`}
-                    >
-                      {conversation.user_name || conversation.user_phone}
-                    </h3>
-                    <span className="text-xs text-gray-500">
-                      {conversation.last_message_time
-                        ? formatMessageTime(conversation.last_message_time)
-                        : formatMessageTime(conversation.updated_at)}
-                    </span>
-                  </div>
-                  <div className="flex items-center mt-1">
-                    {conversation.is_bot_active ? (
-                      <Bot className="h-3 w-3 text-blue-500 mr-1" />
-                    ) : (
-                      <User className="h-3 w-3 text-green-500 mr-1" />
-                    )}
-                    <p className="text-sm text-gray-500 truncate">
-                      {conversation.last_message || "No messages yet"}
-                    </p>
-                  </div>
-                </div>
-                {conversation.status === "pending" && (
-                  <div className="flex-shrink-0 w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center text-white text-xs">
-                    !
-                  </div>
-                )}
-              </div>
+          {loadingConversations ? (
+            <div className="flex items-center gap-2 justify-center h-full">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+              <p className="text-sm">Loading conversations...</p>
             </div>
-          ))}
+          ) : (
+            conversations?.map((conversation) => (
+              <div
+                key={conversation.id}
+                className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 ${
+                  activeConversation?.id === conversation.id ? "bg-gray-50" : ""
+                }`}
+                onClick={() => handleSelectConversation(conversation)}
+              >
+                <div className="flex items-start gap-3">
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage
+                      src={`https://api.dicebear.com/7.x/initials/svg?seed=${
+                        conversation.user_name || conversation.user_phone
+                      }`}
+                    />
+                    <AvatarFallback>
+                      {(
+                        conversation.user_name || conversation.user_phone
+                      ).charAt(0)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <h3
+                        className={`font-medium text-sm ${
+                          activeConversation?.id === conversation.id
+                            ? "text-blue-600"
+                            : ""
+                        }`}
+                      >
+                        {conversation.user_name || conversation.user_phone}
+                      </h3>
+                      <span className="text-xs text-gray-500">
+                        {conversation.last_message_time
+                          ? formatMessageTime(conversation.last_message_time)
+                          : formatMessageTime(conversation.updated_at)}
+                      </span>
+                    </div>
+                    <div className="flex items-center mt-1">
+                      {conversation.is_bot_active ? (
+                        <Bot className="h-3 w-3 text-blue-500 mr-1" />
+                      ) : (
+                        <User className="h-3 w-3 text-green-500 mr-1" />
+                      )}
+                      <p className="text-sm text-gray-500 truncate">
+                        {conversation.last_message || "No messages yet"}
+                      </p>
+                    </div>
+                  </div>
+                  {conversation.status === "pending" && (
+                    <div className="flex-shrink-0 w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center text-white text-xs">
+                      !
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
 
