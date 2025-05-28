@@ -7,17 +7,44 @@ import { Suspense } from "react";
 import Loading from "@/components/ui/loading";
 
 // Server action to fetch business info for the current user
+import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
+
 async function getBusinessInfo(
   userId: string
 ): Promise<BusinessInfoData | null> {
-  const info = await prisma.businessInfo.findFirst({ where: { userId } });
-  if (!info) return null;
-  return {
-    id: info.id,
-    userId: info.userId,
-    data: info.data as Record<string, string>,
-    systemPrompt: info.systemPrompt || "",
-  };
+  try {
+    const info = await prisma.businessInfo.findFirst({ where: { userId } });
+    if (!info) return null;
+
+    return {
+      id: info.id,
+      userId: info.userId,
+      data: info.data as Record<string, string>,
+      systemPrompt: info.systemPrompt || "",
+    };
+  } catch (error) {
+    if (
+      error instanceof PrismaClientKnownRequestError &&
+      error.code === "P2024"
+    ) {
+      // Connection pool timeout error
+      console.error("Database connection pool timeout:", {
+        userId,
+        error: error.message,
+        timestamp: new Date().toISOString(),
+      });
+      // You might want to implement a retry mechanism here
+      throw error;
+    }
+
+    // Log other errors
+    console.error("Unexpected error in getBusinessInfo:", {
+      userId,
+      error,
+      timestamp: new Date().toISOString(),
+    });
+    throw error;
+  }
 }
 
 // Server action to save business info for the current user

@@ -10,12 +10,17 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const userId = searchParams.get("user_id");
   const source = searchParams.get("source");
+  const showArchived = searchParams.get("show_archived") === "true";
 
   // 1. Fetch all conversations for the user (and source if provided)
   let query = supabase.from("conversations").select("*").eq("user_id", userId);
 
   if (source) {
     query = query.eq("source", source);
+  }
+
+  if (!showArchived) {
+    query = query.eq("status", "active");
   }
 
   const { data: conversations, error: convError } = await query;

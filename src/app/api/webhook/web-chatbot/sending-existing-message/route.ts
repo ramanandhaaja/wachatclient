@@ -27,6 +27,39 @@ export async function POST(req: Request) {
       );
     }
 
+    const { data: conversation, error: convError } = await supabase
+      .from("conversations")
+      .select("status")
+      .eq("id", sessionId)
+      .single();
+
+    if (convError) {
+      console.error("Error fetching conversation:", convError);
+      return NextResponse.json(
+        { error: "Failed to fetch conversation" },
+        { status: 500 }
+      );
+    }
+
+    // If conversation is archived, update status to active
+    if (conversation?.status === "archived") {
+      const { error: updateError } = await supabase
+        .from("conversations")
+        .update({
+          status: "active",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", sessionId);
+
+      if (updateError) {
+        console.error("Error updating conversation status:", updateError);
+        return NextResponse.json(
+          { error: "Failed to restore conversation" },
+          { status: 500 }
+        );
+      }
+    }
+
     // 1. Store user message
     const { error: userMessageError } = await supabase.from("messages").insert({
       conversation_id: sessionId,
