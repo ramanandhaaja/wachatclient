@@ -37,6 +37,7 @@ import {
   CheckCheck,
   Clock,
   AlertCircle,
+  Trash,
 } from "lucide-react";
 import {
   useConversationsWithUnread,
@@ -44,16 +45,31 @@ import {
 } from "@/hooks/use-unread-conversation";
 import ReactMarkdown from "react-markdown";
 import { preprocessText } from "@/lib/utils";
+import RightClickMenu from "@/components/ui/right-click-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { toast } from "sonner";
 
 export default function ChatPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [messageText, setMessageText] = useState("");
   const [showDetails, setShowDetails] = useState(true);
+  const [selectedConversationId, setSelectedConversationId] = useState<
+    string | null
+  >(null);
   const [activeConversation, setActiveConversation] =
     useState<Conversation | null>(null);
   const { sendMessage, isSending } = useWhatsAppOfficial();
   const { mutate: markMessagesAsRead } = useMarkMessagesAsRead();
-
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  const [loadingDelete, setLoadingDelete] = useState(false);
   // Load conversations using react-query hook
   const { data: session, status } = useSession();
   const userId = session?.user?.id ?? "";
@@ -63,8 +79,11 @@ export default function ChatPage() {
     error: messagesError,
   } = useConversation(activeConversation?.id ?? null);
 
-  const { data: conversations = [], isLoading: loadingConversations } =
-    useConversationsWithUnread(userId, "web");
+  const {
+    data: conversations = [],
+    isLoading: loadingConversations,
+    refetch: refetchConversations,
+  } = useConversationsWithUnread(userId, "web");
 
   const scrollToBottom = useCallback(() => {
     if (messagesEndRef.current) {
@@ -74,6 +93,81 @@ export default function ChatPage() {
       });
     }
   }, []);
+
+  const [contextMenu, setContextMenu] = useState<{
+    isVisible: boolean;
+    position: { x: number; y: number } | null;
+    conversationId: string | number | null;
+  }>({
+    isVisible: false,
+    position: null,
+    conversationId: null,
+  });
+
+  // right-click menu
+  const handleContextMenu = (
+    e: React.MouseEvent,
+    conversation: Conversation
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Close any open menu first
+    setContextMenu({
+      isVisible: true,
+      position: { x: e.clientX, y: e.clientY },
+      conversationId: conversation.id,
+    });
+  };
+
+  const handleCloseContextMenu = () => {
+    setContextMenu({
+      isVisible: false,
+      position: null,
+      conversationId: null,
+    });
+  };
+
+  //this api call is not used to delete conversation, it is used to archive conversation
+  const deleteConversation = async (conversationId: string) => {
+    setLoadingDelete(true);
+    try {
+      const response = await fetch(
+        `/api/webhook/web-chatbot/conversation-with-unread/${conversationId}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        toast.error(result.error || "Failed to delete chat");
+        throw new Error(result.error || "Failed to delete conversation");
+      }
+
+      await refetchConversations();
+      setSelectedConversationId(null);
+      setActiveConversation(null);
+      toast.success("Chat deleted ");
+      return result;
+    } catch (error) {
+      console.error("Error deleting conversation:", error);
+      throw error;
+    } finally {
+      setLoadingDelete(false);
+      setOpenDeleteDialog(false);
+    }
+  };
+
+  const handleContextMenuDelete = (
+    conversation: Conversation,
+    e: React.MouseEvent
+  ) => {
+    e.stopPropagation();
+    setOpenDeleteDialog(true);
+    setSelectedConversationId(conversation.id);
+  };
 
   useEffect(() => {
     if (!messagesLoading && conversationMessages?.length) {
@@ -166,6 +260,36 @@ export default function ChatPage() {
     }
   };
 
+  const ModalDelete = () => {
+    return (
+      <Dialog open={openDeleteDialog} onOpenChange={setOpenDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Chat</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this chat?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setOpenDeleteDialog(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              disabled={loadingDelete}
+              variant="destructive"
+              onClick={() => deleteConversation(selectedConversationId ?? "")}
+            >
+              {loadingDelete ? "Deleting..." : "Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  };
+
   return (
     <div className="flex h-[calc(100vh-2rem)] overflow-hidden bg-white rounded-lg shadow-sm">
       {/* Left sidebar - Contact list */}
@@ -207,67 +331,86 @@ export default function ChatPage() {
                 activeConversation?.id !== conversation.id;
 
               return (
-                <div
+                <RightClickMenu
                   key={conversation.id}
-                  className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 ${
-                    activeConversation?.id === conversation.id
-                      ? "bg-gray-50"
-                      : ""
-                  }`}
-                  onClick={() => handleSelectConversation(conversation)}
+                  isVisible={
+                    contextMenu.isVisible &&
+                    contextMenu.conversationId === conversation.id
+                  }
+                  position={contextMenu.position}
+                  onClose={handleCloseContextMenu}
+                  onContextMenu={(e) => handleContextMenu(e, conversation)}
+                  menuItems={[
+                    {
+                      label: "Delete Chat",
+                      onClick: (e) => handleContextMenuDelete(conversation, e),
+                    },
+                  ]}
                 >
-                  <div className="flex items-start gap-3">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage
-                        src={`https://api.dicebear.com/7.x/initials/svg?seed=${
-                          conversation.user_name || conversation.user_phone
-                        }`}
-                      />
-                      <AvatarFallback>
-                        {(
-                          conversation.user_name || conversation.user_phone
-                        ).charAt(0)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <h3
-                          className={`font-medium text-sm ${
-                            activeConversation?.id === conversation.id
-                              ? "text-blue-600"
-                              : ""
+                  <div
+                    className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 ${
+                      activeConversation?.id === conversation.id
+                        ? "bg-gray-50"
+                        : ""
+                    }`}
+                    onClick={() => handleSelectConversation(conversation)}
+                  >
+                    <div className="flex items-start gap-3">
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage
+                          src={`https://api.dicebear.com/7.x/initials/svg?seed=${
+                            conversation.user_name || conversation.user_phone
                           }`}
-                        >
-                          {conversation.user_name || conversation.user_phone}
-                        </h3>
-                        <span className="text-xs text-gray-500">
-                          {conversation.last_message_time
-                            ? displayTimeOrDate(conversation.last_message_time)
-                            : displayTimeOrDate(conversation.updated_at)}
-                        </span>
+                        />
+                        <AvatarFallback>
+                          {(
+                            conversation.user_name || conversation.user_phone
+                          ).charAt(0)}
+                        </AvatarFallback>
+                      </Avatar>
+
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <h3
+                            className={`font-medium text-sm ${
+                              activeConversation?.id === conversation.id
+                                ? "text-blue-600"
+                                : ""
+                            }`}
+                          >
+                            {conversation.user_name || conversation.user_phone}
+                          </h3>
+                          <span className="text-xs text-gray-500">
+                            {conversation.last_message_time
+                              ? displayTimeOrDate(
+                                  conversation.last_message_time
+                                )
+                              : displayTimeOrDate(conversation.updated_at)}
+                          </span>
+                        </div>
+                        <div className="flex items-center mt-1">
+                          {conversation.is_bot_active ? (
+                            <Bot className="h-3 w-3 text-blue-500 mr-1" />
+                          ) : (
+                            <User className="h-3 w-3 text-green-500 mr-1" />
+                          )}
+                          <p
+                            className={`text-sm text-gray-500 truncate ${
+                              shouldBold ? "font-bold text-gray-700" : ""
+                            }`}
+                          >
+                            {conversation.last_message || "No messages yet"}
+                          </p>
+                        </div>
                       </div>
-                      <div className="flex items-center mt-1">
-                        {conversation.is_bot_active ? (
-                          <Bot className="h-3 w-3 text-blue-500 mr-1" />
-                        ) : (
-                          <User className="h-3 w-3 text-green-500 mr-1" />
-                        )}
-                        <p
-                          className={`text-sm text-gray-500 truncate ${
-                            shouldBold ? "font-bold text-gray-700" : ""
-                          }`}
-                        >
-                          {conversation.last_message || "No messages yet"}
-                        </p>
-                      </div>
+                      {conversation.status === "pending" && (
+                        <div className="flex-shrink-0 w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center text-white text-xs">
+                          !
+                        </div>
+                      )}
                     </div>
-                    {conversation.status === "pending" && (
-                      <div className="flex-shrink-0 w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center text-white text-xs">
-                        !
-                      </div>
-                    )}
                   </div>
-                </div>
+                </RightClickMenu>
               );
             })
           )}
@@ -568,10 +711,23 @@ export default function ChatPage() {
                 <Calendar className="h-4 w-4 mr-2" />
                 Schedule Follow-up
               </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full text-red-500"
+                onClick={() => {
+                  setOpenDeleteDialog(true);
+                  setSelectedConversationId(activeConversation.id);
+                }}
+              >
+                <Trash className="h-4 w-4 mr-2 " />
+                Delete Chat
+              </Button>
             </div>
           </div>
         </div>
       )}
+      <ModalDelete />
     </div>
   );
 }

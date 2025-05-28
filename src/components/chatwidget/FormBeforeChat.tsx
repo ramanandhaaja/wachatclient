@@ -51,8 +51,9 @@ export function FormBeforeChat({ onUserRegistered }: FormBeforeChatProps) {
           <div className="space-y-2">
             <Label htmlFor="phone">Phone</Label>
             <Input
+              className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               id="phone"
-              type="text"
+              type="number"
               placeholder="Enter your phone number"
               value={userPhone}
               onChange={(e) => setUserPhone(e.target.value)}

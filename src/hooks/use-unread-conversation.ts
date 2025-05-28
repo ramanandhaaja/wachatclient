@@ -3,10 +3,11 @@ import { useMutation } from "@tanstack/react-query";
 
 export function useConversationsWithUnread(
   userId: string,
-  source?: "web" | "whatsapp"
+  source?: "web" | "whatsapp",
+  showArchived?: boolean
 ) {
   return useQuery({
-    queryKey: ["conversations-with-unread", userId, source],
+    queryKey: ["conversations-with-unread", userId, source, showArchived],
     enabled: !!userId,
     queryFn: async () => {
       let url = `/api/webhook/web-chatbot/conversation-with-unread?user_id=${userId}`;
