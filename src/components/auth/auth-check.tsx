@@ -1,6 +1,6 @@
 "use client";
 
-import { useSession } from "next-auth/react";
+import { useAuth } from "@/hooks/use-auth";
 import { ReactNode } from "react";
 
 interface AuthCheckProps {
@@ -9,7 +9,7 @@ interface AuthCheckProps {
 }
 
 export function AuthCheck({ children, fallback }: AuthCheckProps) {
-  const { status } = useSession();
+  const { status } = useAuth();
 
   if (status === "authenticated") {
     return <>{children}</>;

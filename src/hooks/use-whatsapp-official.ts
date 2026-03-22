@@ -1,14 +1,7 @@
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabase';
 
-// Initialize Supabase client
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
-// Environment variables would be better for these values
 const WHATSAPP_API_VERSION = 'v22.0';
 const WHATSAPP_PHONE_NUMBER_ID = process.env.NEXT_PUBLIC_WHATSAPP_PHONE_NUMBER_ID || '';
 const WHATSAPP_ACCESS_TOKEN = process.env.NEXT_PUBLIC_WHATSAPP_ACCESS_TOKEN || '';
@@ -192,35 +185,10 @@ export const useWhatsAppOfficial = () => {
     return digitsOnly;
   };
 
-  // Function to check message status using the WhatsApp Cloud API
-  const checkMessageStatus = useCallback(async (messageId: string) => {
-    try {
-      if (!WHATSAPP_PHONE_NUMBER_ID || !WHATSAPP_ACCESS_TOKEN) {
-        throw new Error('WhatsApp API credentials are missing');
-      }
-      
-      // The WhatsApp Cloud API provides message status through webhooks
-      // This is a placeholder for checking message status
-      // In a real implementation, you would typically store message statuses in your database
-      // when you receive webhook notifications and then query your database here
-      console.log(`Checking status for message ID: ${messageId}`);
-      
-      return { 
-        id: messageId,
-        status: 'unknown', // In a real app, you'd return the actual status from your database
-        timestamp: new Date().toISOString()
-      };
-    } catch (err: any) {
-      console.error('Failed to check message status:', err);
-      return { error: err.message || 'Failed to check message status' };
-    }
-  }, []);
-
   return {
     sendMessage,
     isSending,
     lastMessageId,
     error,
-    checkMessageStatus
   };
 };

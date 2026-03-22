@@ -10,7 +10,6 @@ interface FormBeforeChatProps {
 export function FormBeforeChat({ onUserRegistered }: FormBeforeChatProps) {
   const [userName, setUserName] = useState("");
   const [userPhone, setUserPhone] = useState("");
-  const [sessionId] = useState(() => crypto.randomUUID());
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -51,9 +50,8 @@ export function FormBeforeChat({ onUserRegistered }: FormBeforeChatProps) {
           <div className="space-y-2">
             <Label htmlFor="phone">Phone</Label>
             <Input
-              className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               id="phone"
-              type="number"
+              type="tel"
               placeholder="Enter your phone number"
               value={userPhone}
               onChange={(e) => setUserPhone(e.target.value)}

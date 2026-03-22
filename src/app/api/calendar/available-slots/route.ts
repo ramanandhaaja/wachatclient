@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { createClient } from "@/lib/supabase/server";
 import { z } from "zod";
 
 // Schema for query parameters
@@ -12,8 +11,9 @@ const QuerySchema = z.object({
 export async function GET(req: NextRequest) {
   try {
     // Get authenticated user
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
+    const supabase = await createClient();
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    if (!authUser) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
 
     // Get user's event duration and availability
     const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
+      where: { id: authUser.id },
       select: { eventDuration: true },
     });
 
@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
     // Get availability for the day
     const availability = await prisma.availability.findFirst({
       where: {
-        userId: session.user.id,
+        userId: authUser.id,
         dayOfWeek,
       },
     });
@@ -85,7 +85,7 @@ export async function GET(req: NextRequest) {
     // Get booked events for the day
     const bookedEvents = await prisma.event.findMany({
       where: {
-        userId: session.user.id,
+        userId: authUser.id,
         startTime: {
           gte: startDate,
           lt: new Date(date.setDate(date.getDate() + 1)),

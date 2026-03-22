@@ -1,41 +1,42 @@
 import React from 'react';
-import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { useCalendar } from '@/hooks/use-calendar';
-import { Clock, User } from 'lucide-react';
 
 interface CalendarGridProps {
   currentDate: Date;
   selectedDate: Date;
   onDateSelect: (date: Date) => void;
   monthEvents?: Array<{ startTime: Date }>;
+  eventsLoading?: boolean;
 }
 
-export function CalendarGrid({ currentDate, selectedDate, onDateSelect }: CalendarGridProps) {
-  const { events } = useCalendar();
-  
-  // Fetch events for the current month
-  const { data: monthEvents, isLoading: eventsLoading } = events.useQuery({
-    startDate: format(new Date(currentDate.getFullYear(), currentDate.getMonth(), 1), 'yyyy-MM-dd'),
-    endDate: format(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0), 'yyyy-MM-dd')
-  });
+export function CalendarGrid({ currentDate, selectedDate, onDateSelect, monthEvents, eventsLoading }: CalendarGridProps) {
   const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
   const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay();
-  
+
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
   const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  
+
   const isSelected = (day: number) => {
-    return selectedDate.getDate() === day && 
+    return selectedDate.getDate() === day &&
            selectedDate.getMonth() === currentDate.getMonth() &&
            selectedDate.getFullYear() === currentDate.getFullYear();
   };
 
   const isToday = (day: number) => {
     const today = new Date();
-    return today.getDate() === day && 
+    return today.getDate() === day &&
            today.getMonth() === currentDate.getMonth() &&
            today.getFullYear() === currentDate.getFullYear();
+  };
+
+  const getEventsForDay = (day: number) => {
+    if (!monthEvents) return [];
+    return monthEvents.filter(event => {
+      const eventDate = new Date(event.startTime);
+      return eventDate.getDate() === day &&
+             eventDate.getMonth() === currentDate.getMonth() &&
+             eventDate.getFullYear() === currentDate.getFullYear();
+    });
   };
 
   const handleDateClick = (day: number) => {
@@ -61,13 +62,9 @@ export function CalendarGrid({ currentDate, selectedDate, onDateSelect }: Calend
           {days.map((day) => {
             const isSelectedDay = isSelected(day);
             const isTodayDay = isToday(day);
-            const hasEvents = !eventsLoading && monthEvents?.some(event => {
-              const eventDate = new Date(event.startTime);
-              return eventDate.getDate() === day &&
-                     eventDate.getMonth() === currentDate.getMonth() &&
-                     eventDate.getFullYear() === currentDate.getFullYear();
-            });
-            
+            const dayEvents = eventsLoading ? [] : getEventsForDay(day);
+            const hasEvents = dayEvents.length > 0;
+
             return (
               <button
                 key={day}
@@ -89,17 +86,7 @@ export function CalendarGrid({ currentDate, selectedDate, onDateSelect }: Calend
                   <div className="text-xs text-gray-500 mt-0.5 opacity-50">Loading...</div>
                 ) : hasEvents && (
                   <div className="text-xs text-gray-500 mt-0.5">
-                    {monthEvents?.filter(event => {
-                      const eventDate = new Date(event.startTime);
-                      return eventDate.getDate() === day &&
-                             eventDate.getMonth() === currentDate.getMonth() &&
-                             eventDate.getFullYear() === currentDate.getFullYear();
-                    }).length} event{monthEvents?.filter(event => {
-                      const eventDate = new Date(event.startTime);
-                      return eventDate.getDate() === day &&
-                             eventDate.getMonth() === currentDate.getMonth() &&
-                             eventDate.getFullYear() === currentDate.getFullYear();
-                    }).length !== 1 ? 's' : ''}
+                    {dayEvents.length} event{dayEvents.length !== 1 ? 's' : ''}
                   </div>
                 )}
               </button>

@@ -1,10 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -21,11 +20,10 @@ import {
   nameCardSchema,
   type NameCardFormValues,
 } from "@/lib/schemas/namecard";
-import { Card, CardContent } from "@/components/ui/card";
 import { CardPreview } from "./card-preview";
 import { useNameCard } from "@/hooks/use-namecard";
 import { uploadImageToSupabase } from "@/lib/upload-image";
-import { useSession } from "next-auth/react";
+import { useAuth } from "@/hooks/use-auth";
 import { resizeImageFile } from "@/lib/image-resize";
 import Image from "next/image";
 
@@ -36,54 +34,35 @@ interface CardFormProps {
 }
 
 export function CardForm({ initialData, id, userId }: CardFormProps) {
-  const { data: session } = useSession();
+  const { session } = useAuth();
+  const defaultFormValues: NameCardFormValues = {
+    firstName: "",
+    lastName: "",
+    title: "",
+    company: "",
+    email: "",
+    phone: "",
+    website: "",
+    address1: "",
+    address2: "",
+    city: "",
+    postcode: "",
+    linkedin: "",
+    twitter: "",
+    instagram: "",
+    profileImage: "",
+    coverImage: "",
+    aiChatAgent: false,
+    aiVoiceCallAgent: false,
+    ...initialData,
+  };
   const form = useForm<NameCardFormValues>({
     resolver: zodResolver(nameCardSchema),
-    defaultValues: {
-      ...initialData,
-      firstName: initialData?.firstName || "",
-      lastName: initialData?.lastName || "",
-      title: initialData?.title || "",
-      company: initialData?.company || "",
-      email: initialData?.email || "",
-      phone: initialData?.phone || "",
-      website: initialData?.website || "",
-      address1: initialData?.address1 || "",
-      address2: initialData?.address2 || "",
-      city: initialData?.city || "",
-      postcode: initialData?.postcode || "",
-      linkedin: initialData?.linkedin || "",
-      twitter: initialData?.twitter || "",
-      instagram: initialData?.instagram || "",
-      profileImage: initialData?.profileImage ?? "",
-      coverImage: initialData?.coverImage ?? "",
-      aiChatAgent: initialData?.aiChatAgent ?? false,
-      aiVoiceCallAgent: initialData?.aiVoiceCallAgent ?? false,
-    },
+    defaultValues: defaultFormValues,
   });
-  // Ensure form values are updated when initialData changes (important for edit)
   useEffect(() => {
     if (initialData) {
-      form.reset({
-        ...initialData,
-        firstName: initialData.firstName || "",
-        lastName: initialData.lastName || "",
-        company: initialData.company || "",
-        email: initialData.email || "",
-        phone: initialData.phone || "",
-        website: initialData.website || "",
-        address1: initialData.address1 || "",
-        address2: initialData.address2 || "",
-        city: initialData.city || "",
-        postcode: initialData.postcode || "",
-        linkedin: initialData.linkedin || "",
-        twitter: initialData.twitter || "",
-        instagram: initialData.instagram || "",
-        profileImage: initialData.profileImage ?? "",
-        coverImage: initialData.coverImage ?? "",
-        aiChatAgent: initialData.aiChatAgent ?? false,
-        aiVoiceCallAgent: initialData.aiVoiceCallAgent ?? false,
-      });
+      form.reset({ ...defaultFormValues, ...initialData });
     }
   }, [initialData, form]);
   const router = useRouter();

@@ -32,43 +32,16 @@ import {
   Loader2,
 } from "lucide-react";
 import { useCardViews } from "@/hooks/use-analytics";
-import { useSession } from "next-auth/react";
-import { ShareCard } from "../../../components/namecard/share-card";
+import { useAuth } from "@/hooks/use-auth";
 import { useNameCard } from "@/hooks/use-namecard";
-
-type BusinessCardProps = {
-  id: string;
-  name: string;
-  title: string;
-  company?: string;
-  email: string;
-  phone: string;
-  website?: string;
-  address1?: string;
-  address2?: string;
-  city?: string;
-  postcode?: string;
-  linkedin?: string;
-  twitter?: string;
-  instagram?: string;
-  profileImage?: string;
-  coverImage?: string;
-};
-
-// Temporary analytics data
-const demoAnalytics = {
-  views: 32,
-  shares: 8,
-  saves: 5,
-  clicks: 12,
-};
+import { toNameCardFormValues } from "@/lib/schemas/namecard";
 
 export default function NameCardDashboard() {
   const { useQuery, useDelete } = useNameCard();
   const { data: cards = [], isLoading } = useQuery();
   const { mutate: deleteCard } = useDelete();
 
-  const { data: session } = useSession();
+  const { session } = useAuth();
   const userId = session?.user?.id;
   const { data: cardViews = 0, isLoading: isViewsLoading } =
     useCardViews(userId);
@@ -132,7 +105,7 @@ export default function NameCardDashboard() {
           <CardContent>
             <div className="flex items-center">
               <QrCode className="h-5 w-5 text-primary mr-2" />
-              <div className="text-2xl font-bold">{demoAnalytics.shares}</div>
+              <div className="text-2xl font-bold text-muted-foreground">-</div>
             </div>
           </CardContent>
         </Card>
@@ -146,7 +119,7 @@ export default function NameCardDashboard() {
           <CardContent>
             <div className="flex items-center">
               <Activity className="h-5 w-5 text-primary mr-2" />
-              <div className="text-2xl font-bold">{demoAnalytics.clicks}</div>
+              <div className="text-2xl font-bold text-muted-foreground">-</div>
             </div>
           </CardContent>
         </Card>
@@ -182,26 +155,8 @@ export default function NameCardDashboard() {
                       size="sm"
                       id={card.id}
                       userId={userId ?? ""}
-                      formValues={{
-                        firstName: card.firstName || "",
-                        lastName: card.lastName || "",
-                        title: card.title,
-                        company: card.company || "",
-                        email: card.email || "",
-                        phone: card.phone || "",
-                        website: card.website || "",
-                        address1: card.address1 || "",
-                        address2: card.address2 || "",
-                        city: card.city || "",
-                        postcode: card.postcode || "",
-                        linkedin: card.linkedin || "",
-                        twitter: card.twitter || "",
-                        instagram: card.instagram || "",
-                        profileImage: card.profileImage || "",
-                        coverImage: card.coverImage || "",
-                        aiChatAgent: card.aiChatAgent ?? false,
-                        aiVoiceCallAgent: card.aiVoiceCallAgent ?? false,
-                      }}
+                      formValues={toNameCardFormValues(card)}
+                      disableWidgets
                     />
                     <div className="absolute top-4 left-4 opacity-0 group-hover:opacity-100 transition-opacity">
                       <div className="flex items-center gap-2">

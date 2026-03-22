@@ -1,6 +1,5 @@
 import BusinessInfoForm, { BusinessInfoData } from "./business-info-form";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -76,11 +75,12 @@ async function saveBusinessInfo(data: BusinessInfoData): Promise<void> {
 }
 
 export default async function KnowledgeBasePage() {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
-    redirect("/login");
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    redirect("/auth/signin");
   }
-  const userId = session.user.id;
+  const userId = user.id;
   const initialData = await getBusinessInfo(userId);
 
   // This uses a server action for save

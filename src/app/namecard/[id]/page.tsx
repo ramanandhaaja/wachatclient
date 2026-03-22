@@ -1,9 +1,18 @@
+import { cache } from "react";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { CardPreview } from "@/components/namecard/card-preview";
 import { CardViewAnalytics } from "@/components/analytics/CardViewAnalytics";
 import { CardLayout } from "@/components/namecard/card-layout";
 import { prisma } from "@/lib/prisma";
+import { toNameCardFormValues } from "@/lib/schemas/namecard";
+
+const getCard = cache(async (id: string) => {
+  return prisma.nameCard.findUnique({
+    where: { id },
+    include: { user: true },
+  });
+});
 
 export async function generateMetadata({
   params,
@@ -11,22 +20,10 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const card = await prisma.nameCard.findUnique({
-    where: {
-      id,
-    },
-    select: {
-      firstName: true,
-      lastName: true,
-      title: true,
-      company: true,
-    },
-  });
+  const card = await getCard(id);
 
   if (!card) {
-    return {
-      title: "Card Not Found",
-    };
+    return { title: "Card Not Found" };
   }
 
   return {
@@ -43,14 +40,7 @@ export default async function CardPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const card = await prisma.nameCard.findUnique({
-    where: {
-      id,
-    },
-    include: {
-      user: true,
-    },
-  });
+  const card = await getCard(id);
 
   if (!card) {
     notFound();
@@ -60,26 +50,7 @@ export default async function CardPage({
     <CardLayout>
       <CardViewAnalytics cardId={card.id} userId={card.userId} />
       <CardPreview
-        formValues={{
-          firstName: card.firstName || "",
-          lastName: card.lastName || "",
-          email: card.email || "",
-          title: card.title || "",
-          phone: card.phone || "",
-          address1: card.address1 || "",
-          address2: card.address2 || "",    
-          city: card.city || "",  
-          postcode: card.postcode || "",
-          company: card.company || undefined,
-          website: card.website || undefined,
-          linkedin: card.linkedin || undefined,
-          twitter: card.twitter || undefined,
-          instagram: card.instagram || undefined,
-          aiChatAgent: card.aiChatAgent || false,
-          aiVoiceCallAgent: card.aiVoiceCallAgent || false,
-          profileImage: card.profileImage || null,
-          coverImage: card.coverImage || null,
-        }}
+        formValues={toNameCardFormValues(card)}
         id={card.id}
         userId={card.userId}
       />

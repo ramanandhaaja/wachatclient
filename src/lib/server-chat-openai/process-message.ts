@@ -1,10 +1,10 @@
-import { DynamicStructuredTool } from "@langchain/core/tools";
 import { BufferMemory } from "langchain/memory";
 import { setupChatAgent } from "./setup-chat-agent";
 import { getTools } from "./tools";
-import { useBookingStore, BookingState } from "@/stores/bookingStore";
+import { useBookingStore } from "@/stores/bookingStore";
 import { AIMessage, HumanMessage, BaseMessage } from "@langchain/core/messages";
 import { ChatMessageHistory } from "langchain/stores/message/in_memory";
+import { DynamicStructuredTool } from "@langchain/core/tools";
 
 // In-memory session storage
 const sessionMemory: { [key: string]: BufferMemory } = {};
@@ -72,26 +72,7 @@ export async function processMessage(
 
     // Invoke the executor with the context
     console.log('[processMessage] Invoking executor');
-    let result;
-    try {
-      result = await executor.invoke(contextWithState);
-      console.log('[processMessage] Executor result:', result);
-    } catch (error: any) {
-      console.error('[processMessage] Executor error:', error);
-      // Check if it's a rate limit error
-      if (error.message && error.message.includes('429') && process.env.OPENAI_API_KEY_SERVER) {
-        console.log('[processMessage] Rate limit hit, trying with server API key');
-        // Create a new executor with the server API key
-        const serverTools = await getTools(sessionId, userId);
-        const serverExecutor = await setupChatAgent(serverTools as DynamicStructuredTool[], true, userId);
-        // Try again with the server executor
-        result = await serverExecutor.invoke(contextWithState);
-        console.log('[processMessage] Server executor result:', result);
-      } else {
-        // If it's not a rate limit error or we don't have a server key, rethrow
-        throw error;
-      }
-    }
+    const result = await executor.invoke(contextWithState);
 
     // Save the conversation to memory with proper message formatting
     if (result && result.output) {

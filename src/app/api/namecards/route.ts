@@ -1,19 +1,19 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { nameCardSchema } from "@/lib/schemas/namecard";
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
     const cards = await prisma.nameCard.findMany({
       where: {
-        userId: session.user.id,
+        userId: user.id,
       },
       orderBy: {
         createdAt: "desc",
@@ -29,8 +29,9 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
@@ -40,7 +41,7 @@ export async function POST(req: Request) {
     const card = await prisma.nameCard.create({
       data: {
         ...validatedData,
-        userId: session.user.id,
+        userId: user.id,
       },
     });
 

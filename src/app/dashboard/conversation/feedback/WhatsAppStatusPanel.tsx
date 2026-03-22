@@ -1,10 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { useWhatsApp } from "@/hooks/use-whatsapp";
-import { useSession } from "next-auth/react";
+import { useAuth } from "@/hooks/use-auth";
 import { QRCodeSVG } from 'qrcode.react';
 
 export function WhatsAppStatusPanel() {
-  const { data: session } = useSession();
+  const { session } = useAuth();
   const userId = session?.user?.id;
   const { startSession, isLoading, error, whatsAppState } = useWhatsApp(userId);
   const isConnected = whatsAppState.state === 'CONNECTED';

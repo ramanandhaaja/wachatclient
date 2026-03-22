@@ -3,14 +3,11 @@
 import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { signIn } from "next-auth/react";
-import { FaGithub } from "react-icons/fa";
-import { FcGoogle } from "react-icons/fc";
+import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 
 function SignUpContent() {
   const router = useRouter();
@@ -21,58 +18,49 @@ function SignUpContent() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [debugInfo, setDebugInfo] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
-    setDebugInfo("");
 
     try {
-      setDebugInfo(`Registering user with email: ${email}`);
-      
-      const response = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ name, email, password }),
-      });
+      const supabase = createClient();
 
-      const data = await response.json();
-      setDebugInfo(prev => `${prev}\nRegistration response: ${JSON.stringify(data)}`);
-
-      if (!response.ok) {
-        throw new Error(data.error || "Something went wrong");
-      }
-
-      // Automatically sign in the user after successful registration
-      setDebugInfo(prev => `${prev}\nAttempting to sign in with email: ${email}`);
-      
-      const result = await signIn("credentials", {
+      const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
-        redirect: false,
+        options: {
+          data: { name },
+        },
       });
 
-      setDebugInfo(prev => `${prev}\nSign-in result: ${JSON.stringify(result)}`);
-
-      if (result?.error) {
-        setError(result.error);
+      if (signUpError) {
+        setError(signUpError.message);
         setIsLoading(false);
         return;
       }
 
-      // Redirect to the callback URL or dashboard
-      setDebugInfo(prev => `${prev}\nRedirecting to: ${callbackUrl}`);
-      
-      // Force a hard navigation
-      window.location.href = callbackUrl;
-    } catch (error: any) {
-      console.error("Registration error:", error);
-      setError(error.message || "An error occurred during registration");
-      setDebugInfo(prev => `${prev}\nError: ${error.message || JSON.stringify(error)}`);
+      if (data.user) {
+        const syncRes = await fetch("/api/auth/sync-user", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: data.user.id,
+            email: data.user.email,
+            name,
+          }),
+        });
+
+        if (!syncRes.ok) {
+          console.error("Failed to sync user record:", await syncRes.text());
+        }
+      }
+
+      router.push(callbackUrl);
+      router.refresh();
+    } catch {
+      setError("An error occurred during registration");
       setIsLoading(false);
     }
   };
@@ -123,40 +111,10 @@ function SignUpContent() {
               />
             </div>
             {error && <p className="text-sm text-red-500">{error}</p>}
-            {debugInfo && (
-              <div className="text-xs text-gray-500 whitespace-pre-wrap border p-2 mt-2 bg-gray-50">
-                {debugInfo}
-              </div>
-            )}
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? "Creating account..." : "Sign Up"}
             </Button>
           </form>
-
-          <div className="mt-4 flex items-center">
-            <Separator className="flex-grow" />
-            <span className="mx-2 text-sm text-gray-500">OR</span>
-            <Separator className="flex-grow" />
-          </div>
-
-          <div className="mt-4 space-y-2">
-            <Button
-              variant="outline"
-              className="w-full flex items-center justify-center"
-              onClick={() => signIn("github", { callbackUrl })}
-            >
-              <FaGithub className="mr-2" />
-              Sign up with GitHub
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full flex items-center justify-center"
-              onClick={() => signIn("google", { callbackUrl })}
-            >
-              <FcGoogle className="mr-2" />
-              Sign up with Google
-            </Button>
-          </div>
         </CardContent>
         <CardFooter>
           <p className="text-sm text-center w-full">

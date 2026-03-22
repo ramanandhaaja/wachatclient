@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { useSession } from "next-auth/react";
+import { useAuth } from "@/hooks/use-auth";
 //untuk web admin reply message belum di appilkasikan
 import { useWhatsAppOfficial } from "@/hooks/use-whatsapp-official";
 import {
@@ -71,7 +71,7 @@ export default function ChatPage() {
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [loadingDelete, setLoadingDelete] = useState(false);
   // Load conversations using react-query hook
-  const { data: session, status } = useSession();
+  const { session, status } = useAuth();
   const userId = session?.user?.id ?? "";
   const {
     messages: conversationMessages,

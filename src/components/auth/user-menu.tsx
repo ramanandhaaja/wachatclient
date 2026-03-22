@@ -1,13 +1,13 @@
 "use client";
 
-import { signOut, useSession } from "next-auth/react";
+import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
 
 export function UserMenu() {
-  const { data: session } = useSession();
+  const { session, signOut } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   if (!session?.user) {
@@ -56,7 +56,7 @@ export function UserMenu() {
             Profile
           </Link>
           <button
-            onClick={() => signOut({ callbackUrl: "/" })}
+            onClick={() => signOut()}
             className="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
           >
             Sign out

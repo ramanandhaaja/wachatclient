@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,7 +9,6 @@ import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { z } from "zod";
 
-// Schema for email validation
 const emailSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
 });
@@ -25,7 +25,6 @@ export default function ForgotPassword() {
     setError("");
 
     try {
-      // Validate email
       const result = emailSchema.safeParse({ email });
       if (!result.success) {
         setError(result.error.errors[0].message);
@@ -33,26 +32,20 @@ export default function ForgotPassword() {
         return;
       }
 
-      // Send request to the API
-      const response = await fetch("/api/auth/forgot-password", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email }),
+      const supabase = createClient();
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/confirm?next=/auth/reset-password`,
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Something went wrong");
+      if (resetError) {
+        setError(resetError.message);
+        setIsLoading(false);
+        return;
       }
 
-      // Show success message
       setSuccess(true);
-    } catch (error: any) {
-      console.error("Password reset request error:", error);
-      setError(error.message || "An error occurred. Please try again.");
+    } catch {
+      setError("An error occurred. Please try again.");
     } finally {
       setIsLoading(false);
     }

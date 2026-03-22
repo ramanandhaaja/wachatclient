@@ -11,9 +11,9 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { QrCode, Link2, Mail, Smartphone, Contact } from "lucide-react";
+import { QrCode, Link2, Contact } from "lucide-react";
 import { toast } from "sonner";
-import { NameCardFormValues } from "@/lib/schemas/namecard";
+import { NameCardFormValues, generateVCard } from "@/lib/schemas/namecard";
 import QRCode from "react-qr-code";
 
 interface ShareCardProps {
@@ -24,9 +24,7 @@ interface ShareCardProps {
 export function ShareCard({ card, className }: ShareCardProps) {
   const [activeTab, setActiveTab] = useState("qr");
 
-  // TODO: Update with your actual domain
   const cardUrl = `${process.env.NEXT_PUBLIC_APP_URL}/namecard/${card.id}`;
-  // QRCode will be rendered locally using the <QRCode /> component
 
   const copyToClipboard = async () => {
     try {
@@ -36,21 +34,6 @@ export function ShareCard({ card, className }: ShareCardProps) {
       console.error("Failed to copy:", error);
       toast.error("Failed to copy link");
     }
-  };
-
-  const shareViaEmail = () => {
-    const fullName = [card.firstName, card.lastName]
-      .filter(Boolean)
-      .join(" ")
-      .trim();
-    const subject = encodeURIComponent(`${fullName}'s Digital Name Card`);
-    const body = encodeURIComponent(`Here's my digital name card: ${cardUrl}`);
-    window.location.href = `mailto:?subject=${subject}&body=${body}`;
-  };
-
-  const shareViaWhatsApp = () => {
-    const text = encodeURIComponent(`Here's my digital name card: ${cardUrl}`);
-    window.open(`https://wa.me/?text=${text}`, "_blank");
   };
 
   return (
@@ -99,22 +82,6 @@ export function ShareCard({ card, className }: ShareCardProps) {
                 <Link2 className="h-5 w-5" />
                 <span className="text-xs">Direct Link</span>
               </TabsTrigger>
-              {/* QR Code for vCard 
-              <TabsTrigger
-                value="email"
-                className="flex flex-col items-center justify-center h-full py-3 gap-1"
-              >
-                <Mail className="h-5 w-5" />
-                <span className="text-xs">Email</span>
-              </TabsTrigger>
-              <TabsTrigger
-                value="whatsapp"
-                className="flex flex-col items-center justify-center h-full py-3 gap-1"
-              >
-                <Smartphone className="h-5 w-5" />
-                <span className="text-xs">WhatsApp</span>
-              </TabsTrigger>
-              */}
             </TabsList>
 
             <TabsContent
@@ -135,21 +102,7 @@ export function ShareCard({ card, className }: ShareCardProps) {
             >
               <div className="bg-white p-3 rounded-lg shadow-md mb-4 border">
                 <QRCode
-                  value={[
-                    "BEGIN:VCARD",
-                    "VERSION:3.0",
-                    `FN:${[card.firstName, card.lastName]
-                      .filter(Boolean)
-                      .join(" ")}`,
-                    card.title ? `TITLE:${card.title}` : "",
-                    card.company ? `ORG:${card.company}` : "",
-                    card.phone ? `TEL;TYPE=CELL:${card.phone}` : "",
-                    card.email ? `EMAIL;TYPE=INTERNET:${card.email}` : "",
-                    card.website ? `URL:${card.website}` : "",
-                    "END:VCARD",
-                  ]
-                    .filter(Boolean)
-                    .join("\n")}
+                  value={generateVCard(card)}
                   size={176}
                   className="w-44 h-44"
                 />
@@ -188,30 +141,6 @@ export function ShareCard({ card, className }: ShareCardProps) {
                 Share this link via text message, social media, or any other
                 platform
               </p>
-            </TabsContent>
-
-            <TabsContent value="email" className="flex flex-col px-2 pb-2 pt-2">
-              <p className="text-sm mb-3">
-                Send your digital name card via email.
-              </p>
-              <Button className="w-full" onClick={shareViaEmail}>
-                Send Email
-              </Button>
-            </TabsContent>
-
-            <TabsContent
-              value="whatsapp"
-              className="flex flex-col px-2 pb-2 pt-2"
-            >
-              <p className="text-sm mb-3">
-                Share your digital name card via WhatsApp.
-              </p>
-              <Button className="w-full" onClick={shareViaWhatsApp}>
-                Share on WhatsApp
-              </Button>
-            </TabsContent>
-            <TabsContent value="more" className="flex flex-col px-2 pb-2 pt-2">
-              <p className="text-sm mb-3">More sharing options coming soon.</p>
             </TabsContent>
           </Tabs>
         </div>

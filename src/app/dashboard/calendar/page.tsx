@@ -8,10 +8,10 @@ import { EventPanel } from '@/components/calendar/EventPanel';
 import { AvailabilityPanel } from '@/components/calendar/AvailabilityPanel';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useCalendar } from '@/hooks/use-calendar';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@/hooks/use-auth';
 
 export default function CalendarPage() {
-  const { status } = useSession();
+  const { status } = useAuth();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<'12h' | '24h'>('12h');
@@ -98,6 +98,8 @@ export default function CalendarPage() {
           currentDate={currentDate}
           selectedDate={selectedDate}
           onDateSelect={setSelectedDate}
+          monthEvents={monthEvents}
+          eventsLoading={eventsLoading}
         />
       </div>
 

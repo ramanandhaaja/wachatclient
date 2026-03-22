@@ -4,31 +4,22 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { 
-  Search, 
-  Mail, 
-  AlertTriangle, 
-  Shield, 
-  BarChart2, 
-  BookOpen, 
-  Calendar, 
-  Settings, 
-  ChevronDown, 
+import {
+  Search,
+  Mail,
+  BookOpen,
+  Settings,
+  ChevronDown,
   ChevronRight,
   ChevronLeft,
-  ChevronUp,
   LogOut,
-  Menu,
   CreditCard,
   Bell,
   User,
-  Briefcase,
-  GraduationCap,
-  Cog
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { signOut, useSession } from "next-auth/react";
+import { useAuth } from "@/hooks/use-auth";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -47,7 +38,7 @@ type SidebarItem = {
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { data: session } = useSession();
+  const { session, signOut } = useAuth();
   const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({
     "Conversation": true,
   });
@@ -72,7 +63,7 @@ export function Sidebar() {
   };
 
   const handleLogout = async () => {
-    await signOut({ callbackUrl: '/' });
+    await signOut();
   };
 
   const sidebarItems: SidebarItem[] = [
@@ -98,7 +89,7 @@ export function Sidebar() {
       icon: <Mail className="h-5 w-5" />,
       isExpandable: true,
       submenu: [
-        { title: "Web Chat", href: "/dashboard/conversation/chat" },
+        // { title: "Web Chat", href: "/dashboard/conversation/chat" },
         { title: "Whatsapp", href: "/dashboard/conversation/whatsapp" },
         { title: "Knowledge Base", href: "/dashboard/conversation/knowledge-base" },
         //{ title: "Feedback", href: "/dashboard/conversation/feedback" },
@@ -310,7 +301,6 @@ export function Sidebar() {
               <Bell className="h-4 w-4" />
               <span>Notifications</span>
             </DropdownMenuItem>
-            <DropdownMenuSeparator className="bg-gray-800" />
             <DropdownMenuSeparator className="bg-gray-800" />
             <DropdownMenuItem 
               className="flex items-center gap-2 cursor-pointer hover:bg-gray-800 text-gray-300 hover:text-white"

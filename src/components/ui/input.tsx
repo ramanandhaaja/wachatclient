@@ -12,7 +12,7 @@ function Input({
     if (
       type === "number" &&
       e.target.value !== "" &&
-      !/^\d*$/.test(e.target.value)
+      !/^-?\d*\.?\d*$/.test(e.target.value)
     ) {
       return;
     }

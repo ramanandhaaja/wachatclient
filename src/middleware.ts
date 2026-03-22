@@ -1,25 +1,17 @@
-import { NextResponse } from 'next/server';
-import { NextRequest } from 'next/server';
-import { getToken } from 'next-auth/jwt';
+import { type NextRequest } from 'next/server'
+import { updateSession } from '@/lib/supabase/middleware'
 
 export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-  
-  // Check if the path starts with /dashboard
-  const isProtectedRoute = pathname.startsWith('/dashboard');
-  
-  // Get the session token
-  const token = await getToken({ 
-    req: request,
-    secret: process.env.NEXTAUTH_SECRET
-  });
-  
-  // If it's a protected route and there's no token, redirect to the sign-in page
-  if (isProtectedRoute && !token) {
-    const url = new URL('/auth/signin', request.url);
-    url.searchParams.set('callbackUrl', encodeURI(request.url));
-    return NextResponse.redirect(url);
-  }
-  
-  return NextResponse.next();
+  return await updateSession(request)
+}
+
+export const config = {
+  matcher: [
+    /*
+     * Match all request paths except static files and images.
+     * Public routes (/, /auth/*, /namecard/*, /api/webhook/*) are handled
+     * inside updateSession — only /dashboard/* is protected.
+     */
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+  ],
 }

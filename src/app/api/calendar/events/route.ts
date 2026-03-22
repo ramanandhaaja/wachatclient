@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { createClient } from "@/lib/supabase/server";
 import { z } from "zod";
 
 // Schema for event creation/update
@@ -21,8 +20,9 @@ const EventSchema = z.object({
 // GET /api/calendar/events
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
     const endDate = searchParams.get("endDate");
 
     const where = {
-      userId: session.user.id,
+      userId: user.id,
       ...(startDate && endDate
         ? {
             startTime: {
@@ -62,8 +62,9 @@ export async function GET(req: NextRequest) {
 // POST /api/calendar/events
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
+    const supabase = await createClient();
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    if (!authUser) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -79,19 +80,19 @@ export async function POST(req: NextRequest) {
     const dayOfWeek = eventDate.getDay(); // 0-6 (Sunday-Saturday)
 
     // Get user's event duration and availability
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
+    const dbUser = await prisma.user.findUnique({
+      where: { id: authUser.id },
       select: { eventDuration: true },
     });
 
-    if (!user) {
+    if (!dbUser) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
     // Check if there's availability for this day
     const availability = await prisma.availability.findFirst({
       where: {
-        userId: session.user.id,
+        userId: authUser.id,
         dayOfWeek,
       },
     });
@@ -120,7 +121,7 @@ export async function POST(req: NextRequest) {
     // Check if event is within availability
     if (
       eventMinutes < availStartMinutes ||
-      eventMinutes + user.eventDuration > availEndMinutes
+      eventMinutes + dbUser.eventDuration > availEndMinutes
     ) {
       return NextResponse.json(
         { error: "Selected time is outside available hours" },
@@ -130,12 +131,12 @@ export async function POST(req: NextRequest) {
 
     // Calculate end time based on event duration
     const endTime = new Date(startTime);
-    endTime.setMinutes(endTime.getMinutes() + user.eventDuration);
+    endTime.setMinutes(endTime.getMinutes() + dbUser.eventDuration);
 
     // Check for overlapping events
     const overlappingEvent = await prisma.event.findFirst({
       where: {
-        userId: session.user.id,
+        userId: authUser.id,
         OR: [
           {
             startTime: {
@@ -187,7 +188,7 @@ export async function POST(req: NextRequest) {
         providerId,
         providerName,
         notes,
-        userId: session.user.id,
+        userId: authUser.id,
         clientId: client.id,
       },
       include: {

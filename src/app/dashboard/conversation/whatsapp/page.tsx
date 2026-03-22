@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { useSession } from "next-auth/react";
+import { useAuth } from "@/hooks/use-auth";
 import { useWhatsAppOfficial } from "@/hooks/use-whatsapp-official";
 import {
   useConversation,
@@ -49,7 +49,7 @@ export default function ChatPage() {
   const { sendMessage, isSending } = useWhatsAppOfficial();
 
   // Load conversations using react-query hook
-  const { data: session, status } = useSession();
+  const { session, status } = useAuth();
   const userId = session?.user?.id ?? "";
 
   // Load conversations using react-query hook

@@ -3,16 +3,9 @@ export const config = {
 };
 
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import { processMessage } from "@/lib/server-chat-openai/process-message";
 import { prisma } from "@/lib/prisma";
-import { v4 as uuidv4 } from "uuid";
-
-// Initialize Supabase client
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { supabase } from "@/lib/supabase";
 
 // Verify token for webhook verification
 const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN || "your_verify_token";
@@ -29,10 +22,14 @@ export async function sendtoChatBot(
     const sessionId = to; // Using phone number as session ID
     let response;
     try {
+      let timer: ReturnType<typeof setTimeout>;
       response = await Promise.race([
         processMessage(sessionId, message, userId),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('AI timeout')), 30000)),
+        new Promise<never>((_, reject) => {
+          timer = setTimeout(() => reject(new Error('AI timeout')), 30000);
+        }),
       ]);
+      clearTimeout(timer!);
     } catch (e) {
       console.error('[sendtoChatBot] Error or timeout during processMessage:', e);
       return;
@@ -41,7 +38,7 @@ export async function sendtoChatBot(
 
     if (response) {
       // Send the AI response back via WhatsApp
-      const WHATSAPP_API_VERSION = "v17.0";
+      const WHATSAPP_API_VERSION = "v22.0";
       const WHATSAPP_PHONE_NUMBER_ID =
         process.env.NEXT_PUBLIC_WHATSAPP_PHONE_NUMBER_ID || "";
       const WHATSAPP_ACCESS_TOKEN =
@@ -175,7 +172,7 @@ export async function POST(request: Request) {
 
               if (!userPhone) {
                 console.error("No userId found for phone number:", value.metadata.display_phone_number);
-                return;
+                continue;
               }
               const userId = userPhone.userId;
 
@@ -278,15 +275,9 @@ export async function POST(request: Request) {
 
               console.log("Successfully stored message");
 
-              // Send a simple "thanks" reply
-              //await sendSimpleReply(contact.wa_id);
               // Offload AI reply to background (fire-and-forget)
-              await sendtoChatBot(contact.wa_id, message.text.body, conversationId, userId)
+              sendtoChatBot(contact.wa_id, message.text.body, conversationId, userId)
                 .catch(console.error);
-
-              console.log("Offloading AI reply to background");
-              // Immediately return a 200 OK response to WhatsApp
-             // return new NextResponse("OK", { status: 200 });
             }
           }
         }
@@ -298,79 +289,5 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Error processing webhook:", error);
     return new NextResponse("Internal Server Error", { status: 500 });
-  }
-}
-
-
-
-// Background processor for AI reply
-async function processAndReply({ to, message, conversationId, userId }: { to: string, message: string, conversationId: string, userId: string }) {
-  console.log('[processAndReply] Called with:', { to, message, conversationId, userId });
-  await sendtoChatBot(to, message, conversationId, userId);
-}
-
-// Send a simple "thanks" reply
-async function sendSimpleReply(to: string) {
-  try {
-    // Send the reply using the WhatsApp Cloud API
-    const WHATSAPP_API_VERSION = "v17.0";
-    const WHATSAPP_PHONE_NUMBER_ID =
-      process.env.NEXT_PUBLIC_WHATSAPP_PHONE_NUMBER_ID || "";
-    const WHATSAPP_ACCESS_TOKEN =
-      process.env.NEXT_PUBLIC_WHATSAPP_ACCESS_TOKEN || "";
-
-    const response = await fetch(
-      `https://graph.facebook.com/${WHATSAPP_API_VERSION}/${WHATSAPP_PHONE_NUMBER_ID}/messages`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${WHATSAPP_ACCESS_TOKEN}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          messaging_product: "whatsapp",
-          recipient_type: "individual",
-          to: to,
-          type: "text",
-          text: {
-            preview_url: false,
-            body: "Thanks for your message! Our AI assistant will respond shortly.",
-          },
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`WhatsApp API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    console.log("Simple reply sent:", data);
-
-    // Store the outbound message
-    const { data: replyMessage, error: replyError } = await supabase
-      .from("messages")
-      .insert({
-        conversation_id: to, // Using wa_id as conversation_id temporarily
-        content:
-          "Thanks for your message! Our AI assistant will respond shortly.",
-        sender_type: "bot",
-        timestamp: new Date().toISOString(),
-        metadata: {
-          message_type: "text",
-          wa_message_id: data.messages?.[0]?.id,
-          delivery_status: "sent",
-        },
-      })
-      .select()
-      .single();
-
-    if (replyError) {
-      console.error("Error storing reply message:", replyError);
-    } else {
-      console.log("Reply message stored successfully:", replyMessage);
-    }
-  } catch (error) {
-    console.error("Error sending reply:", error);
   }
 }

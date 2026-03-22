@@ -1,26 +1,8 @@
 import { notFound, redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { CardForm } from "../../../../../components/namecard/card-form";
-
-async function getNameCard(id: string, userId: string) {
-  try {
-    const card = await prisma.nameCard.findFirst({
-      where: {
-        id,
-        userId,
-      },
-    });
-
-    return card;
-  } catch (error) {
-    console.error('[GET_NAMECARD]', error);
-    throw new Error('Failed to fetch name card');
-  }
-}
-
-
+import { toNameCardFormValues } from "@/lib/schemas/namecard";
 
 export default async function EditNameCardPage({
   params,
@@ -28,40 +10,22 @@ export default async function EditNameCardPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const session = await getServerSession(authOptions);
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  if (!session?.user) {
-    redirect('/auth/login');
+  if (!user) {
+    redirect('/auth/signin');
   }
 
-  const nameCard = await getNameCard(id, session.user.id);
+  const nameCard = await prisma.nameCard.findFirst({
+    where: { id, userId: user.id },
+  });
 
   if (!nameCard) {
     notFound();
   }
 
-  const formData = {
-    firstName: nameCard.firstName || '',
-    lastName: nameCard.lastName || '',
-    email: nameCard.email || '',
-    title: nameCard.title || '',
-    phone: nameCard.phone || '',
-    address1: nameCard.address1 || '',
-    address2: nameCard.address2 || '',
-    city: nameCard.city || '',
-    postcode: nameCard.postcode || '',
-    company: nameCard.company || '',
-    website: nameCard.website || '',
-    linkedin: nameCard.linkedin || '',
-    twitter: nameCard.twitter || '',
-    instagram: nameCard.instagram || '',
-    profileImage: nameCard.profileImage || '',
-    coverImage: nameCard.coverImage || '',
-    aiChatAgent: nameCard.aiChatAgent ?? false,
-    aiVoiceCallAgent: nameCard.aiVoiceCallAgent ?? false,
-  };
-
   return (
-    <CardForm initialData={formData} id={id} userId={session.user.id} />
+    <CardForm initialData={toNameCardFormValues(nameCard)} id={id} userId={user.id} />
   );
 }

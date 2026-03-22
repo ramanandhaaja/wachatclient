@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { nameCardSchema } from "@/lib/schemas/namecard";
 
@@ -14,15 +13,16 @@ export async function GET(
 ) {
   const { id } = params;
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
     const card = await prisma.nameCard.findUnique({
       where: {
         id: id,
-        userId: session.user.id,
+        userId: user.id,
       },
     });
 
@@ -44,8 +44,9 @@ export async function PATCH(
 ) {
   const { id } = params;
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
@@ -55,7 +56,7 @@ export async function PATCH(
     const card = await prisma.nameCard.update({
       where: {
         id: id,
-        userId: session.user.id,
+        userId: user.id,
       },
       data: validatedData,
     });
@@ -74,15 +75,16 @@ export async function DELETE(
 ) {
   const { id } = params;
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
     await prisma.nameCard.delete({
       where: {
         id: id,
-        userId: session.user.id,
+        userId: user.id,
       },
     });
 

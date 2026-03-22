@@ -1,6 +1,6 @@
 "use client";
 
-import { useSession } from "next-auth/react";
+import { useAuth } from "@/hooks/use-auth";
 import { ClipboardList, Clock, Star, Calendar } from "lucide-react";
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { StatsCard } from "@/components/dashboard/StatsCard";
@@ -11,7 +11,7 @@ import { BudgetCard } from "@/components/dashboard/BudgetCard";
 import { useCalendar } from "@/hooks/use-calendar";
 
 export default function Dashboard() {
-  const { status } = useSession();
+  const { status } = useAuth();
   const { events } = useCalendar();
 
   // Fetch current month's events
@@ -29,9 +29,10 @@ export default function Dashboard() {
   }
 
   // Calculate calendar stats
+  const now = new Date();
   const totalEvents = monthEvents?.length || 0;
-  const upcomingEvents = monthEvents?.filter(event => event.startTime > new Date()).length || 0;
-  const completedEvents = monthEvents?.filter(event => event.endTime < new Date()).length || 0;
+  const upcomingEvents = monthEvents?.filter(event => event.startTime > now).length || 0;
+  const completedEvents = monthEvents?.filter(event => event.endTime < now).length || 0;
 
   const performanceData = [
     { avatar: "/avatars/01.png", percentage: 19 },

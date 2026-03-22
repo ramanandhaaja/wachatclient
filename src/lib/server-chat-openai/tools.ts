@@ -1,21 +1,7 @@
 import { DynamicStructuredTool } from "@langchain/core/tools";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { toUTC } from "@/lib/utils";
-import { useBookingStore } from "@/stores/bookingStore";
-
-// Define BookingState type to match the one in process-message.ts
-export type BookingState = {
-  name?: string;
-  phone?: string;
-  service?: string;
-  date?: string;
-  time?: string;
-  barberId?: string;
-  clientExists?: boolean;
-  missingFields?: string[];
-  status: "initial" | "pending_confirmation" | "confirmed" | "completed";
-};
+import { useBookingStore, type BookingState } from "@/stores/bookingStore";
 
 /**
  * Get tools for the LangChain chat agent
@@ -105,9 +91,7 @@ ${formatReadable(v, indent + 1)}`;
         });
 
         if (client) {
-          // Update booking state
-          const bookingStore = useBookingStore.getState();
-          bookingStore.updateBookingState(sessionId, {
+          store.updateBookingState(sessionId, {
             phone: phone,
             name: client.name,
             clientExists: true,
@@ -117,9 +101,7 @@ ${formatReadable(v, indent + 1)}`;
           Nama: ${client.name}
           Telepon: ${client.phone}`;
         } else {
-          // Update booking state
-          const bookingStore = useBookingStore.getState();
-          bookingStore.updateBookingState(sessionId, {
+          store.updateBookingState(sessionId, {
             phone: phone,
             clientExists: false,
           });
@@ -285,8 +267,9 @@ ${formatReadable(v, indent + 1)}`;
           });
         }
 
-        // Get the user (assuming we have a default user for the chatbot)
-        const user = await prisma.user.findFirst();
+        const user = await prisma.user.findUnique({
+          where: { id: userId },
+        });
 
         if (!user) {
           return "Maaf, terjadi kesalahan sistem. Silakan coba lagi nanti.";

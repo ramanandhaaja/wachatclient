@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import Script from "next/script";
 import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -18,24 +17,26 @@ import {
   Instagram,
 } from "lucide-react";
 import type { NameCardFormValues } from "@/lib/schemas/namecard";
+import { generateVCard } from "@/lib/schemas/namecard";
+import { ElevenLabsConvaiInline } from "./ElevenLabsConvaiInline";
+import NameCardChatWidget from "@/components/chatwidget/NameCardChatWidget";
+import { ShareCard } from "./share-card";
 
 interface CardPreviewProps {
   formValues: NameCardFormValues;
   id: string;
   userId: string;
   size?: "sm" | "default";
+  /** When true, suppresses heavy widgets (chat, voice) for list views */
+  disableWidgets?: boolean;
 }
-
-import { ElevenLabsConvaiInline } from "./ElevenLabsConvaiInline";
-import NameCardChatWidget from "@/components/chatwidget/NameCardChatWidget";
-import { ShareCard } from "./share-card";
-import QRCode from "react-qr-code";
 
 export function CardPreview({
   formValues,
   id,
   userId,
   size = "default",
+  disableWidgets = false,
 }: CardPreviewProps) {
   const {
     firstName,
@@ -59,15 +60,10 @@ export function CardPreview({
   } = formValues;
 
   const [isClient, setIsClient] = useState(false);
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-
   const [isAndroid, setIsAndroid] = useState(false);
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setIsAndroid(navigator.userAgent.includes('Android'));
-    }
+    setIsClient(true);
+    setIsAndroid(navigator.userAgent.includes('Android'));
   }, []);
 
   const fullName = [firstName, lastName].filter(Boolean).join(" ").trim();
@@ -287,16 +283,13 @@ export function CardPreview({
               )}
             </div>
           )}
-          {/* Chat Agent Button */}
-          {aiChatAgent && isClient &&(
+          {!disableWidgets && aiChatAgent && isClient && (
             <div className="z-[9999]">
               <NameCardChatWidget userId={userId} />
             </div>
           )}
-          {/* Elevenlabs */}
-          {aiVoiceCallAgent && isClient && (
+          {!disableWidgets && aiVoiceCallAgent && isClient && (
             <div className="mt-0 w-full flex justify-center items-center relative force-center-elevenlabs">
-              {/* ElevenLabs Convai Widget (client-only, TSX component) */}
               <ElevenLabsConvaiInline />
               <style jsx global>{`
                 .force-center-elevenlabs elevenlabs-convai,
@@ -316,7 +309,7 @@ export function CardPreview({
                 }
               `}</style>
             </div>
-          )}{" "}
+          )}
         </div>
       </CardContent>
       {/* Save Contact to Phone Button */}
@@ -326,17 +319,7 @@ export function CardPreview({
             type="button"
             className="w-full max-w-xs"
             onClick={() => {
-              const vCard = [
-                'BEGIN:VCARD',
-                'VERSION:3.0',
-                `FN:${fullName}`,
-                title ? `TITLE:${title}` : '',
-                company ? `ORG:${company}` : '',
-                phone ? `TEL;TYPE=CELL:${phone}` : '',
-                email ? `EMAIL;TYPE=INTERNET:${email}` : '',
-                website ? `URL:${website}` : '',
-                'END:VCARD',
-              ].filter(Boolean).join('\n');
+              const vCard = generateVCard(formValues);
               const blob = new Blob([vCard], { type: 'text/vcard' });
               const url = URL.createObjectURL(blob);
               const a = document.createElement('a');

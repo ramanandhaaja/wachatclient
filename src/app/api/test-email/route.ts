@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
         env: {
           RESEND_API_KEY: process.env.RESEND_API_KEY ? 'Set (masked)' : 'Not set',
           EMAIL_FROM: process.env.EMAIL_FROM || 'Not set',
-          NEXTAUTH_URL: process.env.NEXTAUTH_URL || 'Not set'
+          APP_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || 'Not set'
         }
       },
       { status: 200 }
@@ -62,7 +62,7 @@ export async function GET(req: NextRequest) {
         env: {
           RESEND_API_KEY: process.env.RESEND_API_KEY ? 'Set (masked)' : 'Not set',
           EMAIL_FROM: process.env.EMAIL_FROM || 'Not set',
-          NEXTAUTH_URL: process.env.NEXTAUTH_URL || 'Not set'
+          APP_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || 'Not set'
         }
       },
       { status: 500 }
