@@ -34,11 +34,14 @@ async function getSystemPrompt(userId: string) {
 
 // Setup chat agent with LangChain
 export async function setupChatAgent(tools: DynamicStructuredTool[], useServerKey: boolean = false, userId: string) {
+  console.log('[setupChatAgent] Fetching system prompt');
   const systemPrompt = await getSystemPrompt(userId);
+  console.log('[setupChatAgent] System prompt fetched, length:', systemPrompt.length);
 
   const apiKey = useServerKey
     ? process.env.OPENAI_API_KEY_SERVER
     : process.env.OPENAI_API_KEY;
+  console.log('[setupChatAgent] API key present:', !!apiKey, 'model:', process.env.NEXT_PUBLIC_OPENAI_MODEL);
 
   const model = new ChatOpenAI({
     temperature: 0,
@@ -77,11 +80,13 @@ export async function setupChatAgent(tools: DynamicStructuredTool[], useServerKe
     new MessagesPlaceholder("agent_scratchpad"),
   ]);
 
+  console.log('[setupChatAgent] Creating agent');
   const agent = await createOpenAIToolsAgent({
     llm: model,
     prompt,
     tools,
   });
+  console.log('[setupChatAgent] Agent created, creating executor');
 
   const executor = new AgentExecutor({
     agent,
@@ -89,5 +94,6 @@ export async function setupChatAgent(tools: DynamicStructuredTool[], useServerKe
     verbose: false
   });
 
+  console.log('[setupChatAgent] Executor ready');
   return executor;
 }
