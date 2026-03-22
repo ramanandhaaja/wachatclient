@@ -1,29 +1,52 @@
 import { createTool } from '@mastra/core/tools';
 import { z } from 'zod';
+import { prisma } from '@/lib/prisma';
+import { getAvailableSlots, getWIBDayOfWeekFromDateStr } from '@/lib/calendar-utils';
+import { formatWIB } from '@/lib/utils';
 
-export function createCheckAvailabilityTool() {
+const WIB_DAY_NAMES = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+
+export function createCheckAvailabilityTool(userId: string) {
   return createTool({
     id: 'check-availability',
-    description: 'Cek slot kosong untuk booking',
+    description: 'Cek slot kosong untuk booking pada tanggal tertentu',
     inputSchema: z.object({
       date: z.string().describe('Tanggal untuk cek ketersediaan (format: YYYY-MM-DD)'),
-      service: z.string().describe('Layanan yang ingin di-booking'),
     }),
     outputSchema: z.object({
       slots: z.string(),
     }),
     execute: async ({ context }) => {
-      // Placeholder: In a real implementation, this would check a database
-      return {
-        slots: `Slot tersedia untuk ${context.service} pada ${context.date}:
-      - 10:00 WIB
-      - 10.30 WIB
-      - 11.00 WIB
-      - 11.30 WIB
-      - 12.00 WIB
+      try {
+        const user = await prisma.user.findUnique({
+          where: { id: userId },
+          select: { eventDuration: true },
+        });
 
-      Silakan pilih waktu yang Anda inginkan untuk booking.`,
-      };
+        if (!user) {
+          return { slots: 'Maaf, terjadi kesalahan sistem.' };
+        }
+
+        const availableSlots = await getAvailableSlots(userId, context.date, user.eventDuration);
+
+        if (availableSlots.length === 0) {
+          const dayOfWeek = getWIBDayOfWeekFromDateStr(context.date);
+          return {
+            slots: `Tidak ada slot tersedia pada hari ${WIB_DAY_NAMES[dayOfWeek]} (${context.date}). Silakan coba tanggal lain.`,
+          };
+        }
+
+        const formattedSlots = availableSlots
+          .map((slot) => `- ${formatWIB(slot.start, 'HH:mm')} WIB`)
+          .join('\n');
+
+        return {
+          slots: `Slot tersedia pada ${context.date}:\n${formattedSlots}\n\nSilakan pilih waktu yang Anda inginkan untuk booking.`,
+        };
+      } catch (error) {
+        console.error('Error checking availability:', error);
+        return { slots: 'Maaf, terjadi kesalahan saat memeriksa ketersediaan.' };
+      }
     },
   });
 }

@@ -84,11 +84,7 @@ export function EventPanel({ selectedDate, viewMode }: EventPanelProps) {
   };
 
   const formatTime = (date: Date) => {
-    // Create a new date object from the UTC date from the database
-    const localDate = new Date(date);
-    
-    // Format the local date according to the view mode
-    return format(localDate, viewMode === '12h' ? 'hh:mm a' : 'HH:mm');
+    return formatWIB(new Date(date), viewMode === '12h' ? 'hh:mm a' : 'HH:mm');
   };
 
   return (
@@ -154,11 +150,11 @@ export function EventPanel({ selectedDate, viewMode }: EventPanelProps) {
                     <option disabled value="">No available slots</option>
                   ) : (
                     slots.map((slot) => (
-                      <option 
-                        key={slot.start.toISOString()} 
-                        value={format(new Date(slot.start), 'HH:mm')}
+                      <option
+                        key={slot.start.toISOString()}
+                        value={formatWIB(new Date(slot.start), 'HH:mm')}
                       >
-                        {format(new Date(slot.start), viewMode === '12h' ? 'hh:mm a' : 'HH:mm')}
+                        {formatWIB(new Date(slot.start), viewMode === '12h' ? 'hh:mm a' : 'HH:mm')}
                       </option>
                     ))
                   )}
@@ -187,12 +183,6 @@ export function EventPanel({ selectedDate, viewMode }: EventPanelProps) {
               No available slots. Please set your availability for {format(selectedDate, 'EEEE')}s first.
             </AlertDescription>
           </Alert>
-        ) : !dayEvents ? (
-          <div className="p-4 rounded-lg border bg-white">
-            <p className="text-sm text-gray-500 text-center">
-              Loading events...
-            </p>
-          </div>
         ) : eventsLoading ? (
           <div className="p-4 rounded-lg border bg-white">
             <div className="flex items-center justify-center gap-2">

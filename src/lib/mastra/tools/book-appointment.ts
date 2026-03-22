@@ -1,85 +1,101 @@
 import { createTool } from '@mastra/core/tools';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
-import type { BookingStore } from './types';
+import { wibTimeToUTC, isWithinAvailability, findOverlappingEvent, getWIBDayOfWeek } from '@/lib/calendar-utils';
+import { formatWIB } from '@/lib/utils';
 
-export function createBookAppointmentTool(sessionId: string, userId: string, store: BookingStore) {
+export function createBookAppointmentTool(userId: string) {
   return createTool({
     id: 'book-appointment',
-    description: 'Proses booking appointment',
+    description: 'Buat booking appointment untuk pelanggan',
     inputSchema: z.object({
       date: z.string().describe('Tanggal booking (format: YYYY-MM-DD)'),
-      time: z.string().describe('Waktu booking (format: HH:MM)'),
+      time: z.string().describe('Waktu booking dalam WIB (format: HH:mm)'),
       service: z.string().describe('Layanan yang dipilih'),
       name: z.string().describe('Nama pelanggan'),
-      phone: z.string().describe('Nomor WhatsApp'),
-      barberId: z.string().optional().describe('ID barber yang diinginkan (opsional)'),
+      phone: z.string().describe('Nomor WhatsApp pelanggan'),
     }),
     outputSchema: z.object({
       result: z.string(),
     }),
     execute: async ({ context }) => {
       try {
-        const currentState = store.getBookingState(sessionId);
+        const startTime = wibTimeToUTC(context.date, context.time);
+        const dayOfWeek = getWIBDayOfWeek(startTime);
 
-        if (!currentState || currentState.status !== 'confirmed') {
-          return {
-            result: 'Booking belum dikonfirmasi oleh pelanggan. Silakan minta konfirmasi terlebih dahulu.',
-          };
-        }
-
-        const localDate = new Date(`${context.date}T${context.time}:00`);
-        const utcISOString = localDate.toISOString();
-
-        let client = await prisma.client.findFirst({
-          where: { phone: context.phone },
-        });
-
-        if (!client) {
-          client = await prisma.client.create({
-            data: { name: context.name, phone: context.phone },
-          });
-        }
-
-        const user = await prisma.user.findUnique({
-          where: { id: userId },
-        });
+        const [user, availabilityWindows] = await Promise.all([
+          prisma.user.findUnique({
+            where: { id: userId },
+            select: { eventDuration: true },
+          }),
+          prisma.availability.findMany({
+            where: { userId, dayOfWeek },
+            select: { startTime: true, endTime: true },
+          }),
+        ]);
 
         if (!user) {
           return { result: 'Maaf, terjadi kesalahan sistem. Silakan coba lagi nanti.' };
         }
 
-        const endTime = new Date(utcISOString);
-        endTime.setMinutes(endTime.getMinutes() + (user.eventDuration || 60));
+        if (availabilityWindows.length === 0) {
+          return { result: 'Maaf, tidak ada jadwal tersedia pada hari tersebut.' };
+        }
 
-        const event = await prisma.event.create({
+        if (!isWithinAvailability(startTime, user.eventDuration, availabilityWindows)) {
+          return {
+            result: 'Maaf, waktu yang dipilih di luar jam operasional. Silakan gunakan check-availability untuk melihat slot yang tersedia.',
+          };
+        }
+
+        const endTime = new Date(startTime);
+        endTime.setMinutes(endTime.getMinutes() + user.eventDuration);
+
+        const [overlap, existingClient] = await Promise.all([
+          findOverlappingEvent(userId, startTime, endTime),
+          prisma.client.findFirst({
+            where: { phone: context.phone, userId },
+          }),
+        ]);
+
+        if (overlap) {
+          return {
+            result: 'Maaf, slot waktu tersebut sudah terisi. Silakan gunakan check-availability untuk melihat slot lain yang tersedia.',
+          };
+        }
+
+        const client = existingClient ?? await prisma.client.create({
           data: {
-            startTime: utcISOString,
-            endTime,
-            serviceType: context.service,
-            providerId: context.barberId,
-            userId: user.id,
-            clientId: client.id,
+            name: context.name,
+            phone: context.phone,
+            userId,
           },
-          include: { client: true },
         });
 
-        store.updateBookingState(sessionId, { status: 'completed' });
+        await prisma.event.create({
+          data: {
+            startTime,
+            endTime,
+            serviceType: context.service,
+            userId,
+            clientId: client.id,
+          },
+        });
 
-        const localStartTime = new Date(event.startTime);
+        const wibStart = formatWIB(startTime, 'HH:mm');
+        const wibEnd = formatWIB(endTime, 'HH:mm');
+        const wibDate = formatWIB(startTime, 'dd MMMM yyyy');
 
         return {
           result: `Booking berhasil!
 
-      •⁠  ⁠*Layanan*: ${context.service}
-      •⁠  ⁠*Tanggal*: ${localStartTime.toLocaleDateString('id-ID')}
-      •⁠  ⁠*Jam*: ${localStartTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
-      •⁠  ⁠*Nama*: ${event.client.name}
-      •⁠  ⁠*WhatsApp*: ${event.client.phone}
-      •⁠  ⁠*Barber*: ${event.providerName || 'barber yang available'}
+• Layanan: ${context.service}
+• Tanggal: ${wibDate}
+• Jam: ${wibStart} - ${wibEnd} WIB
+• Nama: ${client.name}
+• WhatsApp: ${client.phone}
 
-      Mohon datang 5 menit sebelum jadwal.
-      Kami akan mengirimkan reminder via WhatsApp 1 jam sebelum jadwal Anda.`,
+Mohon datang 5 menit sebelum jadwal.`,
         };
       } catch (error) {
         console.error('Error booking appointment:', error);

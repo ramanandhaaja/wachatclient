@@ -22,6 +22,7 @@ model User {
   eventDuration      Int            @default(30) // 30 or 60 minutes
   availability       Availability[]
   events             Event[]
+  clients            Client[]       // Relation to user-scoped clients
   phoneNumbers       UserPhone[]    // Relation to multiple phone numbers
   businessInfos      BusinessInfo[] // Relation to business tools/info
   nameCards          NameCard[]     // Relation to name cards
@@ -42,14 +43,18 @@ model Availability {
 
 model Client {
   id        String   @id @default(cuid())
+  userId    String
   name      String
   phone     String   // For WhatsApp/contact number
   email     String?  // Optional email
+  user      User     @relation(fields: [userId], references: [id])
   events    Event[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@unique([phone, userId])
   @@index([phone])
+  @@index([userId])
 }
 
 model Event {

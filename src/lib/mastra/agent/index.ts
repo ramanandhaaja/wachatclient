@@ -16,7 +16,7 @@ async function getSystemPrompt(userId: string): Promise<string> {
 export async function createChatAgent(sessionId: string, userId: string) {
   const systemPrompt = await getSystemPrompt(userId);
   const jakartaDate = formatWIB(new Date(), 'yyyy-MM-dd');
-  const tools = createTools(sessionId, userId);
+  const tools = createTools(userId);
 
   const agent = new Agent({
     id: 'whatsapp-chat-agent',
@@ -27,14 +27,15 @@ export async function createChatAgent(sessionId: string, userId: string) {
 
        PENTING: JANGAN PERNAH membuat jawaban sendiri atau menggunakan informasi yang tidak dari tools!
        - SELALU gunakan get-business-info untuk informasi umum bisnis
-       - SELALU gunakan get-hours untuk informasi jam operasional
        - SELALU gunakan check-availability untuk cek slot kosong
-       - SELALU gunakan check-client-exists untuk cek data pelanggan
+       - SELALU gunakan check-schedule untuk melihat jadwal booking yang ada
+       - SELALU gunakan book-appointment untuk membuat booking baru
 
        PANDUAN PENGGUNAAN TOOLS:
-       - Untuk informasi umum pertanyaan: WAJIB gunakan get-business-info, JANGAN membuat daftar sendiri
-       - Untuk jam operasional: WAJIB gunakan get-hours, JANGAN menyebutkan jam sendiri
-       - Untuk cek slot: WAJIB gunakan check-availability, JANGAN menebak ketersediaan
+       - Untuk informasi umum: WAJIB gunakan get-business-info
+       - Untuk cek slot kosong: WAJIB gunakan check-availability, JANGAN menebak ketersediaan
+       - Untuk lihat jadwal: WAJIB gunakan check-schedule
+       - Untuk booking: WAJIB konfirmasi data dengan pelanggan sebelum gunakan book-appointment
 
        Gunakan bahasa yang ramah dan informatif serta casual. Selalu tawarkan booking jika pelanggan menanyakan ketersediaan.`,
     model: {

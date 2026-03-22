@@ -2,10 +2,10 @@ import { createTool } from '@mastra/core/tools';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 
-function formatReadable(obj: any, indent = 0): string {
+function formatReadable(obj: unknown, indent = 0): string {
   if (typeof obj !== 'object' || obj === null) return String(obj);
   const pad = '  '.repeat(indent);
-  return Object.entries(obj)
+  return Object.entries(obj as Record<string, unknown>)
     .map(([k, v]) => {
       if (typeof v === 'object' && v !== null) {
         return `${pad}${k}:\n${formatReadable(v, indent + 1)}`;
@@ -20,23 +20,28 @@ export function createGetBusinessInfoTool(userId: string) {
     id: 'get-business-info',
     description: 'Informasi mengenai informasi umum perusahaan',
     inputSchema: z.object({
-      service: z.string().describe('Informasi perusahaan yang ingin dicek'),
+      query: z.string().describe('Informasi perusahaan yang ingin dicek'),
     }),
     outputSchema: z.object({
       info: z.string(),
     }),
-    execute: async ({ context }) => {
-      const businessInfo = await prisma.businessInfo.findFirst({
-        where: { userId },
-        select: { data: true },
-      });
+    execute: async () => {
+      try {
+        const businessInfo = await prisma.businessInfo.findFirst({
+          where: { userId },
+          select: { data: true },
+        });
 
-      if (!businessInfo) {
-        return { info: 'Maaf, informasi perusahaan belum tersedia.' };
+        if (!businessInfo) {
+          return { info: 'Maaf, informasi perusahaan belum tersedia.' };
+        }
+
+        const output = formatReadable(businessInfo.data);
+        return { info: output || 'Belum ada informasi bisnis yang tersedia.' };
+      } catch (error) {
+        console.error('Error fetching business info:', error);
+        return { info: 'Maaf, terjadi kesalahan saat mengambil informasi bisnis.' };
       }
-
-      const output = formatReadable(businessInfo.data);
-      return { info: output || 'Belum ada informasi bisnis yang tersedia.' };
     },
   });
 }

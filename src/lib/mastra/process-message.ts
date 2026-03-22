@@ -1,5 +1,4 @@
 import { createChatAgent } from './agent';
-import { useBookingStore } from '@/stores/bookingStore';
 
 export async function processMessage(
   sessionId: string,
@@ -7,11 +6,6 @@ export async function processMessage(
   userId: string,
 ): Promise<string> {
   try {
-    const bookingStore = useBookingStore.getState();
-    if (!bookingStore.getBookingState(sessionId)) {
-      bookingStore.initializeSession(sessionId);
-    }
-
     const agent = await createChatAgent(sessionId, userId);
 
     const result = await agent.generate(message, {

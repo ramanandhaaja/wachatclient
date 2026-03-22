@@ -1,15 +1,16 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Card,
   CardHeader,
   CardContent,
   CardFooter,
+  CardAction,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 export interface BusinessInfoData {
   id?: string;
@@ -24,72 +25,70 @@ interface BusinessInfoFormProps {
   userId: string;
 }
 
-// Reference business info for autofill
-const SYSTEM_PROMPT_REFERENCE = `Anda adalah asisten virtual yang ramah untuk barbershop kami. Berkomunikasi dalam Bahasa Indonesia yang sopan dan profesional.
+const SYSTEM_PROMPT_REFERENCE = `Anda adalah asisten virtual yang ramah untuk bisnis kami. Berkomunikasi dalam Bahasa Indonesia yang sopan dan profesional.
 
 Panduan untuk booking:
 1. Ketika pelanggan menyebut "besok", gunakan tanggal yang sesuai
 2. Ketika pelanggan menyebut waktu (misal "jam 2"), konversi ke format 24 jam (14:00)
-3. HANYA gunakan layanan yang tersedia dari get_service_info
+3. HANYA gunakan layanan yang tersedia dari get-business-info
 4. Jika pelanggan sudah memberikan nama dan nomor telepon, tanyakan konfirmasi
 5. Jangan tanya ulang informasi yang sudah diberikan pelanggan
-       
+
 ALUR BOOKING YANG BENAR:
-1. Ketika pelanggan ingin booking, SELALU cek ketersediaan terlebih dahulu dengan check_availability
+1. Ketika pelanggan ingin booking, SELALU cek ketersediaan terlebih dahulu dengan check-availability
 2. Setelah pelanggan memilih waktu, cek apakah sudah ada data pelanggan dengan nomor telepon tersebut
 3. Jika data tidak lengkap, tanyakan satu per satu: nama, nomor telepon, layanan, tanggal, waktu
 4. Setelah semua data lengkap, ubah status ke pending_confirmation dan tampilkan semua detail booking
 5. Minta konfirmasi dari pelanggan
-6. Jika pelanggan mengkonfirmasi, ubah status ke confirmed dan gunakan book_appointment
+6. Jika pelanggan mengkonfirmasi, ubah status ke confirmed dan gunakan book-appointment
 7. Setelah booking berhasil, ubah status ke completed
 
 Gunakan bahasa yang ramah dan informatif serta casual. Selalu tawarkan booking jika pelanggan menanyakan ketersediaan.`;
 
-const BUSINESS_INFO = {
-  services: {
-    potong: "Potong rambut pria (Rp 50.000)",
-    anak: "Potong rambut anak (Rp 35.000)",
-    komplit: "Potong + cuci + pijat (Rp 85.000)",
-    jenggot: "Grooming jenggot (Rp 35.000)",
-    creambath: "Creambath (Rp 75.000)",
-    warna: "Pewarnaan rambut (mulai Rp 150.000)",
-  },
-  hours: {
-    weekday: "09.00 - 21.00 WIB",
-    weekend: "09.00 - 18.00 WIB",
-  },
-  location: {
-    address: "Jl. Raya Serpong No. 123",
-    area: "BSD City, Tangerang Selatan",
-    landmark: "(Sebelah Bank BCA)",
-  },
-  promos: {
-    weekday: "Diskon 20% untuk pelajar/mahasiswa (Senin-Kamis)",
-    weekend: "Paket Grooming Komplit diskon 15%",
-  },
+const EXAMPLE_BUSINESS_INFO: Record<string, string> = {
+  "business_name": "Barbershop XYZ",
+  "contact": "WhatsApp: 0812-3456-7890\nEmail: info@barbershopxyz.com",
+  "address": "Jl. Raya Serpong No. 123, BSD City, Tangerang Selatan (Sebelah Bank BCA)",
+  "services": "Potong rambut pria (Rp 50.000)\nPotong rambut anak (Rp 35.000)\nPotong + cuci + pijat (Rp 85.000)\nGrooming jenggot (Rp 35.000)\nCreambath (Rp 75.000)\nPewarnaan rambut (mulai Rp 150.000)",
+  "hours": "Senin - Jumat: 09.00 - 21.00 WIB\nSabtu - Minggu: 09.00 - 18.00 WIB",
+  "promos": "Diskon 20% untuk pelajar/mahasiswa (Senin-Kamis)\nPaket Grooming Komplit diskon 15%",
 };
 
-function toArray(obj: Record<string, string> = {}) {
-  return Object.entries(obj).map(([key, value]) => ({
+const DEFAULT_ENTRIES: { key: string; placeholder: string }[] = [
+  { key: "business_name", placeholder: "Nama bisnis atau usaha Anda" },
+  { key: "contact", placeholder: "Nomor telepon, WhatsApp, email" },
+  { key: "address", placeholder: "Alamat lengkap bisnis Anda" },
+];
+
+type FieldItem = { id: string; key: string; value: string };
+
+function toArray(obj: Record<string, string> = {}): FieldItem[] {
+  const entries = Object.entries(obj);
+  if (entries.length > 0) {
+    return entries.map(([key, value]) => ({
+      id: crypto.randomUUID(),
+      key,
+      value,
+    }));
+  }
+  return DEFAULT_ENTRIES.map(({ key }) => ({
     id: crypto.randomUUID(),
     key,
-    value,
+    value: "",
   }));
 }
-function toObject(arr: { key: string; value: string }[]) {
+
+function toObject(arr: FieldItem[]): Record<string, string> {
   const obj: Record<string, string> = {};
   arr.forEach(({ key, value }) => {
     if (key) obj[key] = value;
   });
   return obj;
 }
-type FieldItem = { id: string; key: string; value: string };
 
-import { useEffect } from "react";
-
-// Utility to pretty-print nested objects for field value
-function prettyStringify(obj: any) {
-  return typeof obj === "object" ? JSON.stringify(obj, null, 2) : String(obj);
+function getPlaceholder(key: string): string {
+  const entry = DEFAULT_ENTRIES.find((e) => e.key === key);
+  return entry?.placeholder || "Masukkan informasi di sini...";
 }
 
 export default function BusinessInfoForm({
@@ -97,65 +96,30 @@ export default function BusinessInfoForm({
   onSubmit,
   userId,
 }: BusinessInfoFormProps) {
-  // Helper to convert object to FieldItem array
-  // Avoid hydration errors: generate random IDs only on the client
-  const [fields, setFields] = useState<FieldItem[]>(() => {
-    // Use a stable key for SSR (e.g. the 'key' itself)
-    return initialData?.data
-      ? Object.entries(initialData.data).map(([key, value]) => ({
-          id: key, // use the field key as a stable id for SSR
-          key,
-          value: String(value),
-        }))
-      : [];
-  });
-
-  // After mount, replace with random IDs for client-side use (if needed)
-  useEffect(() => {
-    if (initialData?.data) {
-      setFields(
-        Object.entries(initialData.data).map(([key, value]) => ({
-          id: crypto.randomUUID(),
-          key,
-          value: String(value),
-        }))
-      );
-    }
-  }, [initialData]);
-
-  // Handler to fill fields with example BUSINESS_INFO (top-level keys only, pretty-printed value)
-  const handleExampleData = () => {
-    const exampleFields = Object.entries(BUSINESS_INFO).map(([key, value]) => ({
-      id: crypto.randomUUID(),
-      key,
-      value: prettyStringify(value),
-    }));
-    setFields(exampleFields);
-  };
-
+  const [fields, setFields] = useState<FieldItem[]>(() =>
+    toArray(initialData?.data)
+  );
   const [systemPrompt, setSystemPrompt] = useState<string>(
-    initialData?.systemPrompt || SYSTEM_PROMPT_REFERENCE
+    initialData?.systemPrompt || ""
   );
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
+  const [message, setMessage] = useState<{ text: string; isError: boolean } | null>(null);
 
   useEffect(() => {
     setFields(toArray(initialData?.data));
     setSystemPrompt(initialData?.systemPrompt || "");
   }, [initialData]);
 
-  const handleFieldChange = (
-    id: string,
-    field: "key" | "value",
-    value: string
-  ) => {
+  const handleFieldChange = (id: string, field: "key" | "value", value: string) => {
     setFields((prev) =>
       prev.map((item) => (item.id === id ? { ...item, [field]: value } : item))
     );
   };
+
   const handleFieldDelete = (id: string) => {
     setFields((prev) => prev.filter((item) => item.id !== id));
   };
+
   const handleFieldAdd = () => {
     setFields((prev) => [
       ...prev,
@@ -163,166 +127,181 @@ export default function BusinessInfoForm({
     ]);
   };
 
+  const handleExampleData = () => {
+    setFields(
+      Object.entries(EXAMPLE_BUSINESS_INFO).map(([key, value]) => ({
+        id: crypto.randomUUID(),
+        key,
+        value,
+      }))
+    );
+  };
+
+  const handleFileUpload = async (itemId: string, file: File) => {
+    const { uploadPdf } = await import("@/lib/upload-pdf");
+    try {
+      handleFieldChange(itemId, "value", "Uploading...");
+      const { url } = await uploadPdf(file, userId, "knowledge");
+      handleFieldChange(itemId, "value", `di upload di: ${url}`);
+    } catch (err) {
+      handleFieldChange(itemId, "value", "Failed to upload file");
+      console.error(err);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setMessage(null);
     try {
-      // Convert fields array to object for 'data'
-      const data = fields.reduce((acc, { key, value }) => {
-        if (key) acc[key] = value;
-        return acc;
-      }, {} as Record<string, string>);
-      await onSubmit({
-        userId,
-        data,
-        systemPrompt,
-      });
-      setMessage("Business info saved!");
-    } catch (err: any) {
-      setMessage("Failed to save business info");
+      await onSubmit({ userId, data: toObject(fields), systemPrompt });
+      setMessage({ text: "Business info saved!", isError: false });
+    } catch {
+      setMessage({ text: "Failed to save business info", isError: true });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="mx-8 space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-8 w-full">
-        {/* Left column: Business Info Fields */}
-        <div className="md:mx-4">
-          <div className="flex items-center gap-2 mb-2">
-            <label className="block font-semibold">Business Info Fields</label>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="ml-2"
-              onClick={handleExampleData}
-            >
-              (example data)
-            </Button>
+    <form onSubmit={handleSubmit} className="px-6 py-6">
+
+      <Tabs defaultValue="knowledge" className="w-full">
+        <TabsList className="mb-6 w-full justify-start">
+          <TabsTrigger value="knowledge" className="px-5">
+            Knowledge Base
+          </TabsTrigger>
+          <TabsTrigger value="personality" className="px-5">
+            AI Personality
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Tab 1: Knowledge Base */}
+        <TabsContent value="knowledge">
+          <div className="mb-5 rounded-lg bg-blue-50 px-4 py-3 text-sm leading-relaxed text-blue-800">
+            Tambahkan informasi bisnis Anda di sini. AI chatbot akan menggunakan
+            data ini untuk menjawab pertanyaan pelanggan tentang layanan, harga,
+            jam operasional, dan lainnya.
           </div>
-          <div className="space-y-2">
+
+          <div className="space-y-4">
             {fields.map((item) => (
-              <div key={item.id} className="flex flex-col gap-2 items-stretch">
-                <Input
-                  className="input input-bordered w-1/2"
-                  placeholder="Key (e.g. services, menu, howto)"
-                  value={item.key}
-                  onChange={(e) =>
-                    handleFieldChange(item.id, "key", e.target.value)
-                  }
-                  required
-                />
-                {/* Upload button for PDF/text, placed between Input and Textarea */}
-                <div className="flex items-center gap-2">
+              <Card key={item.id} className="py-4 shadow-none border-gray-200">
+                <CardHeader className="pb-0">
+                  <Input
+                    className="w-full max-w-xs border-none bg-transparent px-0 text-base font-semibold shadow-none focus-visible:ring-0 placeholder:text-gray-400 placeholder:font-normal"
+                    placeholder="Nama topik (contoh: services, hours)"
+                    value={item.key}
+                    onChange={(e) => handleFieldChange(item.id, "key", e.target.value)}
+                  />
+                  <CardAction>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0 text-gray-400 hover:text-red-500"
+                      onClick={() => handleFieldDelete(item.id)}
+                    >
+                      <span className="text-lg leading-none">&times;</span>
+                    </Button>
+                  </CardAction>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <Textarea
+                    className="min-h-[80px] resize-y border-gray-200 text-sm placeholder:text-gray-400"
+                    placeholder={getPlaceholder(item.key)}
+                    value={item.value}
+                    onChange={(e) => handleFieldChange(item.id, "value", e.target.value)}
+                    rows={3}
+                  />
+                </CardContent>
+                <CardFooter>
                   <input
                     id={`file-upload-${item.id}`}
                     type="file"
                     accept=".pdf,.txt"
                     className="hidden"
-                    onChange={async (e) => {
+                    onChange={(e) => {
                       const file = e.target.files?.[0];
-                      if (!file) return;
-                      // Import dynamically to avoid SSR issues
-                      const { uploadPdf } = await import(
-                        "@/lib/upload-pdf"
-                      );
-                      try {
-                        handleFieldChange(item.id, "value", "Uploading...");
-                        const { url } = await uploadPdf(
-                          file,
-                          userId || "",
-                          "knowledge"
-                        );
-                        handleFieldChange(item.id, "value", `di upload di: ${url}`);
-                      } catch (err) {
-                        handleFieldChange(
-                          item.id,
-                          "value",
-                          "Failed to upload file"
-                        );
-                        console.error(err);
-                      }
+                      if (file) handleFileUpload(item.id, file);
                     }}
                   />
                   <Button
                     type="button"
-                    variant="secondary"
+                    variant="outline"
                     size="sm"
+                    className="text-xs text-gray-500"
                     onClick={() =>
                       document.getElementById(`file-upload-${item.id}`)?.click()
                     }
                   >
                     Upload File
                   </Button>
-                </div>
-                <Textarea
-                  className="textarea textarea-bordered min-h-[4rem]"
-                  placeholder="Value"
-                  value={item.value}
-                  onChange={(e) =>
-                    handleFieldChange(item.id, "value", e.target.value)
-                  }
-                  rows={4}
-                  required
-                />
-                <Button
-                  type="button"
-                  className="btn btn-error btn-sm self-start mb-4"
-                  onClick={() => handleFieldDelete(item.id)}
-                >
-                  Delete
-                </Button>
-              </div>
+                </CardFooter>
+              </Card>
             ))}
-            <Button
+
+            <button
               type="button"
-              className="btn btn-outline btn-sm mt-2"
               onClick={handleFieldAdd}
+              className="w-full rounded-lg border-2 border-dashed border-gray-300 py-3 text-sm text-gray-500 transition-colors hover:border-gray-400 hover:text-gray-600"
             >
-              + Add Field
-            </Button>
+              + Add Knowledge Entry
+            </button>
+
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={handleExampleData}
+                className="text-sm text-blue-600 underline underline-offset-2 hover:text-blue-700"
+              >
+                Fill with example data
+              </button>
+            </div>
           </div>
-        </div>
-        {/* Right column: System Prompt */}
-        <div className="md:mx-4">
-          <div className="flex items-center gap-2 mb-2">
-            <label className="block font-semibold">
-              System Prompt (optional)
-            </label>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="ml-2"
-              onClick={() => setSystemPrompt(SYSTEM_PROMPT_REFERENCE)}
-            >
-              (example prompt)
-            </Button>
+        </TabsContent>
+
+        {/* Tab 2: AI Personality */}
+        <TabsContent value="personality">
+          <div className="mb-5 rounded-lg bg-amber-50 px-4 py-3 text-sm leading-relaxed text-amber-800">
+            Atur bagaimana AI chatbot berkomunikasi — gaya bahasa, aturan
+            booking, dan panduan respons. Prompt ini mengontrol kepribadian dan
+            perilaku bot Anda.
           </div>
+
           <Textarea
-            className="textarea textarea-bordered w-full min-h-[120px]"
+            className="min-h-[320px] resize-y border-gray-200 text-sm leading-relaxed placeholder:text-gray-400"
             value={systemPrompt}
             onChange={(e) => setSystemPrompt(e.target.value)}
-            placeholder="Enter your system prompt here..."
-            rows={16}
+            placeholder="Masukkan system prompt di sini..."
+            rows={18}
           />
-        </div>
-      </div>
-      {/* Submit button and message below both columns */}
-      <div className="flex flex-col items-center gap-2">
+
+          <div className="mt-3">
+            <button
+              type="button"
+              onClick={() => setSystemPrompt(SYSTEM_PROMPT_REFERENCE)}
+              className="text-sm text-amber-700 underline underline-offset-2 hover:text-amber-800"
+            >
+              Load example prompt
+            </button>
+          </div>
+        </TabsContent>
+      </Tabs>
+
+      {/* Save */}
+      <div className="mt-8 flex flex-col items-center gap-2 border-t border-gray-100 pt-6">
         <Button
           type="submit"
-          className="btn btn-primary w-full max-w-xs"
           disabled={loading}
+          className="w-full max-w-xs"
         >
           {loading ? "Saving..." : "Save"}
         </Button>
         {message && (
-          <div className="mt-2 text-center text-green-600 font-medium">
-            {message}
-          </div>
+          <p className={`mt-1 text-sm font-medium ${message.isError ? "text-red-600" : "text-green-600"}`}>
+            {message.text}
+          </p>
         )}
       </div>
     </form>

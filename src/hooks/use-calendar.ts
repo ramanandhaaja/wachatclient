@@ -121,6 +121,18 @@ async function createAvailability(input: CreateAvailabilityInput): Promise<Avail
   return data.availability;
 }
 
+async function deleteAvailability(id: string): Promise<void> {
+  const response = await fetch('/api/calendar/availability', {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id }),
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to delete availability');
+  }
+}
+
 export function useCalendar() {
   const queryClient = useQueryClient();
 
@@ -135,31 +147,29 @@ export function useCalendar() {
   const events = {
     useQuery: (params?: CalendarQueryParams) =>
       useQuery({
-        queryKey: CALENDAR_KEYS.events(),
+        queryKey: [...CALENDAR_KEYS.events(), params],
         queryFn: () => fetchEvents(params),
       }),
     useCreate: () =>
       useMutation({
         mutationFn: createEvent,
         onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: CALENDAR_KEYS.events() });
+          queryClient.invalidateQueries({ queryKey: CALENDAR_KEYS.all });
         },
       }),
     useUpdate: () =>
       useMutation({
         mutationFn: ({ eventId, input }: { eventId: string; input: UpdateEventInput }) =>
           updateEvent(eventId, input),
-        onSuccess: (_, { eventId }) => {
-          queryClient.invalidateQueries({ queryKey: CALENDAR_KEYS.event(eventId) });
-          queryClient.invalidateQueries({ queryKey: CALENDAR_KEYS.events() });
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: CALENDAR_KEYS.all });
         },
       }),
     useDelete: () =>
       useMutation({
         mutationFn: deleteEvent,
-        onSuccess: (_, eventId) => {
-          queryClient.invalidateQueries({ queryKey: CALENDAR_KEYS.event(eventId) });
-          queryClient.invalidateQueries({ queryKey: CALENDAR_KEYS.events() });
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: CALENDAR_KEYS.all });
         },
       }),
   };
@@ -174,8 +184,13 @@ export function useCalendar() {
       useMutation({
         mutationFn: createAvailability,
         onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: CALENDAR_KEYS.availability() });
-          // Also invalidate slots queries as they depend on availability
+          queryClient.invalidateQueries({ queryKey: CALENDAR_KEYS.all });
+        },
+      }),
+    useDelete: () =>
+      useMutation({
+        mutationFn: deleteAvailability,
+        onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: CALENDAR_KEYS.all });
         },
       }),

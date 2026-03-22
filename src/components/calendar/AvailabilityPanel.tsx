@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { format } from "date-fns";
-import { Clock, Plus } from "lucide-react";
+import { Clock, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -31,6 +30,7 @@ export function AvailabilityPanel() {
 
   const { availability } = useCalendar();
   const createMutation = availability.useCreate();
+  const deleteMutation = availability.useDelete();
   const { data: availabilityList } = availability.useQuery();
 
   const handleCreateAvailability = async () => {
@@ -45,6 +45,14 @@ export function AvailabilityPanel() {
     } catch (error: any) {
       setError(error?.message || "Failed to set availability. Please try again.");
       console.error("Failed to set availability:", error);
+    }
+  };
+
+  const handleDeleteAvailability = async (id: string) => {
+    try {
+      await deleteMutation.mutateAsync(id);
+    } catch (error: any) {
+      console.error("Failed to delete availability:", error);
     }
   };
 
@@ -140,6 +148,15 @@ export function AvailabilityPanel() {
                   {item.startTime} - {item.endTime}
                 </p>
               </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => handleDeleteAvailability(item.id)}
+                disabled={deleteMutation.isPending}
+              >
+                <X className="h-4 w-4" />
+              </Button>
             </div>
           ))
         )}

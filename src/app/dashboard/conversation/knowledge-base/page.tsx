@@ -2,10 +2,7 @@ import BusinessInfoForm, { BusinessInfoData } from "./business-info-form";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
-import { Suspense } from "react";
-import Loading from "@/components/ui/loading";
 
-// Server action to fetch business info for the current user
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 
 async function getBusinessInfo(
@@ -83,23 +80,18 @@ export default async function KnowledgeBasePage() {
   const userId = user.id;
   const initialData = await getBusinessInfo(userId);
 
-  // This uses a server action for save
   async function handleSubmit(data: BusinessInfoData) {
     "use server";
     await saveBusinessInfo(data);
   }
 
   return (
-    <Suspense fallback={<Loading />}>
-      <div className="h-[calc(100vh-2rem)] overflow-y-auto bg-white rounded-lg shadow-sm">
-        <div className="w-full pt-12 pb-12">
-          <BusinessInfoForm
-            initialData={initialData || { userId, data: {}, systemPrompt: "" }}
-            onSubmit={handleSubmit}
-            userId={userId}
-          />
-        </div>
-      </div>
-    </Suspense>
+    <div className="h-[calc(100vh-2rem)] overflow-y-auto bg-white rounded-lg shadow-sm">
+      <BusinessInfoForm
+        initialData={initialData || { userId, data: {}, systemPrompt: "" }}
+        onSubmit={handleSubmit}
+        userId={userId}
+      />
+    </div>
   );
 }

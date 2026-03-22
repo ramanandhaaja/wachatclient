@@ -16,6 +16,7 @@ import {
   CreditCard,
   Bell,
   User,
+  Calendar,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -77,12 +78,11 @@ export function Sidebar() {
       href: "/dashboard/namecard",
       icon: <BookOpen className="h-5 w-5" />,
     },
-    /*
     {
       title: "Calendar",
       href: "/dashboard/calendar",
       icon: <Calendar className="h-5 w-5" />,
-    },*/
+    },
     {
       title: "Conversation",
       href: "/dashboard/conversation",

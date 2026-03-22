@@ -1,18 +1,13 @@
-import { useBookingStore } from '@/stores/bookingStore';
 import { createGetBusinessInfoTool } from './get-business-info';
 import { createCheckAvailabilityTool } from './check-availability';
-import { createCheckClientExistsTool } from './check-client-exists';
-import { createUpdateBookingStateTool } from './update-booking-state';
 import { createBookAppointmentTool } from './book-appointment';
+import { createCheckScheduleTool } from './check-schedule';
 
-export function createTools(sessionId: string, userId: string) {
-  const store = useBookingStore.getState();
-
+export function createTools(userId: string) {
   return {
     getBusinessInfo: createGetBusinessInfoTool(userId),
-    checkAvailability: createCheckAvailabilityTool(),
-    checkClientExists: createCheckClientExistsTool(sessionId, store),
-    updateBookingState: createUpdateBookingStateTool(sessionId, store),
-    bookAppointment: createBookAppointmentTool(sessionId, userId, store),
+    checkAvailability: createCheckAvailabilityTool(userId),
+    bookAppointment: createBookAppointmentTool(userId),
+    checkSchedule: createCheckScheduleTool(userId),
   };
 }

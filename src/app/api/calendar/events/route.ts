@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
 import { z } from "zod";
+import { getWIBDayOfWeek, isWithinAvailability, findOverlappingEvent } from "@/lib/calendar-utils";
 
-// Schema for event creation/update
 const EventSchema = z.object({
   startTime: z.string().datetime(),
   clientInfo: z.object({
@@ -17,7 +17,6 @@ const EventSchema = z.object({
   notes: z.string().optional(),
 });
 
-// GET /api/calendar/events
 export async function GET(req: NextRequest) {
   try {
     const supabase = await createClient();
@@ -26,7 +25,6 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Parse optional date range filters
     const { searchParams } = new URL(req.url);
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
@@ -43,11 +41,9 @@ export async function GET(req: NextRequest) {
         : {}),
     };
 
-    const events = await prisma.event.findMany({ 
+    const events = await prisma.event.findMany({
       where,
-      include: {
-        client: true
-      }
+      include: { client: true },
     });
     return NextResponse.json({ events });
   } catch (error) {
@@ -59,7 +55,6 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST /api/calendar/events
 export async function POST(req: NextRequest) {
   try {
     const supabase = await createClient();
@@ -77,82 +72,40 @@ export async function POST(req: NextRequest) {
 
     const { startTime, clientInfo, serviceType, providerId, providerName, notes } = result.data;
     const eventDate = new Date(startTime);
-    const dayOfWeek = eventDate.getDay(); // 0-6 (Sunday-Saturday)
+    const dayOfWeek = getWIBDayOfWeek(eventDate);
 
-    // Get user's event duration and availability
-    const dbUser = await prisma.user.findUnique({
-      where: { id: authUser.id },
-      select: { eventDuration: true },
-    });
+    const [dbUser, availabilityWindows] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: authUser.id },
+        select: { eventDuration: true },
+      }),
+      prisma.availability.findMany({
+        where: { userId: authUser.id, dayOfWeek },
+      }),
+    ]);
 
     if (!dbUser) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Check if there's availability for this day
-    const availability = await prisma.availability.findFirst({
-      where: {
-        userId: authUser.id,
-        dayOfWeek,
-      },
-    });
-
-    if (!availability) {
+    if (availabilityWindows.length === 0) {
       return NextResponse.json(
         { error: "No availability set for this day" },
         { status: 400 }
       );
     }
 
-    // Parse event time
-    const [eventHour, eventMinute] = eventDate
-      .toTimeString()
-      .slice(0, 5)
-      .split(":")
-      .map(Number);
-    const eventMinutes = eventHour * 60 + eventMinute;
-
-    // Parse availability times
-    const [startHour, startMinute] = availability.startTime.split(":").map(Number);
-    const [endHour, endMinute] = availability.endTime.split(":").map(Number);
-    const availStartMinutes = startHour * 60 + startMinute;
-    const availEndMinutes = endHour * 60 + endMinute;
-
-    // Check if event is within availability
-    if (
-      eventMinutes < availStartMinutes ||
-      eventMinutes + dbUser.eventDuration > availEndMinutes
-    ) {
+    if (!isWithinAvailability(eventDate, dbUser.eventDuration, availabilityWindows)) {
       return NextResponse.json(
         { error: "Selected time is outside available hours" },
         { status: 400 }
       );
     }
 
-    // Calculate end time based on event duration
     const endTime = new Date(startTime);
     endTime.setMinutes(endTime.getMinutes() + dbUser.eventDuration);
 
-    // Check for overlapping events
-    const overlappingEvent = await prisma.event.findFirst({
-      where: {
-        userId: authUser.id,
-        OR: [
-          {
-            startTime: {
-              gte: new Date(startTime),
-              lt: endTime,
-            },
-          },
-          {
-            endTime: {
-              gt: new Date(startTime),
-              lte: endTime,
-            },
-          },
-        ],
-      },
-    });
+    const overlappingEvent = await findOverlappingEvent(authUser.id, new Date(startTime), endTime);
 
     if (overlappingEvent) {
       return NextResponse.json(
@@ -161,25 +114,21 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // First, check if client with this phone number already exists
     let client = await prisma.client.findFirst({
-      where: {
-        phone: clientInfo.phone,
-      },
+      where: { phone: clientInfo.phone, userId: authUser.id },
     });
 
-    // If client doesn't exist, create a new one
     if (!client) {
       client = await prisma.client.create({
         data: {
           name: clientInfo.name,
           phone: clientInfo.phone,
           email: clientInfo.email,
+          userId: authUser.id,
         },
       });
     }
 
-    // Create the event
     const event = await prisma.event.create({
       data: {
         startTime: new Date(startTime),
@@ -191,9 +140,7 @@ export async function POST(req: NextRequest) {
         userId: authUser.id,
         clientId: client.id,
       },
-      include: {
-        client: true
-      },
+      include: { client: true },
     });
 
     return NextResponse.json({ event }, { status: 201 });
