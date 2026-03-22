@@ -6,12 +6,11 @@ import { nameCardSchema } from "@/lib/schemas/namecard";
 export const dynamic = 'force-dynamic';
 
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function GET(
   request: Request,
-  { params }: any
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = params;
+  const { id } = await params;
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -37,12 +36,11 @@ export async function GET(
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function PATCH(
   request: Request,
-  { params }: any
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = params;
+  const { id } = await params;
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -68,12 +66,11 @@ export async function PATCH(
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function DELETE(
   request: Request,
-  { params }: any
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = params;
+  const { id } = await params;
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();

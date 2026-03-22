@@ -55,10 +55,11 @@ export default function ChatWidget({ userId }: NameCardChatWidgetProps) {
   }, []);
 
   useEffect(() => {
-    if (!messages || localStateMessages.length === 0) return;
+    if (!messages) return;
 
-    setLocalStateMessages((pending) =>
-      pending.filter(
+    setLocalStateMessages((pending) => {
+      if (pending.length === 0) return pending;
+      return pending.filter(
         (pendingMsg) =>
           !messages.some(
             (realMsg) =>
@@ -70,8 +71,8 @@ export default function ChatWidget({ userId }: NameCardChatWidgetProps) {
                   new Date(pendingMsg.timestamp).getTime()
               ) < 60000
           )
-      )
-    );
+      );
+    });
   }, [messages]);
 
   const toggleChat = () => {

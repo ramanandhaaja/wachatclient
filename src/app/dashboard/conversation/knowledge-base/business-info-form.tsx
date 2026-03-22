@@ -229,22 +229,13 @@ export default function BusinessInfoForm({
                         "@/lib/upload-pdf"
                       );
                       try {
-                        handleFieldChange(item.id, "value", "Extracting...");
-                        const { url, text } = await uploadPdfAndExtractText(
+                        handleFieldChange(item.id, "value", "Uploading...");
+                        const { url } = await uploadPdfAndExtractText(
                           file,
                           userId || "",
                           "knowledge"
                         );
-                        const fileInfo = {
-                          title: item.key,
-                          name: file.name,
-                          url,
-                          text,
-                        };
-                        //const fileInfoString = `${fileInfo.title}, ${fileInfo.name}, ${fileInfo.url}, ${fileInfo.text}`;
-                        const fileInfoString = `di upload di: ${fileInfo.url}`;
-                        
-                        handleFieldChange(item.id, "value", fileInfoString);
+                        handleFieldChange(item.id, "value", `di upload di: ${url}`);
                       } catch (err) {
                         handleFieldChange(
                           item.id,
