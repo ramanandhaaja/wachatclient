@@ -225,12 +225,12 @@ export default function BusinessInfoForm({
                       const file = e.target.files?.[0];
                       if (!file) return;
                       // Import dynamically to avoid SSR issues
-                      const { uploadPdfAndExtractText } = await import(
+                      const { uploadPdf } = await import(
                         "@/lib/upload-pdf"
                       );
                       try {
                         handleFieldChange(item.id, "value", "Uploading...");
-                        const { url } = await uploadPdfAndExtractText(
+                        const { url } = await uploadPdf(
                           file,
                           userId || "",
                           "knowledge"
@@ -240,7 +240,7 @@ export default function BusinessInfoForm({
                         handleFieldChange(
                           item.id,
                           "value",
-                          "Failed to extract text from PDF"
+                          "Failed to upload file"
                         );
                         console.error(err);
                       }

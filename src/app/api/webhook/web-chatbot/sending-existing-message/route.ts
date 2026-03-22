@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 // If you use an AI function, import it here
-import { processMessage } from "@/lib/server-chat-openai/process-message";
+import { processMessage } from "@/lib/mastra/process-message";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,

@@ -43,8 +43,6 @@ export default function ChatWidget({ userId }: NameCardChatWidgetProps) {
         setUserPhone(session.phone);
         setShowFormInput(false);
 
-        // Load previous messages if needed
-        // loadPreviousMessages(session.session_id);
       } else {
         sessionStorage.removeItem("userWebChatSession");
         setShowFormInput(true);

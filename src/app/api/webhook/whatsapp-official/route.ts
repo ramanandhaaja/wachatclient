@@ -1,8 +1,7 @@
 export const maxDuration = 300; // 5 minutes
 
-import { NextResponse } from "next/server";
-import { after } from "next/server";
-import { processMessage } from "@/lib/server-chat-openai/process-message";
+import { NextResponse, after } from "next/server";
+import { processMessage } from "@/lib/mastra/process-message";
 import { prisma } from "@/lib/prisma";
 import { supabase } from "@/lib/supabase";
 
@@ -17,7 +16,7 @@ export async function sendtoChatBot(
 ) {
   console.log('[sendtoChatBot] Called with:', { to, message, conversationId, userId });
   try {
-    // Process the message using the AI, with a 30s timeout
+    // Process the message using the AI, with a 120s timeout
     const sessionId = to; // Using phone number as session ID
     let response;
     try {
@@ -137,16 +136,9 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
 
-    // Log the webhook event for debugging
-    console.log("Received webhook:", JSON.stringify(body, null, 2));
-
-    // Check if this is a WhatsApp message notification
     if (body.object === "whatsapp_business_account") {
-      // Process each entry
       for (const entry of body.entry) {
-        // Process each change
         for (const change of entry.changes) {
-          // Check if this is a message
           if (change.field === "messages") {
             const value = change.value;
 
@@ -274,8 +266,6 @@ export async function POST(request: Request) {
 
               console.log("Successfully stored message");
 
-              // Use next/server after() to keep the function alive for AI processing
-              // after() runs the callback after the response is sent but keeps the function alive
               after(async () => {
                 try {
                   await sendtoChatBot(contact.wa_id, message.text.body, conversationId, userId);

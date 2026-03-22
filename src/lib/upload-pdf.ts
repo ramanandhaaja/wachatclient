@@ -30,7 +30,7 @@ export async function uploadFileToSupabase(
 /**
  * Upload a file to Supabase Storage and return the URL.
  */
-export async function uploadPdfAndExtractText(
+export async function uploadPdf(
   file: File,
   userId: string,
   bucket = 'knowledge'
