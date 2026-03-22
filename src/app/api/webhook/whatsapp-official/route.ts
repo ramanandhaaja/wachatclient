@@ -1,6 +1,7 @@
 export const maxDuration = 300; // 5 minutes
 
 import { NextResponse } from "next/server";
+import { after } from "next/server";
 import { processMessage } from "@/lib/server-chat-openai/process-message";
 import { prisma } from "@/lib/prisma";
 import { supabase } from "@/lib/supabase";
@@ -273,9 +274,15 @@ export async function POST(request: Request) {
 
               console.log("Successfully stored message");
 
-              // Offload AI reply to background (fire-and-forget)
-              sendtoChatBot(contact.wa_id, message.text.body, conversationId, userId)
-                .catch(console.error);
+              // Use next/server after() to keep the function alive for AI processing
+              // after() runs the callback after the response is sent but keeps the function alive
+              after(async () => {
+                try {
+                  await sendtoChatBot(contact.wa_id, message.text.body, conversationId, userId);
+                } catch (e) {
+                  console.error('[after] sendtoChatBot error:', e);
+                }
+              });
             }
           }
         }
