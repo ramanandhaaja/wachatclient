@@ -1,12 +1,7 @@
 import { supabase } from '@/lib/supabase';
 
-
 /**
- * Uploads a file (e.g. PDF) to Supabase Storage under the 'knowledge' folder in the 'cardify' bucket and returns the public URL.
- * @param file File to upload
- * @param folder Folder name (default: 'knowledge')
- * @param userId Optional user id for folder structure
- * @param fileName Optional file name (if not provided, generates one)
+ * Uploads a file to Supabase Storage and returns the public URL.
  */
 export async function uploadFileToSupabase(
   file: File,
@@ -32,49 +27,14 @@ export async function uploadFileToSupabase(
   return data?.publicUrl || null;
 }
 
-
-
-export async function extractTextFromPdf(file: File): Promise<string> {
-  const formData = new FormData();
-  formData.append("file", file);
-
-  /*
-  const res = await fetch("/api/knowledge/extract-pdf", {
-    method: "POST",
-    body: formData,
-  });
-
-  if (!res.ok) {
-    const { error } = await res.json().catch(() => ({ error: 'Unknown error' }));
-    throw new Error(error || 'Failed to extract PDF text');
-  }
-
-  const { text } = await res.json();
-  return text;
-*/
-  return "sukses";
-}
-
-
-
 /**
- * Upload a PDF to Supabase, extract its text, and return both
- * @param file PDF File
- * @param userId User ID for pathing
- * @param bucket Storage bucket name (default: 'pdfs')
- * @returns { url, text }
+ * Upload a file to Supabase Storage and return the URL.
  */
-
 export async function uploadPdfAndExtractText(
   file: File,
   userId: string,
   bucket = 'knowledge'
-): Promise<{ url: string | null; text: string }> {
-  const [url, text] = await Promise.all([
-    uploadFileToSupabase(file, bucket, userId, file.name),
-    extractTextFromPdf(file),
-  ]);
-  return { url, text };
+): Promise<{ url: string | null }> {
+  const url = await uploadFileToSupabase(file, bucket, userId, file.name);
+  return { url };
 }
-
-
