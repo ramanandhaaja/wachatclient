@@ -1,6 +1,4 @@
-export const config = {
-  maxDuration: 300, // 5 minutes
-};
+export const maxDuration = 300; // 5 minutes
 
 import { NextResponse } from "next/server";
 import { processMessage } from "@/lib/server-chat-openai/process-message";
@@ -26,7 +24,7 @@ export async function sendtoChatBot(
       response = await Promise.race([
         processMessage(sessionId, message, userId),
         new Promise<never>((_, reject) => {
-          timer = setTimeout(() => reject(new Error('AI timeout')), 30000);
+          timer = setTimeout(() => reject(new Error('AI timeout')), 120000);
         }),
       ]);
       clearTimeout(timer!);
