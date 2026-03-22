@@ -33,14 +33,24 @@ export function toUTC(date: Date): Date {
 }
 
 /**
- * Format a date in WIB timezone
- * This is for display purposes - when showing dates from the database
+ * Format a date in WIB timezone (GMT+7).
+ * Uses manual UTC offset to avoid double-offset when date-fns applies local timezone.
  */
 export function formatWIB(date: Date, formatStr: string): string {
-  // Convert the UTC date to WIB first
+  // Shift the UTC time by +7 hours to get WIB
   const wibDate = toWIB(date);
-  // Then format it
-  return formatDate(wibDate, formatStr);
+  // Format using UTC values to avoid date-fns applying local timezone on top
+  // We create a date where the local time equals the WIB time
+  const localEquivalent = new Date(
+    wibDate.getUTCFullYear(),
+    wibDate.getUTCMonth(),
+    wibDate.getUTCDate(),
+    wibDate.getUTCHours(),
+    wibDate.getUTCMinutes(),
+    wibDate.getUTCSeconds(),
+    wibDate.getUTCMilliseconds()
+  );
+  return formatDate(localEquivalent, formatStr);
 }
 
 /**

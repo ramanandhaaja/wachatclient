@@ -70,8 +70,9 @@ export function useConversations(userId: string, source?: 'web' | 'whatsapp') {
   const queryClient = useQueryClient();
 
   const { data: conversations, isLoading, error } = useQuery<Conversation[]>({
-    queryKey: ['conversations', source],
+    queryKey: ['conversations', userId, source],
     queryFn: () => fetchConversations(userId, source),
+    enabled: !!userId,
   });
 
   // Set up real-time subscription
