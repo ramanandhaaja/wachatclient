@@ -7,7 +7,6 @@ export async function processMessage(
   userId: string,
 ): Promise<string> {
   try {
-    // Initialize booking state if not exists
     const bookingStore = useBookingStore.getState();
     if (!bookingStore.getBookingState(sessionId)) {
       bookingStore.initializeSession(sessionId);

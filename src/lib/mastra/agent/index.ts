@@ -1,8 +1,8 @@
 import { Agent } from '@mastra/core/agent';
 import { prisma } from '@/lib/prisma';
 import { formatWIB } from '@/lib/utils';
-import { memory } from './memory';
-import { createTools } from './tools';
+import { memory } from '../memory';
+import { createTools } from '../tools';
 
 async function getSystemPrompt(userId: string): Promise<string> {
   const businessInfo = await prisma.businessInfo.findFirst({
@@ -13,16 +13,13 @@ async function getSystemPrompt(userId: string): Promise<string> {
   return businessInfo?.systemPrompt || 'You are a helpful AI assistant.';
 }
 
-/**
- * Creates a Mastra Agent configured for a specific session and user.
- * Called per-message since the system prompt and tools are user-specific.
- */
 export async function createChatAgent(sessionId: string, userId: string) {
   const systemPrompt = await getSystemPrompt(userId);
   const jakartaDate = formatWIB(new Date(), 'yyyy-MM-dd');
   const tools = createTools(sessionId, userId);
 
   const agent = new Agent({
+    id: 'whatsapp-chat-agent',
     name: 'WhatsApp Chat Agent',
     instructions: `${systemPrompt}
 
